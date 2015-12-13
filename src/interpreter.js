@@ -1,4 +1,4 @@
-/* global move, __line, setInterval, clearInterval */
+/* global __line, setInterval, clearInterval */
 
 var KEY_CODE_ENTER = 13;
 var KEY_CODE_ESCAPE = 27;
@@ -28,6 +28,7 @@ var FOCUS_MODE_MESSAGEBOX = "messagebox";
 var MAX_SLOTS = 20;
 
 var none = function () {};
+var move = require("move-js");
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");

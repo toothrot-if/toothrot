@@ -9,7 +9,7 @@
         <script src="engine/toothrot.js"></script>
         <script src="story.js"></script>
         <script>
-            TOOTHROT.run(window.toothrotResources);
+            TOOTHROT.run(JSON.parse(window.atob(window.toothrotResources)));
         </script>
     </body>
 </html>

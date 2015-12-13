@@ -1,26 +1,40 @@
 /* global require, __dirname */
 
 var fs = require("fs");
+var path = require("path");
 var ncp = require("ncp").ncp;
 
-var resourceDir = __dirname + "../resources/";
-var engineFile = __dirname + "../build/toothrot.js";
+var resourceDir = path.normalize(__dirname + "/../resources/");
+var engineSourceDir = path.normalize(__dirname + "/../build/");
 
 function init (dir) {
     
-    if (fs.existsSync(dir)) {
+    dir = path.normalize(dir + "/");
+    
+    if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
     
     ncp(resourceDir, dir, function (error) {
         
+        var sourceOutputDir = path.normalize(dir + "/engine/");
+        
         if (error) {
             return console.error(error);
         }
         
-        fs.writeFileSync(dir + "engine/toothrot.js", fs.readFileSync(engineFile));
+        console.log("engineSourceDir:", engineSourceDir);
+        console.log("sourceOutputDir:", sourceOutputDir);
         
-        console.log("Initialized empty Toothrot Engine project in " + dir + ".");
+        ncp(engineSourceDir, sourceOutputDir, function (error) {
+            
+            if (error) {
+                return console.error(error);
+            }
+            
+            console.log("Initialized empty Toothrot Engine project in " + dir + ".");
+        });
+        
     });
 }
 
