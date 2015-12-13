@@ -1,0 +1,670 @@
+/* YUI 3.5.0 reset.css (http://developer.yahoo.com/yui/3/cssreset/) - http://cssreset.com */
+html{color:#000;background:#FFF}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0}table{border-collapse:collapse;border-spacing:0}fieldset,img{border:0}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal}/*ol,ul{list-style:none}*/caption,th{text-align:left}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal}q:before,q:after{content:''}abbr,acronym{border:0;font-variant:normal}sup{vertical-align:text-top}sub{vertical-align:text-bottom}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit}input,textarea,select{*font-size:100%}legend{color:#000}#yui3-css-stamp.cssreset{display:none}
+
+
+
+* {
+    box-sizing: border-box;
+}
+
+li {
+    margin: 5px;
+    margin-left: 20px;
+}
+
+html {
+    font-family: arial, Arial, Helvetica, sans-serif;
+    background: black;
+    color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: bold;
+}
+
+h1 {
+    font-size: 1.6em;
+    text-align: center;
+}
+
+h2 {
+    font-size: 1.3em;
+}
+
+h3 {
+    font-size: 1.2em;
+}
+
+em, i {
+    font-style: italic;
+}
+
+strong, b {
+    font-weight: bold;
+}
+
+#header {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    background: rgba(50, 50, 50, 0.6);
+    border-bottom: 1px solid rgb(50, 50, 50);
+    padding: 10px;
+    font-weight: bold;
+    color: white;
+}
+
+.right {
+    float: right;
+}
+
+#content {
+    padding: 10px;
+    padding-top: 60px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+#content[data-section=default] .Background {
+    background: black;
+    background-size: 100% 100%;
+}
+
+#content[data-section=outside] .Background {
+    background: url(sky1.jpg);
+    background-size: 100% 100%;
+}
+
+.Highlighter {
+    position: absolute;
+    border-radius: 3px;
+    border: 1px solid white;
+    box-shadow: 0 0 2px black;
+    z-index: 1000000;
+    cursor: pointer;
+    /*animation: pulse 1s infinite;*/
+}
+
+.BackgroundDimmer, .Background {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    background: black;
+}
+
+.BackgroundDimmer {
+    opacity: 0;
+}
+
+@keyframes pulse {
+    
+    0% {
+        opacity: 1;
+    }
+    
+    50% {
+        opacity: 0;
+    }
+    
+    100% {
+        opacity: 1;
+    }
+}
+
+.NextIndicator {
+    width: 16px;
+    height: 16px;
+    position: absolute;
+    right: -30px;
+    bottom: -20px;
+    margin: 0;
+    padding: 0;
+    opacity: 0.8;
+    background: transparent url(arrow-key-right.gif) no-repeat center center;
+    box-shadow: 1px 1px 2px rgba(50, 50, 50, 0.8);
+    /*
+    animation: pulse 1s infinite;
+    border: 1px solid rgb(50, 50, 50);
+    */
+}
+
+.Text {
+    margin-bottom: 20px;
+    /*
+    padding: 15px;
+    border-radius: 3px;
+    background: rgba(50, 50, 50, 0.9);
+    box-shadow: 2px 2px 3px rgba(50, 50, 50, 0.8);
+    */
+    font-size: 2em;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: default;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    -moz-transform: translate(-50%, -50%);
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    backface-visibility: hidden;
+    text-shadow: 1px 1px 2px rgba(20, 20, 20, 0.8);
+}
+
+.Text p {
+    margin-top: 15px;
+}
+
+.Text p:first-child {
+    margin-top: 0;
+}
+
+.OptionsContainer {
+    margin-top: 20px;
+}
+
+.Option {
+    display: block;
+    padding: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-top: 10px;
+    background: rgba(50, 50, 50, 0.9);
+    border: 1px solid rgb(20, 20, 20);
+    box-shadow: 2px 2px 2px rgb(20, 20, 20);
+    border-radius: 5px;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+.Option:hover {
+    background: rgba(70, 70, 70, 0.9);
+    border: 1px solid rgb(40, 40, 40);
+}
+
+.Option:first-child {
+    margin-top: 0;
+}
+
+.TimeoutContainer {
+    padding: 2px;
+    background: rgb(40, 40, 40);
+    margin-top: 20px;
+    margin-bottom: -5px;
+    border-radius: 3px;
+    box-shadow: inset 2px 2px 2px black;
+}
+
+.TimeoutContainer .TimerBar {
+    border-radius: 3px;
+    height: 8px;
+    background: rgb(80, 80, 80);
+    margin: auto;
+}
+
+.Action {
+    border-radius: 5px;
+    border: 1px solid rgb(20, 20, 20);
+    background: rgba(50, 50, 50, 0.9);
+    box-shadow: inset -1px -1px 2px black;
+    color: white;
+    cursor: pointer;
+    padding: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    display: inline-block;
+    margin-right: 5px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.Action:hover {
+    background: rgba(70, 70, 70, 0.9);
+    border: 1px solid rgb(40, 40, 40);
+}
+
+.Action:last-child {
+    margin-right: 0;
+}
+
+.ActionsCurtain {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.ActionsContainer {
+    position: absolute;
+    z-index: 1000;
+    max-width: 700px;
+    margin: auto;
+    margin-top: -10px;
+    top: 50%;
+    left: 50%;
+    -moz-transform: translate(-50%, -50%);
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    max-width: 700px;
+    background: rgb(50, 50, 50);
+    border: 1px solid rgb(20, 20, 20);
+    border-radius: 5px;
+    padding: 5px;
+    box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.8);
+}
+
+.link, .link:visited {
+    color: skyblue;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.link:hover {
+    color: white;
+}
+
+.direct_link {
+    border-bottom: 1px dashed;
+}
+
+.object_link {
+    display: inline-block;
+    margin: 5px;
+    border-radius: 5px;
+    border: 1px solid rgb(120, 120, 120);
+    background: rgba(50, 50, 50, 0.6);
+    color: white;
+    padding: 3px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 0.8em;
+}
+
+.object_link:hover {
+    color: white;
+    background: rgba(70, 70, 70, 0.9);
+}
+
+
+#footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-top: 1px solid rgb(50, 50, 50);
+    padding: 5px;
+    background: rgba(50, 50, 50, 0.6);
+}
+
+#buttons {
+    max-width: 700px;
+    margin: auto;
+    text-align: center;
+}
+
+.Button {
+    display: inline-block;
+    border: 1px solid gray;
+    padding: 5px;
+    border-radius: 3px;
+    border: 1px solid rgb(80, 80, 80);
+    font-weight: bold;
+    font-size: 0.8em;
+    background: rgba(50, 50, 50, 0.9);
+    min-width: 20px;
+    text-align: center;
+    text-decoration: none;
+    color: white;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+
+@media (min-width: 800px) {
+
+html {
+    font-size: 18px;
+}
+
+#content {
+    padding-top: 80px;
+}
+
+}
+
+
+@media (max-width: 600px) {
+
+html {
+    font-size: 15px;
+}
+
+#content .Text {
+    margin-bottom: 10px;
+    max-width: 90%;
+}
+
+}
+
+@media (max-height: 600px) {
+
+html {
+    font-size: 15px;
+}
+
+}
+
+@media (min-width: 1000px) {
+
+#content .Text {
+    max-width: 900px;
+}
+
+}
+
+@media (min-width: 1600px) {
+
+#content .Text {
+    max-width: 1200px;
+}
+
+}
+
+
+
+
+.Curtain {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: black;
+    opacity: 0;
+}
+
+.Screen {
+    color: white;
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.Screen .Menu {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 5px;
+}
+
+.Screen .Menu ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.SaveScreen .Menu, .SettingsScreen .Menu {
+    position: absolute;
+    left: 0;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    padding: 5px;
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.9);
+    text-align: right;
+    padding: 10px;
+}
+
+.SaveScreen .Menu *[data-type=menu-item], .SettingsScreen .Menu *[data-type=menu-item] {
+    display: inline-block;
+}
+
+.SaveScreen {
+    overflow: hidden;
+}
+
+.SaveScreen .Slots {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: -30px;
+    bottom: 0;
+    overflow-y: scroll;
+    padding-top: 50px;
+    padding-bottom: 80px;
+}
+
+.SaveScreen .Slots *[data-type=slots] {
+    margin: auto;
+    max-width: 1250px;
+    text-align: center;
+}
+
+.SaveScreen .Slots .index {
+    border: 1px solid white;
+    border-radius: 5px;
+    padding: 5px;
+    width: 50px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.SaveScreen .Slots ul {
+    list-style-type: none;
+    /*
+    float: right;
+    */
+}
+
+.SaveScreen .Slots ul ul {
+    float: right;
+}
+
+.SaveScreen *[data-type=slot-time] {
+    margin-bottom: 10px;
+}
+
+.SaveScreen li[data-type=slot] {
+    border-radius: 5px;
+    display: block;
+    float: left;
+    width: 580px;
+    height: 140px;
+    padding: 10px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.SaveScreen li[data-type=slot-button] {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid white;
+    border-radius: 5px;
+    font-size: 0.8em;
+    font-weight: bold;
+    padding: 5px;
+    margin: 5px;
+    text-align: center;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    display: inline-block;
+}
+
+.SaveScreen *[data-template-name=slot] {
+    background: rgba(50, 50, 50, 0.8);
+    border: 1px solid white;
+}
+
+.SaveScreen *[data-template-name=empty-slot] {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.SaveScreen .disabled {
+    opacity: 0.3;
+    cursor: default !important;
+}
+
+.Screen *[data-type=menu-item] {
+    cursor: pointer;
+    padding: 10px;
+    margin: 0;
+    margin-bottom: 5px;
+    border: 1px solid white;
+    border-radius: 5px;
+    min-width: 200px;
+    background: rgba(0, 0, 0, 0.8);
+    text-align: center;
+}
+
+.Screen *[data-type=menu-item]:hover {
+    background: rgba(50, 50, 50, 0.8);
+}
+
+.Screen *[data-type=menu-item]:last-child {
+    margin-bottom: 0;
+}
+
+
+
+
+.Settings {
+    width: 580px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.Settings .Box {
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+.Settings .Box label {
+    float: left;
+    font-weight: bold;
+}
+
+.Settings .Box input[type=range] {
+    min-width: 300px;
+}
+
+
+
+
+
+.MessageBoxContainer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.MessageBox {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid white;
+    border-radius: 5px;
+    min-width: 500px;
+    min-height: 100px;
+    padding: 20px;
+}
+
+.MessageBox .Message {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.MessageBox .ButtonBar {
+    text-align: right;
+}
+
+.MessageBox .Button {
+    font-size: 1.2em;
+    font-weight: bold;
+    min-width: 80px;
+}
+
+
+
+/**
+ * ------------------ Customizations
+
+#content[data-section=stasis_chamber] .Text {
+    background: rgba(50, 50, 50, 0.4);
+    padding: 10px;
+    border-radius: 5px;
+}
+ */
+
+
+#content[data-section=stasis_chamber] .Background {
+    background: white;
+}
+
+
+*[data-screen-name=main] {
+    background: green;
+}
+
+*[data-screen-name=pause] {
+    background: yellow;
+}
+
+*[data-screen-name=save] {
+    background: blue;
+}
+
+
+
