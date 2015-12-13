@@ -1,16 +1,19 @@
 {
   "name": "toothrot",
   "version": "1.0.0-alpha.1512140033",
-  "description": "",
+  "description": "Interactive fiction engine based on web technologies.",
   "main": "index.js",
   "directories": {
     "test": "tests"
   },
+  "keywords": [
+      "interactive fiction",
+      "text adventures",
+      "choose your own adventure"
+  ],
   "scripts": {
     "test": "mocha tests/"
   },
-  "author": "J. Steinbeck <mail@steinbeck.it>",
-  "license": "BSD-3-Clause",
   "dependencies": {
     "browserify": "^12.0.1",
     "enjoy-js": "^15.11.1-preview.1511202107",
@@ -19,6 +22,16 @@
     "ncp": "^2.0.0",
     "rimraf": "^2.4.4"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iiyo/toothrot.git"
+  },
+  "author": "J. Steinbeck <mail@steinbeck.it> (https://steinbeck.it)",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/iiyo/toothrot/issues"
+  },
+  "homepage": "https://github.com/iiyo/toothrot#readme",
   "bin": {
       "toothrot": "./bin/cli.js"
   }
