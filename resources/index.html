@@ -3,10 +3,13 @@
     <head>
         <title>Toothrot Engine</title>
         <meta charset="utf-8" />
-        <link rel="stylesheet" type="text/css" href="style/default.css" />
+        <link rel="stylesheet" type="text/css" href="engine/default.css" />
     </head>
     <body>
-        <div id="content"></div>
-        <script src="js/toothrot.js"></script>
+        <script src="engine/toothrot.js"></script>
+        <script src="story.js"></script>
+        <script>
+            TOOTHROT.run(window.toothrotResources);
+        </script>
     </body>
 </html>

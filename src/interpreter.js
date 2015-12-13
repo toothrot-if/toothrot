@@ -37,7 +37,10 @@ if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
 
 var defaultStorage = require("./storage.js");
 
-function run (story, container, $, opt, resources) {
+function run (resources, $, opt) {
+    
+    var story = resources.story;
+    var container = document.createElement("div");
     
     var templates = resources.templates;
     var defaultScreens = resources.screens;
@@ -111,6 +114,7 @@ function run (story, container, $, opt, resources) {
         env[key] = $[key];
     }
     
+    container.setAttribute("class", "Toothrot");
     container.setAttribute("data-section", nodes.start.section);
     text.setAttribute("class", "Text");
     indicator.setAttribute("class", "NextIndicator");
@@ -132,6 +136,7 @@ function run (story, container, $, opt, resources) {
     container.appendChild(text);
     container.appendChild(screenContainer);
     document.body.appendChild(highlighter);
+    document.body.appendChild(container);
     
     highlighter.addEventListener("click", function (event) {
         event.stopPropagation();
