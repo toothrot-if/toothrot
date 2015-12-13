@@ -1,6 +1,6 @@
 {
   "name": "toothrot",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.1512140033",
   "description": "",
   "main": "index.js",
   "directories": {
@@ -18,5 +18,8 @@
     "move-js": "^0.5.0",
     "ncp": "^2.0.0",
     "rimraf": "^2.4.4"
+  },
+  "bin": {
+      "toothrot": "./bin/cli.js"
   }
 }
