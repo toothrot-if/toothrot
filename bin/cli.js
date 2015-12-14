@@ -3,10 +3,10 @@
 /* global require, process */
 
 var fs = require("fs");
-var pack = require("./src/packer").pack;
-var parse = require("./src/parser").parse;
-var build = require("./src/builder").build;
-var init = require("./src/initializer").init;
+var pack = require("../src/packer").pack;
+var parse = require("../src/parser").parse;
+var build = require("../src/builder").build;
+var init = require("../src/initializer").init;
 var args = process.argv;
 var command = args[2];
 var path = args[3];
