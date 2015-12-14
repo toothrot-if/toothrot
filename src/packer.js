@@ -1,17 +1,18 @@
-/* global require */
+/* global require, process */
 
+var normalize = require("path").normalize;
 var parse = require("./parser").parse;
 var fs = require("fs");
 
 function pack (dir) {
     
-    console.log(dir);
+    dir = dir || process.cwd();
     
-    var templatePath = dir + "templates/";
-    var screenPath = dir + "screens/";
+    var templatePath = normalize(dir + "/templates/");
+    var screenPath = normalize(dir + "/screens/");
     var templateFiles = fs.readdirSync(templatePath);
     var screenFiles = fs.readdirSync(screenPath);
-    var story = parse("" + fs.readFileSync(dir + "story.md"));
+    var story = parse("" + fs.readFileSync(normalize(dir + "/story.md")));
     
     var bundle = {
         templates: {},

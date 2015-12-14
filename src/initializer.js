@@ -23,9 +23,6 @@ function init (dir) {
             return console.error(error);
         }
         
-        console.log("engineSourceDir:", engineSourceDir);
-        console.log("sourceOutputDir:", sourceOutputDir);
-        
         ncp(engineSourceDir, sourceOutputDir, function (error) {
             
             if (error) {

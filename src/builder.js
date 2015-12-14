@@ -14,10 +14,6 @@ function build (dir, outputDir) {
     var buildDir = normalize(outputDir || (base + "build/"));
     var tmpDir = normalize(os.tmpdir() + "/toothrot_" + Math.round(Math.random() * 10000));
     
-    console.log("base dir:", base);
-    console.log("build dir:", buildDir);
-    console.log("temp dir:", tmpDir);
-    
     if (fs.existsSync(buildDir)) {
         rimraf(buildDir, function () {
             copyContents();
