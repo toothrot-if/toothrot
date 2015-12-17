@@ -112,7 +112,7 @@ Then they died.
 ```
 
 In this example, we have a named node `boring_story` and a bunch of connected nodes
-defined by `(~~~)`
+defined by `(~~~)`.
 
 
 ### Returning to the last node
@@ -143,7 +143,7 @@ a list of actions that can be used upon the link text (the "object").
 
 Object links can be written like this:
 
-   This is an object link: (# door => {"open": "open_door", "examine": "examine_door"} #)
+    This is an object link: (# door => {"open": "open_door", "examine": "examine_door"} #)
 
 When someone clicks on this link (which has the text `door`), then a menu with the actions
 `open` and `examine` will appear. When you click on `open` then the node `open_door` will
