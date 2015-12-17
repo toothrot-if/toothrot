@@ -194,7 +194,8 @@ function parseStructure (text) {
         head: {
             content: ""
         },
-        nodes: {}
+        nodes: {},
+        sections: {}
     };
     
     lines.forEach(function (line, lineOffset) {
@@ -209,6 +210,9 @@ function parseStructure (text) {
             }
             else if (isNodeTitle(line)) {
                 addNode(line, lineOffset);
+            }
+            else if (section && isProperty(line)) {
+                parseProperty(line, lineOffset, true);
             }
             else if (!foundFirstSection) {
                 ast.head.content += line + "\n";
@@ -245,7 +249,13 @@ function parseStructure (text) {
     return ast;
     
     function setSection (line) {
+        
         section = line.replace(/^##:/, "").trim();
+        
+        if (!ast.sections[section]) {
+            ast.sections[section] = {};
+        }
+        
     }
     
     function addNode (line, lineOffset) {
@@ -313,19 +323,35 @@ function parseStructure (text) {
         currentNode.options.push(option(label, target, value, lineOffset));
     }
     
-    function parseProperty (line, lineOffset) {
+    function parseProperty (line, lineOffset, isSection) {
         
         var rawKey = line.split(":")[0];
         var value = line.split(rawKey + ":")[1];
         var key = rawKey.replace(/^\(#\)/, "").trim();
+        var currentSection;
         
-        try {
-            currentNode[key] = JSON.parse(value);
+        if (isSection) {
+            
+            currentSection = ast.sections[section];
+            
+            try {
+                currentSection[key] = JSON.parse(value);
+            }
+            catch (error) {
+                throw new Error("Cannot parse property '" + key + "' in section '" +
+                    section + "' (line " + currentSection.line + "): " + error.message +
+                    " @" + (lineOffset + 1));
+            }
         }
-        catch (error) {
-            throw new Error("Cannot parse property '" + key + "' in node '" +
-                currentNode.id + "' (line " + currentNode.line + "): " + error.message +
-                " @" + (lineOffset + 1));
+        else {
+            try {
+                currentNode[key] = JSON.parse(value);
+            }
+            catch (error) {
+                throw new Error("Cannot parse property '" + key + "' in node '" +
+                    currentNode.id + "' (line " + currentNode.line + "): " + error.message +
+                    " @" + (lineOffset + 1));
+            }
         }
     }
 }

@@ -29,6 +29,8 @@ var MAX_SLOTS = 20;
 
 var none = function () {};
 var move = require("move-js");
+var clone = require("clone");
+var merge = require("merge");
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
@@ -38,7 +40,7 @@ if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
 
 var defaultStorage = require("./storage.js");
 
-function run (resources, $, opt) {
+function run (resources, _, opt) {
     
     var story = resources.story;
     var container = document.createElement("div");
@@ -55,6 +57,7 @@ function run (resources, $, opt) {
     var screenStack = [];
     var focusMode = FOCUS_MODE_NODE;
     var nodes = story.nodes;
+    var sections = story.sections;
     var vars = Object.create(null);
     var text = document.createElement("div");
     var indicator = document.createElement("div");
@@ -109,10 +112,10 @@ function run (resources, $, opt) {
         }
     };
     
-    $ = $ || {};
+    _ = _ || {};
     
-    for (key in $) {
-        env[key] = $[key];
+    for (key in _) {
+        env[key] = _[key];
     }
     
     container.setAttribute("class", "Toothrot");
@@ -706,13 +709,15 @@ function run (resources, $, opt) {
         
         function replaceContent () {
             
+            var copy = merge(clone(sections[node.section]), clone(node));
+            
             currentNode = node;
             currentSection = node.section;
             
             container.setAttribute("data-node-id", currentNode.id);
             container.setAttribute("data-section", currentNode.section);
             
-            node.links.forEach(function (link, i) {
+            copy.links.forEach(function (link, i) {
                 if (link.type === "direct_link") {
                     content = content.replace(
                         "(%l" + i + "%)",
@@ -727,22 +732,26 @@ function run (resources, $, opt) {
                 }
             });
             
-            node.scripts.forEach(function (script, i) {
+            copy.scripts.forEach(function (script, i) {
                 
                 var result;
                 
                 try {
-                    result = evalScript(story, env, script.body, script.line);
+                    result = evalScript(story, env, vars, script.body, script.line);
                 }
                 catch (error) {
                     console.error("Cannot execute script at line " + script.line + ":", error);
                 }
                 
-                if (typeof result !== "string") {
-                    return;
+                if (["string", "number", "boolean"].indexOf(typeof result) <= 0) {
+                    content = content.replace(
+                        "(%s" + i + "%)",
+                        "<!-- Script result: " + JSON.stringify(result) + " -->"
+                    );
                 }
-                
-                content = content.replace("(%s" + i + "%)", result);
+                else {
+                    content = content.replace("(%s" + i + "%)", result);
+                }
             });
             
             content = content.replace(/\(\$((.|\n)*?)\$\)/g, function (match, p1, p2) {
@@ -773,10 +782,10 @@ function run (resources, $, opt) {
             text.innerHTML = content;
             
             if (
-                node.options.length ||
-                node.timeout ||
-                node.links.length ||
-                node.reveal === false
+                copy.options.length ||
+                copy.timeout ||
+                copy.links.length ||
+                copy.reveal === false
             ) {
                 insertSpecials();
             }
@@ -787,14 +796,14 @@ function run (resources, $, opt) {
             
             function insertSpecials () {
                 
-                if (typeof node.timeout === "number") {
-                    addTimer(text, node);
+                if (typeof copy.timeout === "number") {
+                    addTimer(text, copy);
                 }
                 
-                if (node.options.length) {
-                    addOptions(text, node);
+                if (copy.options.length) {
+                    addOptions(text, copy);
                 }
-                else if (node.next || node.returnToLast) {
+                else if (copy.next || copy.returnToLast) {
                     text.appendChild(indicator);
                 }
             }
@@ -1447,15 +1456,11 @@ function run (resources, $, opt) {
     }
 }
 
-function evalScript (__story, $, __body, __line) {
+function evalScript (__story, _, $, __body, __line) {
     
-    var get = $.get;
-    var set = $.set;
-    var has = $.has;
-    var move = $.move;
-    var link = $.link;
-    var dim = $.dim;
-    var objectLink = $.objectLink;
+    var link = _.link;
+    var dim = _.dim;
+    var objectLink = _.objectLink;
     var nodes = __story.nodes;
     var title = __story.meta.title;
     
