@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v1.0.0-alpha.1512171527)
-    Build time: Thu, 17 Dec 2015 14:27:31 GMT
+    Toothrot Engine (v1.0.0-alpha.1512171618)
+    Build time: Thu, 17 Dec 2015 15:19:07 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -3170,11 +3170,57 @@ for (var i = 0; i < styles.length; i++) {
 }
 
 },{}],17:[function(require,module,exports){
+/* global module */
+
+(function () {
+    
+    var format = create("{", "}"), output;
+    
+    function create (left, right) {
+        
+        if (typeof left !== "string" || typeof right !== "string") {
+            throw new Error("Arguments left and right must be strings.");
+        }
+        
+        return function (text, values) {
+            
+            var key;
+            
+            if (Array.isArray(values)) {
+                values.forEach(function (value, i) {
+                    text = text.split(left + (i + 1) + right).join(value);
+                });
+            }
+            else {
+                for (key in values) {
+                    text = text.split(left + key + right).join(values[key]);
+                }
+            }
+            
+            return text;
+        };
+    }
+    
+    output = {
+        create: create,
+        format: format
+    };
+    
+    if (typeof require === "function") {
+        module.exports = output;
+    }
+    else {
+        window.VREP = output;
+    }
+    
+}());
+
+},{}],18:[function(require,module,exports){
 /* global require */
 
 window.TOOTHROT = require("./interpreter.js");
 
-},{"./interpreter.js":18}],18:[function(require,module,exports){
+},{"./interpreter.js":19}],19:[function(require,module,exports){
 /* global __line, setInterval, clearInterval */
 
 var KEY_CODE_ENTER = 13;
@@ -3208,6 +3254,7 @@ var none = function () {};
 var move = require("move-js");
 var clone = require("clone");
 var merge = require("merge");
+var format = require("vrep").format;
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
@@ -3229,7 +3276,14 @@ function run (resources, _, opt) {
     var currentNode, currentSection, key, timeoutId, focusOffset, highlightCurrent;
     var currentScreen, curtainVisible = false;
     var nextClickTime = Date.now();
-    var settings = {};
+    
+    var settings = {
+        textSpeed: 50,
+        soundVolume: 100,
+        ambienceVolume: 100,
+        musicVolume: 100
+    };
+    
     var stack = [];
     var screenStack = [];
     var focusMode = FOCUS_MODE_NODE;
@@ -3419,6 +3473,9 @@ function run (resources, _, opt) {
             else if (target === "back") {
                 returnToLastScreen();
             }
+            else if (target === "saveSettings") {
+                updateSettings(returnToLastScreen);
+            }
         }
         else if (type === "slot-button") {
             if (action === "save") {
@@ -3542,6 +3599,36 @@ function run (resources, _, opt) {
         }
     }
     
+    function updateSettings (then) {
+        
+        var settingWidgets = screenContainer.querySelectorAll("*[data-type=setting]");
+        
+        [].forEach.call(settingWidgets, function (widget) {
+            
+            var name = widget.getAttribute("data-name");
+            var value = widget.value;
+            
+            if (!name) {
+                return;
+            }
+            
+            settings[name] = value;
+        });
+        
+        console.log("Updated settings:", settings);
+        
+        saveSettings(then);
+    }
+    
+    function saveSettings (then) {
+        
+        then = then || none;
+        
+        storage.save("settings", settings, function () {
+            then();
+        });
+    }
+    
     function serialize () {
         return JSON.stringify({
             vars: vars,
@@ -3623,7 +3710,7 @@ function run (resources, _, opt) {
         }
         
         function replaceScreen () {
-            screenContainer.innerHTML = screen;
+            screenContainer.innerHTML = format(screen, settings);
         }
         
         function getDomNodeContent (dom) {
@@ -3962,13 +4049,18 @@ function run (resources, _, opt) {
                 copy.options.length ||
                 copy.timeout ||
                 copy.links.length ||
-                copy.reveal === false
+                copy.reveal === false ||
+                settings.textSpeed >= 100
             ) {
                 insertSpecials();
             }
             else {
                 hideCharacters(text);
-                cancelCharAnimation = revealCharacters(text, 30, insertSpecials).cancel;
+                cancelCharAnimation = revealCharacters(
+                    text,
+                    (settings.textSpeed / 100) * 30,
+                    insertSpecials
+                ).cancel;
             }
             
             function insertSpecials () {
@@ -4684,7 +4776,7 @@ module.exports = {
 };
 
 
-},{"./storage.js":19,"clone":5,"merge":6,"move-js":7}],19:[function(require,module,exports){
+},{"./storage.js":20,"clone":5,"merge":6,"move-js":7,"vrep":17}],20:[function(require,module,exports){
 /* global using */
 
 //
@@ -4823,4 +4915,4 @@ function storage (storageKey) {
 
 module.exports = storage;
 
-},{}]},{},[17]);
+},{}]},{},[18]);

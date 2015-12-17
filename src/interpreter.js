@@ -31,6 +31,7 @@ var none = function () {};
 var move = require("move-js");
 var clone = require("clone");
 var merge = require("merge");
+var format = require("vrep").format;
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
@@ -52,7 +53,14 @@ function run (resources, _, opt) {
     var currentNode, currentSection, key, timeoutId, focusOffset, highlightCurrent;
     var currentScreen, curtainVisible = false;
     var nextClickTime = Date.now();
-    var settings = {};
+    
+    var settings = {
+        textSpeed: 50,
+        soundVolume: 100,
+        ambienceVolume: 100,
+        musicVolume: 100
+    };
+    
     var stack = [];
     var screenStack = [];
     var focusMode = FOCUS_MODE_NODE;
@@ -242,6 +250,9 @@ function run (resources, _, opt) {
             else if (target === "back") {
                 returnToLastScreen();
             }
+            else if (target === "saveSettings") {
+                updateSettings(returnToLastScreen);
+            }
         }
         else if (type === "slot-button") {
             if (action === "save") {
@@ -365,6 +376,36 @@ function run (resources, _, opt) {
         }
     }
     
+    function updateSettings (then) {
+        
+        var settingWidgets = screenContainer.querySelectorAll("*[data-type=setting]");
+        
+        [].forEach.call(settingWidgets, function (widget) {
+            
+            var name = widget.getAttribute("data-name");
+            var value = widget.value;
+            
+            if (!name) {
+                return;
+            }
+            
+            settings[name] = value;
+        });
+        
+        console.log("Updated settings:", settings);
+        
+        saveSettings(then);
+    }
+    
+    function saveSettings (then) {
+        
+        then = then || none;
+        
+        storage.save("settings", settings, function () {
+            then();
+        });
+    }
+    
     function serialize () {
         return JSON.stringify({
             vars: vars,
@@ -446,7 +487,7 @@ function run (resources, _, opt) {
         }
         
         function replaceScreen () {
-            screenContainer.innerHTML = screen;
+            screenContainer.innerHTML = format(screen, settings);
         }
         
         function getDomNodeContent (dom) {
@@ -785,13 +826,18 @@ function run (resources, _, opt) {
                 copy.options.length ||
                 copy.timeout ||
                 copy.links.length ||
-                copy.reveal === false
+                copy.reveal === false ||
+                settings.textSpeed >= 100
             ) {
                 insertSpecials();
             }
             else {
                 hideCharacters(text);
-                cancelCharAnimation = revealCharacters(text, 30, insertSpecials).cancel;
+                cancelCharAnimation = revealCharacters(
+                    text,
+                    (settings.textSpeed / 100) * 30,
+                    insertSpecials
+                ).cancel;
             }
             
             function insertSpecials () {

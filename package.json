@@ -1,6 +1,6 @@
 {
   "name": "toothrot",
-  "version": "1.0.0-alpha.1512171527",
+  "version": "1.0.0-alpha.1512171618",
   "description": "Interactive fiction engine based on web technologies.",
   "main": "index.js",
   "directories": {
@@ -22,7 +22,8 @@
     "merge": "^1.2.0",
     "move-js": "^0.5.0",
     "ncp": "^2.0.0",
-    "rimraf": "^2.4.4"
+    "rimraf": "^2.4.4",
+    "vrep": "^1.0.0-final.1512151612"
   },
   "repository": {
     "type": "git",
