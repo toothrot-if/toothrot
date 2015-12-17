@@ -5,7 +5,6 @@ var path = require("path");
 var ncp = require("ncp").ncp;
 
 var resourceDir = path.normalize(__dirname + "/../resources/");
-var engineSourceDir = path.normalize(__dirname + "/../build/");
 
 function init (dir) {
     
@@ -17,20 +16,11 @@ function init (dir) {
     
     ncp(resourceDir, dir, function (error) {
         
-        var sourceOutputDir = path.normalize(dir + "/engine/");
-        
         if (error) {
             return console.error(error);
         }
         
-        ncp(engineSourceDir, sourceOutputDir, function (error) {
-            
-            if (error) {
-                return console.error(error);
-            }
-            
-            console.log("Initialized empty Toothrot Engine project in " + dir + ".");
-        });
+        console.log("Initialized Toothrot Engine project in " + dir + ".");
         
     });
 }

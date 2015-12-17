@@ -3,10 +3,12 @@
 var normalize = require("path").normalize;
 var parse = require("./parser").parse;
 var fs = require("fs");
+var normalize = require("path").normalize;
 
 function pack (dir) {
     
     dir = dir || process.cwd();
+    dir = normalize(dir + "/resources/");
     
     var templatePath = normalize(dir + "/templates/");
     var screenPath = normalize(dir + "/screens/");
@@ -15,6 +17,9 @@ function pack (dir) {
     var story = parse("" + fs.readFileSync(normalize(dir + "/story.md")));
     
     var bundle = {
+        meta: {
+            buildTime: Date.now()
+        },
         templates: {},
         screens: {},
         story: story
