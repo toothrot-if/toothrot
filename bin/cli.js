@@ -13,7 +13,10 @@ var path = args[3];
 var outputDir = args[4];
 
 if (command === "build") {
-    build(path, outputDir);
+    build(path, outputDir, false);
+}
+else if (command === "build-desktop") {
+    build(path, outputDir, true);
 }
 else if (command === "pack") {
     console.log(pack(path));

@@ -1,6 +1,6 @@
 {
   "name": "toothrot",
-  "version": "1.0.0-alpha.1512171618",
+  "version": "1.0.0-alpha.1512172232",
   "description": "Interactive fiction engine based on web technologies.",
   "main": "index.js",
   "directories": {
@@ -18,10 +18,12 @@
     "browserify": "^12.0.1",
     "clone": "^1.0.2",
     "enjoy-js": "^15.11.1-preview.1511202107",
+    "howler": "^1.1.28",
     "marked": "^0.3.5",
     "merge": "^1.2.0",
     "move-js": "^0.5.0",
     "ncp": "^2.0.0",
+    "nw-builder": "^2.1.0",
     "rimraf": "^2.4.4",
     "vrep": "^1.0.0-final.1512151612"
   },

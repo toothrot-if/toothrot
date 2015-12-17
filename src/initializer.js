@@ -8,6 +8,22 @@ var resourceDir = path.normalize(__dirname + "/../resources/");
 
 function init (dir) {
     
+    var project = {
+        name: "My Toothrot Engine Project",
+        version: "0.1.0",
+        main: "index.html",
+        nwVersion: "0.12.2",
+        platforms: ["osx32", "osx64", "win32", "win64", "linux32", "linux64"],
+        window: {
+            title: "My Toothrot Engine Project",
+            toolbar: false,
+            frame: true,
+            min_width: 800,
+            min_height: 600,
+            position: "mouse"
+        }
+    };
+    
     dir = path.normalize(dir + "/");
     
     if (!fs.existsSync(dir)) {
@@ -19,6 +35,8 @@ function init (dir) {
         if (error) {
             return console.error(error);
         }
+        
+        fs.writeFileSync(path.normalize(dir + "/project.json"), JSON.stringify(project, null, 4));
         
         console.log("Initialized Toothrot Engine project in " + dir + ".");
         

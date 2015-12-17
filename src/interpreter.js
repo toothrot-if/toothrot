@@ -32,6 +32,7 @@ var move = require("move-js");
 var clone = require("clone");
 var merge = require("merge");
 var format = require("vrep").format;
+var Howl = require("howler").Howl;
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
@@ -40,6 +41,16 @@ if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
 }
 
 var defaultStorage = require("./storage.js");
+
+var nw = (function () {
+    try {
+        window.require("nw.gui");
+        return true;
+    }
+    catch (error) {
+        return false;
+    }
+}());
 
 function run (resources, _, opt) {
     
@@ -51,9 +62,11 @@ function run (resources, _, opt) {
     var messageBoxTemplate = templates.confirm;
     
     var currentNode, currentSection, key, timeoutId, focusOffset, highlightCurrent;
+    var currentSound, currentAmbience, currentMusic;
     var currentScreen, curtainVisible = false;
     var nextClickTime = Date.now();
     
+    // General story settings. Can be changed using screens.
     var settings = {
         textSpeed: 50,
         soundVolume: 100,
@@ -61,49 +74,91 @@ function run (resources, _, opt) {
         musicVolume: 100
     };
     
+    // The story's variables. Available in scripts as: $
+    var vars = Object.create(null);
+    
+    // A stack for remembering which node to return to.
     var stack = [];
+    
+    // A stack for remembering which screen to return to.
     var screenStack = [];
+    
+    // The highlighter's current focus mode.
+    // Determines which elements can be highlighted.
     var focusMode = FOCUS_MODE_NODE;
+    
     var nodes = story.nodes;
     var sections = story.sections;
-    var vars = Object.create(null);
+    
+    // All the different DOM elements used by the interpreter:
+    
     var text = document.createElement("div");
     var indicator = document.createElement("div");
     var background = document.createElement("div");
+    
+    // The curtain element is used to darken the screen when
+    // transitioning from one state to the next, e.g. when
+    // the section changes.
     var curtain = document.createElement("div");
+    
+    // Actions and options are put into a parent element
+    // so that clicks can be intercepted and to allow
+    // more flexibility in styling the elements with CSS.
+    var actionsParent = document.createElement("div");
+    var optionsParent = document.createElement("div");
+    
+    // The background can be dimmed using "dim(amount)" in scripts.
+    // This is the element used for this purpose:
     var backgroundDimmer = document.createElement("div");
-    var actionsCurtain = document.createElement("div");
+    
     var actionsContainer = document.createElement("div");
-    var optionsCurtain = document.createElement("div");
     var optionsContainer = document.createElement("div");
     var screenContainer = document.createElement("div");
+    
+    // The highlighter is an absolutely positioned element
+    // that can be moved over clickable elements by using
+    // the arrow keys. Hitting the return key when an element
+    // is highlighted will execute a click on the element.
     var highlighter = document.createElement("div");
+    
+    // When the "reveal" animation for text is started,
+    // a function to cancel it is put in here.
     var cancelCharAnimation;
     
     opt = opt || {};
     
+    // Determines how to display timers in the story.
     var timerTemplate = opt.timerTemplate || 
         '<div class="TimerBar" style="width: {remaining}%;"></div>';
     
-    var storageKey = "TE-" + story.meta.title;
+    // Each story should have its own storage key so that
+    // one story doesn't overwrite another story's savegames
+    // and settings.
+    var storageKey = "TOOTHROT-" + story.meta.title;
+    
+    // Screens can be used to implement simple connected menus.
+    // Screens are written in pure HTML and can be styled with CSS.
+    // When an element is clicked, the event bubbles up to the
+    // screen container where it is decided whether the click means
+    // anything and executes any associated actions (e.g. a click
+    // on a button is supposed to update something or go to another
+    // screen).
     var screens = opt.screens || defaultScreens;
+    
+    // External listeners can be hooked into the system
+    // to allow observing the interpreter's state.
     var listeners = opt.on || {};
     
+    // The storage to use. Default is the browser's localStorage.
+    // But this can be set using the options to anything with the
+    // same API, e.g. a server-side storage using AJAX can be
+    // used instead.
     var storage = typeof opt.storage === "function" ?
         opt.storage(storageKey) :
         defaultStorage(storageKey);
     
+    // The environment for scripts. It's available in scripts as: _
     var env = {
-        get: function (key) {
-            return vars[key];
-        },
-        set: function (key, val) {
-            vars[key] = val;
-        },
-        has: function (key) {
-            return typeof vars[key] !== "undefined";
-        },
-        move: move,
         link: function (label, target) {
             return insertLink(label, target);
         },
@@ -115,8 +170,28 @@ function run (resources, _, opt) {
                 set("opacity", opacity).
                 duration(arguments.length > 1 ? duration : 800).
                 end(function () {
-                    vars["$$dim"] = opacity;
+                    vars["_dim"] = opacity;
                 });
+        }
+    };
+    
+    // We have internal listeners so that external listeners don't interfere
+    // with core features.
+    var internalListeners = {
+        "updateSetting.soundVolume": function (env, volume) {
+            if (currentSound) {
+                currentSound.volume(volume / 100);
+            }
+        },
+        "updateSetting.ambienceVolume": function (env, volume) {
+            if (currentAmbience) {
+                currentAmbience.volume(volume / 100);
+            }
+        },
+        "updateSetting.musicVolume": function (env, volume) {
+            if (currentMusic) {
+                currentMusic.volume(volume / 100);
+            }
         }
     };
     
@@ -126,23 +201,27 @@ function run (resources, _, opt) {
         env[key] = _[key];
     }
     
-    container.setAttribute("class", "Toothrot");
+    // The container element always has the current section name
+    // in the "data-section" attribute so that everything can be
+    // styled completely differently for each section.
     container.setAttribute("data-section", nodes.start.section);
+    
+    container.setAttribute("class", "Toothrot");
     text.setAttribute("class", "Text");
     indicator.setAttribute("class", "NextIndicator");
     highlighter.setAttribute("class", "Highlighter");
     highlighter.setAttribute("data-type", "highlighter");
     background.setAttribute("class", "Background");
     backgroundDimmer.setAttribute("class", "BackgroundDimmer");
-    actionsCurtain.setAttribute("class", "ActionsCurtain");
+    actionsParent.setAttribute("class", "ActionsCurtain");
     actionsContainer.setAttribute("class", "ActionsContainer");
-    optionsCurtain.setAttribute("class", "OptionsCurtain");
+    optionsParent.setAttribute("class", "OptionsCurtain");
     optionsContainer.setAttribute("class", "OptionsContainer");
     screenContainer.setAttribute("class", "ScreenContainer");
     curtain.setAttribute("class", "Curtain");
     
-    actionsCurtain.appendChild(actionsContainer);
-    optionsCurtain.appendChild(optionsContainer);
+    actionsParent.appendChild(actionsContainer);
+    optionsParent.appendChild(optionsContainer);
     container.appendChild(background);
     container.appendChild(backgroundDimmer);
     container.appendChild(text);
@@ -156,7 +235,7 @@ function run (resources, _, opt) {
         executeHighlighter();
     });
     
-    actionsCurtain.addEventListener("click", function (event) {
+    actionsParent.addEventListener("click", function (event) {
         if (event.target.getAttribute("data-type") !== "action") {
             event.stopPropagation();
             event.preventDefault();
@@ -164,7 +243,7 @@ function run (resources, _, opt) {
         }
     });
     
-    optionsCurtain.addEventListener("click", function (event) {
+    optionsParent.addEventListener("click", function (event) {
         if (event.target.getAttribute("data-type") !== "option") {
             event.stopPropagation();
             event.preventDefault();
@@ -191,7 +270,7 @@ function run (resources, _, opt) {
         }
         else if (link.getAttribute("data-type") === "option") {
             
-            vars["$$choice"] = JSON.parse(window.atob(link.getAttribute("data-value")));
+            vars["_choice"] = JSON.parse(window.atob(link.getAttribute("data-value")));
             
             if (link.getAttribute("data-target")) {
                 runNode(nodes[link.getAttribute("data-target")]);
@@ -246,6 +325,13 @@ function run (resources, _, opt) {
             }
             else if (target === "resume") {
                 resumeGame();
+            }
+            else if (target === "exit") {
+                confirm("Do you really want to quit?", function (yes) {
+                    if (yes) {
+                        exit();
+                    }
+                })
             }
             else if (target === "back") {
                 returnToLastScreen();
@@ -390,6 +476,8 @@ function run (resources, _, opt) {
             }
             
             settings[name] = value;
+            
+            emit("updateSetting." + name, value);
         });
         
         console.log("Updated settings:", settings);
@@ -422,8 +510,8 @@ function run (resources, _, opt) {
         stack = data.stack;
         vars = data.vars;
         
-        if (typeof vars["$$dim"] === "number") {
-            env.dim(vars["$$dim"], 0);
+        if (typeof vars["_dim"] === "number") {
+            env.dim(vars["_dim"], 0);
         }
         
         runNode(nodes[data.node]);
@@ -487,7 +575,17 @@ function run (resources, _, opt) {
         }
         
         function replaceScreen () {
+            
             screenContainer.innerHTML = format(screen, settings);
+            
+            if (!nw) {
+                [].forEach.call(
+                    screenContainer.querySelectorAll("*[data-target=exit]") || [],
+                    function (element) {
+                        element.parentNode.removeChild(element);
+                    }
+                );
+            }
         }
         
         function getDomNodeContent (dom) {
@@ -822,6 +920,33 @@ function run (resources, _, opt) {
             
             text.innerHTML = content;
             
+            if (copy.audio === false) {
+                stopSound();
+                stopAmbience();
+                stopMusic();
+            }
+            
+            if (copy.sound) {
+                playSound(copy.sound);
+            }
+            else if (copy.sound === false) {
+                stopSound();
+            }
+            
+            if (copy.ambience) {
+                playAmbience(copy.ambience);
+            }
+            else if (copy.ambience === false) {
+                stopAmbience();
+            }
+            
+            if (copy.music) {
+                playMusic(copy.music);
+            }
+            else if (copy.music === false) {
+                stopMusic();
+            }
+            
             if (
                 copy.options.length ||
                 copy.timeout ||
@@ -835,7 +960,7 @@ function run (resources, _, opt) {
                 hideCharacters(text);
                 cancelCharAnimation = revealCharacters(
                     text,
-                    (settings.textSpeed / 100) * 30,
+                    (settings.textSpeed / 100) * 60,
                     insertSpecials
                 ).cancel;
             }
@@ -1040,16 +1165,16 @@ function run (resources, _, opt) {
     }
     
     function animateActionsEntry (then) {
-        move(actionsCurtain).set("opacity", 0).duration(0).end();
-        container.appendChild(actionsCurtain);
-        move(actionsCurtain).set("opacity", 1).duration(NODE_FADE_IN).end(then);
+        move(actionsParent).set("opacity", 0).duration(0).end();
+        container.appendChild(actionsParent);
+        move(actionsParent).set("opacity", 1).duration(NODE_FADE_IN).end(then);
     }
     
     function animateActionsExit (then) {
-        move(actionsCurtain).set("opacity", 0).duration(NODE_FADE_OUT).end(function () {
+        move(actionsParent).set("opacity", 0).duration(NODE_FADE_OUT).end(function () {
             
             focusMode === FOCUS_MODE_NODE;
-            container.removeChild(actionsCurtain);
+            container.removeChild(actionsParent);
             clearActions();
             
             if (then) {
@@ -1146,7 +1271,7 @@ function run (resources, _, opt) {
             addOption(option, node);
         });
         
-        container.appendChild(optionsCurtain);
+        container.appendChild(optionsParent);
     }
     
     function addOption (opt, node) {
@@ -1215,13 +1340,13 @@ function run (resources, _, opt) {
                         "' in node '" + node.id + "' (line " + node.line + ").");
                 }
                 
-                vars["$$choice"] = options[node.defaultOption].value;
+                vars["_choice"] = options[node.defaultOption].value;
                 
                 runNode(nodes[options[node.defaultOption].target]);
             }
             else if (options.length) {
                 
-                vars["$$choice"] = options[0].value;
+                vars["_choice"] = options[0].value;
                 
                 runNode(nodes[options[0].target]);
             }
@@ -1461,8 +1586,17 @@ function run (resources, _, opt) {
     }
     
     function emit (channel, data) {
+        
         if (typeof listeners[channel] === "function") {
             listeners[channel]({
+                env: env,
+                vars: vars,
+                stack: stack
+            }, data);
+        }
+        
+        if (typeof internalListeners[channel] === "function") {
+            internalListeners[channel]({
                 env: env,
                 vars: vars,
                 stack: stack
@@ -1499,6 +1633,74 @@ function run (resources, _, opt) {
                 then(value === "yes" ? true : false);
             }
         }
+    }
+    
+    function playSound (path) {
+        currentSound = playTrack(path, settings.soundVolume, false, currentSound);
+    }
+    
+    function stopSound () {
+        if (currentSound) {
+            currentSound.unload();
+        }
+    }
+    
+    function stopAmbience () {
+        if (currentAmbience) {
+            currentAmbience.unload();
+        }
+    }
+    
+    function stopMusic () {
+        if (currentMusic) {
+            currentMusic.unload();
+        }
+    }
+    
+    function playAmbience (path) {
+        currentAmbience = playTrack(path, settings.ambienceVolume, true, currentAmbience);
+    }
+    
+    function playMusic (path) {
+        currentMusic = playTrack(path, settings.musicVolume, true, currentMusic);
+    }
+    
+    function playTrack (path, volume, loop, current) {
+        
+        var paths = getAudioPaths(path), audio;
+        
+        audio = new Howl({
+            urls: paths,
+            volume: volume / 100,
+            loop: loop === true ? true : false
+        });
+        
+        if (current) {
+            current.unload();
+        }
+        
+        audio.play();
+        
+        return audio;
+    }
+    
+    function getAudioPaths (path) {
+        
+        var paths = [], base;
+        
+        if (Array.isArray(path)) {
+            
+            base = path.shift();
+            
+            path.forEach(function (type) {
+                paths.push(base + "." + type);
+            });
+        }
+        else {
+            paths.push(path);
+        }
+        
+        return paths;
     }
 }
 
@@ -1545,6 +1747,16 @@ function getClickableParent (node) {
         if (node.nodeType === ELEMENT && node.getAttribute("data-type")) {
             return node;
         }
+    }
+}
+
+function exit () {
+    try {
+        var gui = window.require("nw.gui");
+        gui.App.quit();
+    }
+    catch (error) {
+        console.error("Cannot exit: " + error);
     }
 }
 
