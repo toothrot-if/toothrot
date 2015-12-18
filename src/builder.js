@@ -73,7 +73,19 @@ function build (dir, outputDir, buildDesktop) {
                     fs.readFileSync(engineFile)
                 );
                 
-                rawResources = pack(base);
+                try {
+                    rawResources = pack(base);
+                }
+                catch (error) {
+                    
+                    if (error.isToothrotError) {
+                        console.error(error.toothrotMessage);
+                        return;
+                    }
+                    
+                    throw error;
+                }
+                
                 resources = new Buffer(rawResources).toString("base64");
                 
                 indexContent = "(function () {" +

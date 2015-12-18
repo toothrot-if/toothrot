@@ -6,6 +6,17 @@ var bind = enjoy.bind;
 var some = enjoy.some;
 var parseMarkdown = require("marked");
 
+function parseError (message) {
+    
+    message = "Toothrot Parser Error: " + message;
+    
+    return {
+        message: message,
+        isToothrotError: true,
+        toothrotMessage: message
+    };
+}
+
 function parse (text) {
     
     var ast;
@@ -38,12 +49,12 @@ function validateNodes (ast) {
     each(ast.nodes, function (node) {
         
         if (node.next && !ast.nodes[node.next]) {
-            throw new Error("Unknown next node '" + node.next + "' for node '" +
+            throw parseError("Unknown next node '" + node.next + "' for node '" +
                 node.id + "' (line " + node.line + ").");
         }
         
         if (node.next && node.returnToLast) {
-            throw new Error("Conflict: Node '" + node.id + "' (line " + node.line +
+            throw parseError("Conflict: Node '" + node.id + "' (line " + node.line +
                 ") has both a next node and a return to the last node.");
         }
         
@@ -51,13 +62,13 @@ function validateNodes (ast) {
             each(node.options, function (option) {
                 
                 if (!option.target && !option.value) {
-                    throw new Error("Option must have at least one of 'target' or " +
+                    throw parseError("Option must have at least one of 'target' or " +
                         "'value' in node '" + node.id + "' (line " + node.line +
                         "). @" + option.line);
                 }
                 
                 if (option.target && !ast.nodes[option.target]) {
-                    throw new Error("Unknown node '" + option.target +
+                    throw parseError("Unknown node '" + option.target +
                         "' referenced in option '" + option.label + "' in node '" +
                         node.id + "' (line " + node.line + "). @" + option.line);
                 }
@@ -77,7 +88,7 @@ function parseNodeContent (ast, node) {
         var label, target, line;
         
         if (parts.length !== 2) {
-            throw new Error("Malformed node link in node '" + node.id +
+            throw parseError("Malformed node link in node '" + node.id +
                 " (line " + node.line + ")'.");
         }
         
@@ -87,7 +98,7 @@ function parseNodeContent (ast, node) {
         line = countNewLines(oldContent.split(match)[0]) + node.line + 1;
         
         if (!ast.nodes[target]) {
-            throw new Error("Unknown node '" + target + "' referenced in link '" +
+            throw parseError("Unknown node '" + target + "' referenced in link '" +
                 label + "' in node '" + node.id + "' (line " + node.line +"). @" + line);
         }
         
@@ -104,7 +115,7 @@ function parseNodeContent (ast, node) {
         var label, targets, line;
         
         if (parts.length !== 2) {
-            throw new Error("Malformed object link in node '" + node.id +
+            throw parseError("Malformed object link in node '" + node.id +
                 " (line " + node.line + ")'.");
         }
         
@@ -116,13 +127,13 @@ function parseNodeContent (ast, node) {
             targets = JSON.parse(targets);
         }
         catch (error) {
-            throw new Error("Object link in node '" + node.id + "' (line " +
+            throw parseError("Object link in node '" + node.id + "' (line " +
                 node.line + ") cannot be parsed: " + error.message);
         }
         
         each(targets, function (target, verb) {
             if (!ast.nodes[target]) {
-                throw new Error("Unknown node '" + target + "' referenced in link '" +
+                throw parseError("Unknown node '" + target + "' referenced in link '" +
                     label + "' in node '" + node.id + "' (line " + node.line +"). @" +
                     line);
             }
@@ -287,7 +298,7 @@ function parseStructure (text) {
         var next = line.replace(/^\(>\)/, "").trim();
         
         if (currentNode.next) {
-            throw new Error("Node '" + currentNode.id + "' (line " + currentNode.line +
+            throw parseError("Node '" + currentNode.id + "' (line " + currentNode.line +
                 ") cannot have more than one next node. @" + lineOffset + 1);
         }
         
@@ -310,7 +321,7 @@ function parseStructure (text) {
         parts = line.split("=>");
         
         if (parts.length !== 2) {
-            throw new Error("Malformed option in node '" + currentNode.id +
+            throw parseError("Malformed option in node '" + currentNode.id +
                 "' (line " + currentNode.line + "). @" + (lineOffset + 1));
         }
         
@@ -338,7 +349,7 @@ function parseStructure (text) {
                 currentSection[key] = JSON.parse(value);
             }
             catch (error) {
-                throw new Error("Cannot parse property '" + key + "' in section '" +
+                throw parseError("Cannot parse property '" + key + "' in section '" +
                     section + "' (line " + currentSection.line + "): " + error.message +
                     " @" + (lineOffset + 1));
             }
@@ -348,7 +359,7 @@ function parseStructure (text) {
                 currentNode[key] = JSON.parse(value);
             }
             catch (error) {
-                throw new Error("Cannot parse property '" + key + "' in node '" +
+                throw parseError("Cannot parse property '" + key + "' in node '" +
                     currentNode.id + "' (line " + currentNode.line + "): " + error.message +
                     " @" + (lineOffset + 1));
             }
