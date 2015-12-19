@@ -152,6 +152,107 @@ be shown. And if you click on `examine`, the node `examine_door` will be shown i
 The menu of actions can also be closed without doing anything by clicking somewhere on the screen
 or by using the `ESC` key.
 
+If object links are too simple for what you want to do, objects are an alternative.
+
+### Objects
+
+Objects in Toothrot are defined in the `resources/objects.json` file. Each object can
+have many different aspects, and each aspect defines actions that can be used upon
+the object. Each object has a list of currently active aspects and when the object
+is printed in a node's text, only those actions of currently active aspects will be
+shown.
+
+An example `objects.json` file looks like this:
+
+```json
+{
+    "closable": {
+        "label": "closable thing",
+        "prototypes": [],
+        "activeAspects": ["closed"],
+        "aspects": {
+            "closed": {
+                "open": "open_{name}"
+            },
+            "open": {
+                "close": "close_{name}"
+            }
+        }
+    },
+    "door": {
+        "label": "door",
+        "prototypes": ["closable"],
+        "activeAspects": ["closed", "locked"],
+        "aspects": {
+            "locked": {
+                "unlock": "unlock_{name}"
+            },
+            "unlocked": {
+                "lock": "lock_{name}"
+            }
+        }
+    }
+}
+```
+
+This file defines two different objects: `closable` and `door`.
+
+The `prototypes` property contains the names of other objects to inherit from.
+Inheriting means that the object will have all the aspects its prototypes.
+
+In the example, the `door` object has the `closable` object as a prototype. Therefore,
+the `door` object will have these aspects: `closed`, `open`, `locked` and `unlocked`.
+
+The `activeAspects` property contains the currently active aspects at the point
+of creation of the object. This list can be changed during the story using the
+object's JavaScript API.
+
+The `aspects` property contains the object's own aspects. For example, the `door`
+object has an own aspect `locked` with an associated action `unlock`.
+
+Each action of an object defines the name of a node that will be shown when the user first
+clicks on the object and then on the name of the action. So if a user clicks on the `door`
+object while the `locked` aspect is active, then the `unlock` action will be shown in the
+list of actions. And if the user then clicks on `unlock` the node `unlock_{name}" will be
+shown. The `{name}` portion of the node name is always replaced with the *actual* name of
+the object, not the name of the object the aspect is inherited from.
+
+This means that the action `unlock` on the `door` object will lead to the node `unlock_door`,
+but the action `open` on the same object will **not** lead to the node `open_closable`. Instead
+this will lead to the node `open_door`!
+
+You must always make sure that the node referenced in an action actually exists. If it doesn't
+exist then an error will be displayed in the browser console once a node containing the object
+is displayed - and instead of the object link you will see an ugly `undefined` in the node's text.
+
+#### Object JavaScript API
+
+Objects can be printed and manipulated using JavaScript.
+
+To print the `door` object, you can write this:
+
+    (! _.o("door").print() !)
+
+If you want to print the `door` object with another label, you can do it like this:
+
+    (! _.o("door").print("some strange door") !)
+
+If you permanently alter an object's label, use the `.label()` method:
+
+    (-) (! _.o("door").label("some strange door") !)
+
+You can change the `door` object's active aspects like so:
+
+    (-) (! _.o("door").drop("closed").add("open") !)
+
+The `.drop()` method drops an aspect from an object's list of active aspects.
+
+The `.add()` method adds an aspect to an object's list of active aspects.
+
+You can check if an aspect is currently active in an object using the `is()` method:
+
+    The door is (! _.o("door").is("closed") ? "closed" : "not closed" !).
+
 
 ### Variables
 
