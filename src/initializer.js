@@ -6,7 +6,7 @@ var ncp = require("ncp").ncp;
 
 var resourceDir = path.normalize(__dirname + "/../resources/");
 
-function init (dir) {
+function init (dir, then) {
     
     var project = {
         name: "My Toothrot Engine Project",
@@ -24,6 +24,7 @@ function init (dir) {
         }
     };
     
+    then = then || function () {};
     dir = path.normalize(dir + "/");
     
     if (!fs.existsSync(dir)) {
@@ -33,13 +34,14 @@ function init (dir) {
     ncp(resourceDir, dir, function (error) {
         
         if (error) {
+            then(error);
             return console.error(error);
         }
         
         fs.writeFileSync(path.normalize(dir + "/project.json"), JSON.stringify(project, null, 4));
         
         console.log("Initialized Toothrot Engine project in " + dir + ".");
-        
+        then(null);
     });
 }
 

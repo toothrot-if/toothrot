@@ -9,7 +9,7 @@ var os = require("os");
 
 var engineFile = normalize(__dirname + "/../build/toothrot.js");
 
-function build (dir, outputDir, buildDesktop) {
+function build (dir, outputDir, buildDesktop, then) {
     
     var rawResources, resources, indexContent;
     var base = normalize((dir || process.cwd()) + "/");
@@ -20,6 +20,8 @@ function build (dir, outputDir, buildDesktop) {
     var filesDir = normalize(base + "/files/");
     var projectFile = normalize(base + "/project.json");
     var project = JSON.parse("" + fs.readFileSync(projectFile));
+    
+    then = then || function () {};
     
     if (!fs.existsSync(buildDir)) {
         fs.mkdirSync(buildDir);
@@ -59,12 +61,14 @@ function build (dir, outputDir, buildDesktop) {
         ncp(filesDir, tmpDir, function (error) {
             
             if (error) {
+                then(error);
                 return console.error(error);
             }
             
             ncp(tmpDir, browserDir, function (error) {
                 
                 if (error) {
+                    then(error);
                     return console.error(error);
                 }
                 
@@ -79,6 +83,7 @@ function build (dir, outputDir, buildDesktop) {
                 catch (error) {
                     
                     if (error.isToothrotError) {
+                        then(error);
                         console.error(error.toothrotMessage);
                         return;
                     }
@@ -111,11 +116,16 @@ function build (dir, outputDir, buildDesktop) {
                     
                     buildDesktopApps(buildDir, project.platforms, project.nwVersion).
                     then(function () {
+                        then(null);
                         console.log("Desktop apps build in: " + desktopDir);
                     }).
                     catch(function (error) {
+                        then(error);
                         console.error("Cannot build desktop apps: " + error);
                     });
+                }
+                else {
+                    then(null);
                 }
             });
         });
