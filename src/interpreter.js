@@ -452,6 +452,8 @@ function run (resources, _, opt) {
     window.addEventListener("resize", reflowElements);
     window.addEventListener("orientationchange", reflowElements);
     
+    document.title = story.meta.title || "Toothrot Engine";
+    
     loadSettings(runScreen.bind(undefined, "main"));
     
     function loadSettings (then) {
