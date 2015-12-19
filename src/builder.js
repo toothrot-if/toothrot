@@ -91,6 +91,7 @@ function build (dir, outputDir, buildDesktop, then) {
                     throw error;
                 }
                 
+                project.name = JSON.parse(rawResources).story.meta.title || project.name;
                 resources = new Buffer(rawResources).toString("base64");
                 
                 indexContent = "(function () {" +
@@ -98,6 +99,7 @@ function build (dir, outputDir, buildDesktop, then) {
                     "}());";
                 
                 fs.writeFileSync(browserDir + "resources.js", indexContent);
+                fs.writeFileSync(projectFile, JSON.stringify(project, null, 4));
                 
                 console.log("Toothrot Engine project built successfully in: " + browserDir);
                 
