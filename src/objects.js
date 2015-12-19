@@ -3,8 +3,6 @@
 var format = require("vrep").format;
 var merge = require("deepmerge");
 
-console.log("Merging arrays:", merge({a: [1, 2, 3]}, {a: [3, 4, 5, 6]}));
-
 function assemble (name, objects) {
     
     var obj = {};
@@ -26,8 +24,6 @@ function assembleAll (objects) {
     for (key in objects) {
         all[key] = assemble(key, objects);
     }
-    
-    console.log("all:", all);
     
     return all;
 }
