@@ -1,0 +1,14 @@
+{
+    "closable": {
+        "prototypes": [],
+        "activeAspects": ["closed"],
+        "aspects": {
+            "open": {
+                "close": "{name}_close"
+            },
+            "closed": {
+                "open": "{name}_open"
+            }
+        }
+    }
+}

@@ -15,6 +15,7 @@ function pack (dir) {
     var templateFiles = fs.readdirSync(templatePath);
     var screenFiles = fs.readdirSync(screenPath);
     var story = parse("" + fs.readFileSync(normalize(dir + "/story.md")));
+    var objects = JSON.parse("" + fs.readFileSync(normalize(dir + "/objects.json")));
     
     var bundle = {
         meta: {
@@ -22,7 +23,8 @@ function pack (dir) {
         },
         templates: {},
         screens: {},
-        story: story
+        story: story,
+        objects: objects
     }
     
     templateFiles.forEach(function (file) {

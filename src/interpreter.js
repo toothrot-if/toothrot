@@ -28,11 +28,13 @@ var FOCUS_MODE_MESSAGEBOX = "messagebox";
 var MAX_SLOTS = 20;
 
 var none = function () {};
+
 var move = require("move-js");
 var clone = require("clone");
-var merge = require("merge");
+var merge = require("deepmerge");
 var format = require("vrep").format;
 var Howl = require("howler").Howl;
+var objects = require("./objects.js");
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
@@ -76,6 +78,8 @@ function run (resources, _, opt) {
     
     // The story's variables. Available in scripts as: $
     var vars = Object.create(null);
+    
+    vars._objects = objects.assembleAll(resources.objects || {});
     
     // A stack for remembering which node to return to.
     var stack = [];
@@ -163,7 +167,7 @@ function run (resources, _, opt) {
             return insertLink(label, target);
         },
         objectLink: function (label, actions) {
-            return insertObjectLink(label, undefined, undefined, actions);
+            return insertObjectLink(label, actions);
         },
         dim: function (opacity, duration) {
             return move(backgroundDimmer).
@@ -172,6 +176,9 @@ function run (resources, _, opt) {
                 end(function () {
                     vars["_dim"] = opacity;
                 });
+        },
+        o: function (name) {
+            return objects.create(name, objects.find(name, vars._objects), insertObjectLink);
         }
     };
     
@@ -866,7 +873,7 @@ function run (resources, _, opt) {
                 else if (link.type === "object_link") {
                     content = content.replace(
                         "(%l" + i + "%)",
-                        insertObjectLink(link.label, node.id, i)
+                        insertObjectLink(link.label, undefined, node.id, i)
                     );
                 }
             });
@@ -882,15 +889,7 @@ function run (resources, _, opt) {
                     console.error("Cannot execute script at line " + script.line + ":", error);
                 }
                 
-                if (["string", "number", "boolean"].indexOf(typeof result) <= 0) {
-                    content = content.replace(
-                        "(%s" + i + "%)",
-                        "<!-- Script result: " + JSON.stringify(result) + " -->"
-                    );
-                }
-                else {
-                    content = content.replace("(%s" + i + "%)", result);
-                }
+                content = content.replace("(%s" + i + "%)", result);
             });
             
             content = content.replace(/\(\$((.|\n)*?)\$\)/g, function (match, p1, p2) {
@@ -1369,7 +1368,7 @@ function run (resources, _, opt) {
             label + '</span>';
     }
     
-    function insertObjectLink (label, nodeId, linkId, actions) {
+    function insertObjectLink (label, actions, nodeId, linkId) {
         
         var key, html;
         

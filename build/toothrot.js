@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.0.0-alpha.1512172232)
-    Build time: Fri, 18 Dec 2015 10:20:43 GMT
+    Build time: Sat, 19 Dec 2015 00:13:59 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -1934,6 +1934,60 @@ if (typeof module === 'object' && module.exports) {
 
 }).call(this,require("buffer").Buffer)
 },{"buffer":1}],6:[function(require,module,exports){
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(factory);
+    } else if (typeof exports === 'object') {
+        module.exports = factory();
+    } else {
+        root.deepmerge = factory();
+    }
+}(this, function () {
+
+return function deepmerge(target, src) {
+    var array = Array.isArray(src);
+    var dst = array && [] || {};
+
+    if (array) {
+        target = target || [];
+        dst = dst.concat(target);
+        src.forEach(function(e, i) {
+            if (typeof dst[i] === 'undefined') {
+                dst[i] = e;
+            } else if (typeof e === 'object') {
+                dst[i] = deepmerge(target[i], e);
+            } else {
+                if (target.indexOf(e) === -1) {
+                    dst.push(e);
+                }
+            }
+        });
+    } else {
+        if (target && typeof target === 'object') {
+            Object.keys(target).forEach(function (key) {
+                dst[key] = target[key];
+            })
+        }
+        Object.keys(src).forEach(function (key) {
+            if (typeof src[key] !== 'object' || !src[key]) {
+                dst[key] = src[key];
+            }
+            else {
+                if (!target[key]) {
+                    dst[key] = src[key];
+                } else {
+                    dst[key] = deepmerge(target[key], src[key]);
+                }
+            }
+        });
+    }
+
+    return dst;
+}
+
+}));
+
+},{}],7:[function(require,module,exports){
 /*!
  *  howler.js v1.1.28
  *  howlerjs.com
@@ -3288,182 +3342,6 @@ if (typeof module === 'object' && module.exports) {
 
 })();
 
-},{}],7:[function(require,module,exports){
-/*!
- * @name JavaScript/NodeJS Merge v1.2.0
- * @author yeikos
- * @repository https://github.com/yeikos/js.merge
-
- * Copyright 2014 yeikos - MIT license
- * https://raw.github.com/yeikos/js.merge/master/LICENSE
- */
-
-;(function(isNode) {
-
-	/**
-	 * Merge one or more objects 
-	 * @param bool? clone
-	 * @param mixed,... arguments
-	 * @return object
-	 */
-
-	var Public = function(clone) {
-
-		return merge(clone === true, false, arguments);
-
-	}, publicName = 'merge';
-
-	/**
-	 * Merge two or more objects recursively 
-	 * @param bool? clone
-	 * @param mixed,... arguments
-	 * @return object
-	 */
-
-	Public.recursive = function(clone) {
-
-		return merge(clone === true, true, arguments);
-
-	};
-
-	/**
-	 * Clone the input removing any reference
-	 * @param mixed input
-	 * @return mixed
-	 */
-
-	Public.clone = function(input) {
-
-		var output = input,
-			type = typeOf(input),
-			index, size;
-
-		if (type === 'array') {
-
-			output = [];
-			size = input.length;
-
-			for (index=0;index<size;++index)
-
-				output[index] = Public.clone(input[index]);
-
-		} else if (type === 'object') {
-
-			output = {};
-
-			for (index in input)
-
-				output[index] = Public.clone(input[index]);
-
-		}
-
-		return output;
-
-	};
-
-	/**
-	 * Merge two objects recursively
-	 * @param mixed input
-	 * @param mixed extend
-	 * @return mixed
-	 */
-
-	function merge_recursive(base, extend) {
-
-		if (typeOf(base) !== 'object')
-
-			return extend;
-
-		for (var key in extend) {
-
-			if (typeOf(base[key]) === 'object' && typeOf(extend[key]) === 'object') {
-
-				base[key] = merge_recursive(base[key], extend[key]);
-
-			} else {
-
-				base[key] = extend[key];
-
-			}
-
-		}
-
-		return base;
-
-	}
-
-	/**
-	 * Merge two or more objects
-	 * @param bool clone
-	 * @param bool recursive
-	 * @param array argv
-	 * @return object
-	 */
-
-	function merge(clone, recursive, argv) {
-
-		var result = argv[0],
-			size = argv.length;
-
-		if (clone || typeOf(result) !== 'object')
-
-			result = {};
-
-		for (var index=0;index<size;++index) {
-
-			var item = argv[index],
-
-				type = typeOf(item);
-
-			if (type !== 'object') continue;
-
-			for (var key in item) {
-
-				var sitem = clone ? Public.clone(item[key]) : item[key];
-
-				if (recursive) {
-
-					result[key] = merge_recursive(result[key], sitem);
-
-				} else {
-
-					result[key] = sitem;
-
-				}
-
-			}
-
-		}
-
-		return result;
-
-	}
-
-	/**
-	 * Get type of variable
-	 * @param mixed input
-	 * @return string
-	 *
-	 * @see http://jsperf.com/typeofvar
-	 */
-
-	function typeOf(input) {
-
-		return ({}).toString.call(input).slice(8, -1).toLowerCase();
-
-	}
-
-	if (isNode) {
-
-		module.exports = Public;
-
-	} else {
-
-		window[publicName] = Public;
-
-	}
-
-})(typeof module === 'object' && module && typeof module.exports === 'object' && module.exports);
 },{}],8:[function(require,module,exports){
 // Patch IE9 and below
 try {
@@ -4606,11 +4484,13 @@ var FOCUS_MODE_MESSAGEBOX = "messagebox";
 var MAX_SLOTS = 20;
 
 var none = function () {};
+
 var move = require("move-js");
 var clone = require("clone");
-var merge = require("merge");
+var merge = require("deepmerge");
 var format = require("vrep").format;
 var Howl = require("howler").Howl;
+var objects = require("./objects.js");
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
@@ -4654,6 +4534,8 @@ function run (resources, _, opt) {
     
     // The story's variables. Available in scripts as: $
     var vars = Object.create(null);
+    
+    vars._objects = objects.assembleAll(resources.objects || {});
     
     // A stack for remembering which node to return to.
     var stack = [];
@@ -4741,7 +4623,7 @@ function run (resources, _, opt) {
             return insertLink(label, target);
         },
         objectLink: function (label, actions) {
-            return insertObjectLink(label, undefined, undefined, actions);
+            return insertObjectLink(label, actions);
         },
         dim: function (opacity, duration) {
             return move(backgroundDimmer).
@@ -4750,6 +4632,9 @@ function run (resources, _, opt) {
                 end(function () {
                     vars["_dim"] = opacity;
                 });
+        },
+        o: function (name) {
+            return objects.create(name, objects.find(name, vars._objects), insertObjectLink);
         }
     };
     
@@ -5444,7 +5329,7 @@ function run (resources, _, opt) {
                 else if (link.type === "object_link") {
                     content = content.replace(
                         "(%l" + i + "%)",
-                        insertObjectLink(link.label, node.id, i)
+                        insertObjectLink(link.label, undefined, node.id, i)
                     );
                 }
             });
@@ -5460,15 +5345,7 @@ function run (resources, _, opt) {
                     console.error("Cannot execute script at line " + script.line + ":", error);
                 }
                 
-                if (["string", "number", "boolean"].indexOf(typeof result) <= 0) {
-                    content = content.replace(
-                        "(%s" + i + "%)",
-                        "<!-- Script result: " + JSON.stringify(result) + " -->"
-                    );
-                }
-                else {
-                    content = content.replace("(%s" + i + "%)", result);
-                }
+                content = content.replace("(%s" + i + "%)", result);
             });
             
             content = content.replace(/\(\$((.|\n)*?)\$\)/g, function (match, p1, p2) {
@@ -5947,7 +5824,7 @@ function run (resources, _, opt) {
             label + '</span>';
     }
     
-    function insertObjectLink (label, nodeId, linkId, actions) {
+    function insertObjectLink (label, actions, nodeId, linkId) {
         
         var key, html;
         
@@ -6343,7 +6220,126 @@ module.exports = {
 };
 
 
-},{"./storage.js":21,"clone":5,"howler":6,"merge":7,"move-js":8,"vrep":18}],21:[function(require,module,exports){
+},{"./objects.js":21,"./storage.js":22,"clone":5,"deepmerge":6,"howler":7,"move-js":8,"vrep":18}],21:[function(require,module,exports){
+/* global require, module */
+
+var format = require("vrep").format;
+var merge = require("deepmerge");
+
+console.log("Merging arrays:", merge({a: [1, 2, 3]}, {a: [3, 4, 5, 6]}));
+
+function assemble (name, objects) {
+    
+    var obj = {};
+    var prototypes = (objects[name].prototypes || []).slice();
+    
+    prototypes.forEach(function (p) {
+        obj = merge(obj, assemble(p, objects));
+    });
+    
+    obj.properties = {};
+    
+    return merge(obj, objects[name]);
+}
+
+function assembleAll (objects) {
+    
+    var key, all = {};
+    
+    for (key in objects) {
+        all[key] = assemble(key, objects);
+    }
+    
+    console.log("all:", all);
+    
+    return all;
+}
+
+function create (name, obj, putLink) {
+    
+    var out = {
+        add: add,
+        drop: drop,
+        is: is,
+        print: print,
+        put: put,
+        property: property
+    };
+    
+    function print (label) {
+        return putLink(label || name, put());
+    }
+    
+    function put () {
+        
+        var actions = {};
+        
+        obj.activeAspects.forEach(function (aspect) {
+            for (var key in obj.aspects[aspect]) {
+                actions[key] = format(obj.aspects[aspect][key], {name: name});
+            }
+        });
+        
+        return actions;
+    }
+    
+    function is (aspect) {
+        return obj.activeAspects.indexOf(aspect) >= 0;
+    }
+    
+    function add (aspect) {
+        
+        if (!(aspect in obj.aspects)) {
+            throw new Error("No such aspect in object '" + name + "': " + aspect);
+        }
+        
+        if (obj.activeAspects.indexOf(aspect) < 0) {
+            obj.activeAspects.push(aspect);
+        }
+        
+        return out;
+    }
+    
+    function drop (aspect) {
+        
+        var index = obj.activeAspects.indexOf(aspect);
+        
+        if (index >= 0) {
+            obj.activeAspects.splice(index, 1);
+        }
+        
+        return out;
+    }
+    
+    function property (key, value) {
+        
+        if (arguments.length > 1) {
+            obj.properties[key] = value;
+        }
+        
+        return obj.properties[key];
+    }
+    
+    return out;
+}
+
+function find (name, objects) {
+    
+    if (!objects[name]) {
+        throw new Error("Unknown object: " + name);
+    }
+    
+    return objects[name];
+}
+
+module.exports = {
+    assemble: assemble,
+    assembleAll: assembleAll,
+    create: create,
+    find: find
+};
+
+},{"deepmerge":6,"vrep":18}],22:[function(require,module,exports){
 /* global using */
 
 //
