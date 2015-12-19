@@ -30,17 +30,30 @@ function assembleAll (objects) {
 
 function create (name, obj, putLink) {
     
+    var printLabel = obj.label || name;
+    
     var out = {
         add: add,
         drop: drop,
         is: is,
         print: print,
         put: put,
-        property: property
+        property: property,
+        label: label
     };
     
-    function print (label) {
-        return putLink(label || name, put());
+    function label (newLabel) {
+        
+        if (newLabel) {
+            obj.label = newLabel;
+            printLabel = newLabel;
+        }
+        
+        return obj.label;
+    }
+    
+    function print (text) {
+        return putLink(text || printLabel, put(), undefined, undefined, name);
     }
     
     function put () {

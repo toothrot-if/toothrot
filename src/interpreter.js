@@ -179,6 +179,14 @@ function run (resources, _, opt) {
         },
         o: function (name) {
             return objects.create(name, objects.find(name, vars._objects), insertObjectLink);
+        },
+        createObject: function (name, prototypes) {
+            
+            vars._objects[name] = {
+                prototypes: prototypes
+            };
+            
+            vars._objects[name] = objects.assemble(name, vars._objects);
         }
     };
     
@@ -269,11 +277,16 @@ function run (resources, _, opt) {
                 link.getAttribute("data-node"),
                 link.getAttribute("data-id"),
                 link.getAttribute("data-actions"),
-                link
+                link,
+                link.getAttribute("data-object-name")
             );
         }
         else if (link.getAttribute("data-type") === "action") {
-            animateActionsExit(runNode.bind(null, nodes[link.getAttribute("data-target")]));
+            animateActionsExit(function () {
+                vars._object = link.getAttribute("data-object-name");
+                vars._action = link.getAttribute("data-action-name");
+                runNode(nodes[link.getAttribute("data-target")]);
+            });
         }
         else if (link.getAttribute("data-type") === "option") {
             
@@ -1207,7 +1220,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function showObjectActions (nodeId, linkId, actions, eventTarget) {
+    function showObjectActions (nodeId, linkId, actions, eventTarget, objectName) {
         
         var node, link, key;
         
@@ -1236,7 +1249,7 @@ function run (resources, _, opt) {
         }
         
         for (key in link.target) {
-            addAction(key, link.target[key]);
+            addAction(key, link.target[key], objectName);
         }
         
         positionBelow(actionsContainer, eventTarget);
@@ -1245,13 +1258,18 @@ function run (resources, _, opt) {
         emit("showActions");
     }
     
-    function addAction (label, target) {
+    function addAction (label, target, objectName) {
         
         var option = document.createElement("a");
         
         option.setAttribute("class", "Action");
         option.setAttribute("data-type", "action");
         option.setAttribute("data-target", target);
+        option.setAttribute("data-action-name", label);
+        
+        if (objectName) {
+            option.setAttribute("data-object-name", objectName);
+        }
         
         option.innerHTML = label;
         
@@ -1368,7 +1386,7 @@ function run (resources, _, opt) {
             label + '</span>';
     }
     
-    function insertObjectLink (label, actions, nodeId, linkId) {
+    function insertObjectLink (label, actions, nodeId, linkId, objectName) {
         
         var key, html;
         
@@ -1391,6 +1409,10 @@ function run (resources, _, opt) {
         }
         else {
             throw new Error("Object link without ID or actions.");
+        }
+        
+        if (objectName) {
+            html += ' data-object-name="' + objectName + '"';
         }
         
         html += '>' + label + '</span>';

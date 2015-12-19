@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.0.0-alpha.1512172232)
-    Build time: Sat, 19 Dec 2015 00:13:59 GMT
+    Build time: Sat, 19 Dec 2015 10:12:31 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -4635,6 +4635,14 @@ function run (resources, _, opt) {
         },
         o: function (name) {
             return objects.create(name, objects.find(name, vars._objects), insertObjectLink);
+        },
+        createObject: function (name, prototypes) {
+            
+            vars._objects[name] = {
+                prototypes: prototypes
+            };
+            
+            vars._objects[name] = objects.assemble(name, vars._objects);
         }
     };
     
@@ -4725,11 +4733,16 @@ function run (resources, _, opt) {
                 link.getAttribute("data-node"),
                 link.getAttribute("data-id"),
                 link.getAttribute("data-actions"),
-                link
+                link,
+                link.getAttribute("data-object-name")
             );
         }
         else if (link.getAttribute("data-type") === "action") {
-            animateActionsExit(runNode.bind(null, nodes[link.getAttribute("data-target")]));
+            animateActionsExit(function () {
+                vars._object = link.getAttribute("data-object-name");
+                vars._action = link.getAttribute("data-action-name");
+                runNode(nodes[link.getAttribute("data-target")]);
+            });
         }
         else if (link.getAttribute("data-type") === "option") {
             
@@ -5663,7 +5676,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function showObjectActions (nodeId, linkId, actions, eventTarget) {
+    function showObjectActions (nodeId, linkId, actions, eventTarget, objectName) {
         
         var node, link, key;
         
@@ -5692,7 +5705,7 @@ function run (resources, _, opt) {
         }
         
         for (key in link.target) {
-            addAction(key, link.target[key]);
+            addAction(key, link.target[key], objectName);
         }
         
         positionBelow(actionsContainer, eventTarget);
@@ -5701,13 +5714,18 @@ function run (resources, _, opt) {
         emit("showActions");
     }
     
-    function addAction (label, target) {
+    function addAction (label, target, objectName) {
         
         var option = document.createElement("a");
         
         option.setAttribute("class", "Action");
         option.setAttribute("data-type", "action");
         option.setAttribute("data-target", target);
+        option.setAttribute("data-action-name", label);
+        
+        if (objectName) {
+            option.setAttribute("data-object-name", objectName);
+        }
         
         option.innerHTML = label;
         
@@ -5824,7 +5842,7 @@ function run (resources, _, opt) {
             label + '</span>';
     }
     
-    function insertObjectLink (label, actions, nodeId, linkId) {
+    function insertObjectLink (label, actions, nodeId, linkId, objectName) {
         
         var key, html;
         
@@ -5847,6 +5865,10 @@ function run (resources, _, opt) {
         }
         else {
             throw new Error("Object link without ID or actions.");
+        }
+        
+        if (objectName) {
+            html += ' data-object-name="' + objectName + '"';
         }
         
         html += '>' + label + '</span>';
@@ -6226,8 +6248,6 @@ module.exports = {
 var format = require("vrep").format;
 var merge = require("deepmerge");
 
-console.log("Merging arrays:", merge({a: [1, 2, 3]}, {a: [3, 4, 5, 6]}));
-
 function assemble (name, objects) {
     
     var obj = {};
@@ -6250,12 +6270,12 @@ function assembleAll (objects) {
         all[key] = assemble(key, objects);
     }
     
-    console.log("all:", all);
-    
     return all;
 }
 
 function create (name, obj, putLink) {
+    
+    var printLabel = obj.label || name;
     
     var out = {
         add: add,
@@ -6263,11 +6283,22 @@ function create (name, obj, putLink) {
         is: is,
         print: print,
         put: put,
-        property: property
+        property: property,
+        label: label
     };
     
-    function print (label) {
-        return putLink(label || name, put());
+    function label (newLabel) {
+        
+        if (newLabel) {
+            obj.label = newLabel;
+            printLabel = newLabel;
+        }
+        
+        return obj.label;
+    }
+    
+    function print (text) {
+        return putLink(text || printLabel, put(), undefined, undefined, name);
     }
     
     function put () {
