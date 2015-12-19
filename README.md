@@ -198,7 +198,8 @@ An example `objects.json` file looks like this:
 This file defines two different objects: `closable` and `door`.
 
 The `prototypes` property contains the names of other objects to inherit from.
-Inheriting means that the object will have all the aspects its prototypes.
+Inheriting means that the object will have all the aspects of its prototypes
+on top of its own aspects.
 
 In the example, the `door` object has the `closable` object as a prototype. Therefore,
 the `door` object will have these aspects: `closed`, `open`, `locked` and `unlocked`.
@@ -213,7 +214,7 @@ object has an own aspect `locked` with an associated action `unlock`.
 Each action of an object defines the name of a node that will be shown when the user first
 clicks on the object and then on the name of the action. So if a user clicks on the `door`
 object while the `locked` aspect is active, then the `unlock` action will be shown in the
-list of actions. And if the user then clicks on `unlock` the node `unlock_{name}" will be
+list of actions. And if the user then clicks on `unlock` the node `unlock_{name}` will be
 shown. The `{name}` portion of the node name is always replaced with the *actual* name of
 the object, not the name of the object the aspect is inherited from.
 
