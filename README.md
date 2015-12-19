@@ -10,9 +10,11 @@ You need Node.js to run the engine. If you don't have it installed, download it 
 
 Once you have Node.js up and running, open a terminal window and type:
 
-    npm install -g toothrot
+    $ npm install -g toothrot
 
-You can now create a new project like this:
+## Creating a new project
+
+You can now create a new project in the terminal like this:
 
 ```
 $ mkdir my_project
@@ -20,16 +22,67 @@ $ cd my_project
 $ toothrot init
 ```
 
-Each Toothrot project comes with a `story.md` file which you can find in the `resources` folder.
-Edit this file to your liking (see below for an explanation of the format) and then run:
+This will create the following files and folders in `my_project`:
+
+```
++ files
+  + style
+    - default.css
+    - indicator.gif
+  - index.html
++ resources
+  + screens
+    - main.html
+    - pause.html
+    - save.html
+    - settings.html
+  + templates
+    - confirm.html
+  - objects.json
+  - story.md
+- project.json
+```
+
+The `files/` folder contains all the files that are copied as is when you build your project.
+
+The `resources/` folder contains files that will be packed into a `resources.js` file when
+you build your project.
+
+The folder `resources/screens/` contains HTML template files for screens. You can customize
+the templates to better fit the style of your projects, or add new files here to add new
+screens to your game.
+
+The `resources/templates/` folder contains non-screen templates. Currently only `confirm.html`
+is used. You can change this file to customize the appearance of confirm dialogs.
+
+The `resources/objects.json` file contains object definitions. See the section about objects
+in this README for details.
+
+The `files/index.html` file is the main file of the project. When you build your projects for
+the browser, you can double-click on this file to start the game.
+
+You can customize your game's appearance by changing `files/style/default.css`. Of course, you
+can also add new CSS files to your `files/index.html` file.
+
+The file `project.json` contains information about your project, e.g. for which desktop
+platforms you want to build your game.
+
+Finally, the `resources/story.md` file contains the actual story of your game.
+
+You can change all of your project files to your liking, then build your project to run and test it.
+
+## Building your project
+
+To create a working game from your project, you need to build it. This can be done by writing
+the following in the terminal:
 
     $ toothrot build
 
-This will package all the resources and create a folder `build/browser/`. To run your story, just
-double-click on the `index.html` file or open that file in your browser (drag and drop usually
-works, too).
+This will package all the resources and create a folder `my_project/build/browser/`.
+To run your game, just double-click on the `index.html` file or open that file in
+your browser (drag and drop usually works, too).
 
-You can also build desktop applications from your story for Linux, Windows and Mac OS X like so:
+You can also build desktop applications from your project for Linux, Windows and Mac OS X like so:
 
     $ toothrot build-desktop
 
@@ -46,6 +99,9 @@ With the default settings this will built for the following platforms:
 
 You can change which platforms to build for by opening your project's `project.json` file and
 editing the `platforms` property.
+
+You can find the finished desktop builds in `my_project/build/desktop/`.
+
 
 ## The Story Format
 
