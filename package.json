@@ -1,6 +1,6 @@
 {
   "name": "toothrot",
-  "version": "1.2.0-alpha.1512191113",
+  "version": "1.2.0-alpha.1512192304",
   "description": "Interactive fiction engine based on web technologies.",
   "main": "index.js",
   "directories": {
