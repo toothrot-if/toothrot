@@ -289,3 +289,78 @@ it for your story:
     Does `foo` contain `"bar"`?: (! $.foo === "bar" !)
 
 
+## Node and section properties
+
+Both nodes and sections can be augmented with properties. To add a property
+to a node or section, add the following on an empty line somewhere in the
+node's or section's text:
+
+    (#) theKey: "theValue"
+
+In this example, a property `theKey` is defined with a string value of `"theValue"`.
+The value of a property can be any JSON value like `string`, `number`, `boolean`,
+`array`, `object` or `null`.
+
+If a property is defined for a section, it will affect all the nodes contained
+within that section. If a property is defined for a node, it will only belong
+to the node itself.
+
+If both a node and its section define the same property, then the node's property
+is used.
+
+**WARNING:** You can change a node's internal properties with this. It's a good
+idea to only change those properties mentioned in the documentation! At the time of
+this writing, the internal properties are: `id`, `line`, `options`, `links`, `next`
+and `returnToLast`. Never change these properties unless you really know what
+you're doing!
+
+
+
+## Audio
+
+You can play audio files with Toothrot. There are three different kinds of audio,
+and each has its own "channel" (meaning its own volume):
+
+ * sound: Sounds that are played once when something happens, e.g. glass breaking, door shutting.
+ * music: Looping background music.
+ * ambience: Looping ambience (noise) tracks, e.g. ocean waves or restaurant chatter.
+
+You can use node properties to play audio. To play a sound, at a `sound` property to your node:
+
+    (#) sound: "doorShutting.ogg"
+
+To start a background music track (or change the one currently playing), use:
+
+    (#) music: "mainTheme.ogg"
+
+And for playing or changing the ambience track:
+
+    (#) ambience: "restaurant.ogg"
+
+You can stop whatever is playing on a channel by setting it to `false`:
+
+    (#) music: false
+
+And if you want to stop all audio at once, use this:
+
+    (#) audio: false
+
+The paths to your audio files is relative to the `index.html` file of your built project.
+So if you write this:
+
+    (#) sound: "beep.ogg"
+
+It plays the file `my_project/files/beep.ogg`. And if you write:
+
+    (#) sound: "sounds/beep.ogg"
+
+Then it plays `my_project/files/sounds/beep.ogg`.
+
+If you build your project for the use in browsers, you might need to supply different formats of
+the same audio file. You can specify alternatives like this:
+
+    (#) sound: ["sounds/beep", "ogg", "mp3"]
+
+The browser will choose the format it supports automatically, so it will either play
+`my_project/files/sounds/beep.ogg` or `my_project/files/sounds/beep.mp3`.
+
