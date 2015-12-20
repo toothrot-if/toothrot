@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.2.0-alpha.1512192304)
-    Build time: Sun, 20 Dec 2015 13:08:24 GMT
+    Build time: Sun, 20 Dec 2015 14:27:33 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5273,6 +5273,8 @@ function run (resources, _, opt) {
     function runNode (node, nextType) {
         
         var content = node.content;
+        var copy = merge(clone(sections[node.section]), clone(node));
+        var skipTo;
         
         focusMode = FOCUS_MODE_NODE;
         resetHighlight();
@@ -5280,6 +5282,28 @@ function run (resources, _, opt) {
         if (timeoutId) {
             clearInterval(timeoutId);
             timeoutId = undefined;
+        }
+        
+        env.skipTo = function (id) {
+            skipTo = id;
+        };
+        
+        copy.scripts.forEach(function (script, i) {
+            
+            var result;
+            
+            try {
+                result = evalScript(story, env, vars, script.body, script.line);
+            }
+            catch (error) {
+                console.error("Cannot execute script at line " + script.line + ":", error);
+            }
+            
+            content = content.replace("(%s" + i + "%)", result);
+        });
+        
+        if (skipTo) {
+            return runNode(nodes[skipTo]);
         }
         
         if (currentNode && !node.parent && nextType !== "return") {
@@ -5326,8 +5350,6 @@ function run (resources, _, opt) {
         
         function replaceContent () {
             
-            var copy = merge(clone(sections[node.section]), clone(node));
-            
             currentNode = node;
             currentSection = node.section;
             
@@ -5347,20 +5369,6 @@ function run (resources, _, opt) {
                         insertObjectLink(link.label, undefined, node.id, i)
                     );
                 }
-            });
-            
-            copy.scripts.forEach(function (script, i) {
-                
-                var result;
-                
-                try {
-                    result = evalScript(story, env, vars, script.body, script.line);
-                }
-                catch (error) {
-                    console.error("Cannot execute script at line " + script.line + ":", error);
-                }
-                
-                content = content.replace("(%s" + i + "%)", result);
             });
             
             content = content.replace(/\(\$((.|\n)*?)\$\)/g, function (match, p1, p2) {

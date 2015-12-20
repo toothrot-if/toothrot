@@ -817,6 +817,8 @@ function run (resources, _, opt) {
     function runNode (node, nextType) {
         
         var content = node.content;
+        var copy = merge(clone(sections[node.section]), clone(node));
+        var skipTo;
         
         focusMode = FOCUS_MODE_NODE;
         resetHighlight();
@@ -824,6 +826,28 @@ function run (resources, _, opt) {
         if (timeoutId) {
             clearInterval(timeoutId);
             timeoutId = undefined;
+        }
+        
+        env.skipTo = function (id) {
+            skipTo = id;
+        };
+        
+        copy.scripts.forEach(function (script, i) {
+            
+            var result;
+            
+            try {
+                result = evalScript(story, env, vars, script.body, script.line);
+            }
+            catch (error) {
+                console.error("Cannot execute script at line " + script.line + ":", error);
+            }
+            
+            content = content.replace("(%s" + i + "%)", result);
+        });
+        
+        if (skipTo) {
+            return runNode(nodes[skipTo]);
         }
         
         if (currentNode && !node.parent && nextType !== "return") {
@@ -870,8 +894,6 @@ function run (resources, _, opt) {
         
         function replaceContent () {
             
-            var copy = merge(clone(sections[node.section]), clone(node));
-            
             currentNode = node;
             currentSection = node.section;
             
@@ -891,20 +913,6 @@ function run (resources, _, opt) {
                         insertObjectLink(link.label, undefined, node.id, i)
                     );
                 }
-            });
-            
-            copy.scripts.forEach(function (script, i) {
-                
-                var result;
-                
-                try {
-                    result = evalScript(story, env, vars, script.body, script.line);
-                }
-                catch (error) {
-                    console.error("Cannot execute script at line " + script.line + ":", error);
-                }
-                
-                content = content.replace("(%s" + i + "%)", result);
             });
             
             content = content.replace(/\(\$((.|\n)*?)\$\)/g, function (match, p1, p2) {
