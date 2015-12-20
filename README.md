@@ -306,12 +306,16 @@ The `.drop()` method drops an aspect from an object's list of active aspects.
 
 The `.add()` method adds an aspect to an object's list of active aspects.
 
-You can check if an aspect is currently active in an object using the `is()` method:
+You can check if an aspect is currently active in an object using the `.is()` method:
 
     The door is (! _.o("door").is("closed") ? "closed" : "not closed" !).
 
+You can also change the target node of an object's action using `.rewire()`:
 
-### Variables
+    (-) (! _.o("magicDoor").rewire("enter", "door_location_2") !)
+
+
+## Variables
 
 Variables can be inserted into a node's text by using this notation:
 
@@ -326,23 +330,81 @@ What this does is that it assigns the string `"bar"` to the variable `foo`. The
 shown in the node's text.
 
 
-### JavaScript expressions
+## JavaScript
 
 A node can contain JavaScript. The JavaScript inside a node gets executed right
 before the node is shown. JavaScript can be written in the node's text between
-`(!` and `!)`. The value of the JavaScript expression will be inserted into
-the text. For example, the following snippets produce the same output:
+`(!` and `!)`. The last value of the JavaScript snippet will be inserted into
+the text.
+
+### The variable container: $
+
+Inside the JavaScript snippets, there are two main ways in which you can interact
+with the engine. The first is `$`. It's an object containing all of the game's
+current variables.
+
+For example, the following snippets produce the same output:
 
     Foo is: ($ foo $)
 
     Foo is: (! $.foo !)
 
-If you don't know much about JavaScript, here are some examples on how to use
-it for your story:
+### The function container: _
 
-#### Comparing variables
+The next way to interact with the engine from a JavaScript snippet is the
+*environment* `_`. It contains a bunch of functions to alter the game's state
+in some way or help you write your scripts.
 
-    Does `foo` contain `"bar"`?: (! $.foo === "bar" !)
+#### _.skipTo(nodeId)
+
+The `skipTo(nodeId)` function skips the current node immediately before showing
+any text or effects or playing any audio. The following will skip the node where
+it is written and continue with the node `foo` instead:
+
+    _.skipTo("foo")
+
+#### _.o(objectName)
+
+The `o(name)` function returns the API of a story object:
+
+    _.o("door").print()
+
+To find out more about objects, read the README section about it.
+
+
+#### _.link(label, target)
+
+Creates a direct link to another node:
+
+    You can (! _.link("go to the other room", "other_room") !).
+
+#### _.objectLink(label, actions)
+
+Creates an object link:
+
+    There's a (! _.objectLink("bird", {"talk to": "talk_to_bird", examine: "examine_bird"}) !) here.
+
+#### _.dim(amount)
+
+Dims the background:
+
+    (-) (! _.dim(0.8) !)
+
+Dim values must be between `0` (not dimmed, background fully visible) and `1`
+(fully dimmed, all black).
+
+#### _.oneOf(a1, a2, ..., aN)
+
+Returns one of its arguments randomly:
+
+    (-) (! $.hairColor = _.oneOf("blond", "brown", "black", "red", "white", "gray") !)
+
+### Silencing script output
+
+You can also remove any script output from the node text by writing `(-)` on the
+line where the script starts:
+
+    (-) (! "foo" + "bar" !)
 
 
 ## Node and section properties
