@@ -132,7 +132,7 @@ strong, b {
 
 .Text {
     margin-bottom: 20px;
-    font-size: 2em;
+    font-size: 1.8em;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -340,10 +340,6 @@ strong, b {
 
 @media (min-width: 800px) {
 
-html {
-    font-size: 18px;
-}
-
 #content {
     padding-top: 80px;
 }
@@ -353,21 +349,9 @@ html {
 
 @media (max-width: 600px) {
 
-html {
-    font-size: 15px;
-}
-
 #content .Text {
     margin-bottom: 10px;
     max-width: 90%;
-}
-
-}
-
-@media (max-height: 600px) {
-
-html {
-    font-size: 15px;
 }
 
 }
