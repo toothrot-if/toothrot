@@ -187,6 +187,9 @@ function run (resources, _, opt) {
             };
             
             vars._objects[name] = objects.assemble(name, vars._objects);
+        },
+        oneOf: function () {
+            return arguments[Math.floor(Math.random() * arguments.length)];
         }
     };
     
