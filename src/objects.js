@@ -39,8 +39,11 @@ function create (name, obj, putLink) {
         print: print,
         put: put,
         property: property,
-        label: label
+        label: label,
+        rewire: rewire
     };
+    
+    obj.masks = obj.masks || Object.create(null);
     
     function label (newLabel) {
         
@@ -62,7 +65,8 @@ function create (name, obj, putLink) {
         
         obj.activeAspects.forEach(function (aspect) {
             for (var key in obj.aspects[aspect]) {
-                actions[key] = format(obj.aspects[aspect][key], {name: name});
+                actions[key] = (key in obj.masks ? obj.masks[key] : obj.aspects[aspect][key]);
+                actions[key] = format(actions[key], {name: name});
             }
         });
         
@@ -104,6 +108,11 @@ function create (name, obj, putLink) {
         }
         
         return obj.properties[key];
+    }
+    
+    function rewire (action, newTarget) {
+        obj.masks[action] = newTarget;
+        return out;
     }
     
     return out;

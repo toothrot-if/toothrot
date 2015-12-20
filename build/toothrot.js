@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.2.0-alpha.1512192304)
-    Build time: Sat, 19 Dec 2015 22:05:30 GMT
+    Build time: Sun, 20 Dec 2015 13:08:24 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -6286,8 +6286,11 @@ function create (name, obj, putLink) {
         print: print,
         put: put,
         property: property,
-        label: label
+        label: label,
+        rewire: rewire
     };
+    
+    obj.masks = obj.masks || Object.create(null);
     
     function label (newLabel) {
         
@@ -6309,7 +6312,8 @@ function create (name, obj, putLink) {
         
         obj.activeAspects.forEach(function (aspect) {
             for (var key in obj.aspects[aspect]) {
-                actions[key] = format(obj.aspects[aspect][key], {name: name});
+                actions[key] = (key in obj.masks ? obj.masks[key] : obj.aspects[aspect][key]);
+                actions[key] = format(actions[key], {name: name});
             }
         });
         
@@ -6351,6 +6355,11 @@ function create (name, obj, putLink) {
         }
         
         return obj.properties[key];
+    }
+    
+    function rewire (action, newTarget) {
+        obj.masks[action] = newTarget;
+        return out;
     }
     
     return out;
