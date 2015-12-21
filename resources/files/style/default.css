@@ -14,7 +14,7 @@ li {
 
 html {
     font-family: arial, Arial, Helvetica, sans-serif;
-    background: black;
+    background: rgb(20, 20, 20);
     color: white;
 }
 
@@ -69,16 +69,6 @@ strong, b {
     bottom: 0;
 }
 
-#content[data-section=default] .Background {
-    background: black;
-    background-size: 100% 100%;
-}
-
-#content[data-section=outside] .Background {
-    background: url(sky1.jpg);
-    background-size: 100% 100%;
-}
-
 .Highlighter {
     position: absolute;
     border-radius: 3px;
@@ -89,13 +79,17 @@ strong, b {
     /*animation: pulse 1s infinite;*/
 }
 
-.BackgroundDimmer, .Background {
+.BackgroundDimmer {
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
     right: 0;
     background: black;
+}
+
+.Background {
+    background: rgb(20, 20, 20);
 }
 
 .BackgroundDimmer {
@@ -127,7 +121,7 @@ strong, b {
     padding: 0;
     opacity: 0.8;
     background: transparent url(indicator.gif) no-repeat center center;
-    box-shadow: 1px 1px 2px rgba(50, 50, 50, 0.8);
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .Text {
@@ -142,12 +136,12 @@ strong, b {
     cursor: default;
     position: absolute;
     left: 50%;
-    top: 50%;
+    top: 45%;
     -moz-transform: translate(-50%, -50%);
     -webkit-transform: translate(-50%, -50%);
     transform: translate(-50%, -50%);
     backface-visibility: hidden;
-    text-shadow: 1px 1px 2px rgba(20, 20, 20, 0.8);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .Text p {
@@ -162,6 +156,16 @@ strong, b {
     margin-top: 20px;
 }
 
+.Option {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 0.8em;
+    padding: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+/*
 .Option {
     display: block;
     padding: 10px;
@@ -187,6 +191,7 @@ strong, b {
     background: rgba(70, 70, 70, 0.9);
     border: 1px solid rgb(40, 40, 40);
 }
+*/
 
 .Option:first-child {
     margin-top: 0;
@@ -205,16 +210,14 @@ strong, b {
     border-radius: 3px;
     height: 8px;
     background: rgb(80, 80, 80);
+    box-shadow: 1px 1px 1px rgba(20, 20, 20, 0.8);
     margin: auto;
 }
 
 .Action {
     border-radius: 5px;
-    border: 1px solid rgb(20, 20, 20);
-    background: rgba(50, 50, 50, 0.9);
-    box-shadow: inset -1px -1px 2px black;
-    color: white;
     cursor: pointer;
+    font-size: 1em;
     padding: 10px;
     padding-top: 5px;
     padding-bottom: 5px;
@@ -226,11 +229,6 @@ strong, b {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-}
-
-.Action:hover {
-    background: rgba(70, 70, 70, 0.9);
-    border: 1px solid rgb(40, 40, 40);
 }
 
 .Action:last-child {
@@ -252,18 +250,20 @@ strong, b {
     z-index: 1000;
     max-width: 700px;
     margin: auto;
-    margin-top: -10px;
+    margin-top: -20px;
     top: 50%;
     left: 50%;
     -moz-transform: translate(-50%, -50%);
     -webkit-transform: translate(-50%, -50%);
     transform: translate(-50%, -50%);
     max-width: 700px;
-    background: rgb(50, 50, 50);
+    /*
+    background: rgb(20, 20, 20);
     border: 1px solid rgb(20, 20, 20);
-    border-radius: 5px;
-    padding: 5px;
     box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.8);
+    border-radius: 5px;
+    */
+    padding: 0;
 }
 
 .link, .link:visited {
@@ -284,19 +284,18 @@ strong, b {
     display: inline-block;
     margin: 5px;
     border-radius: 5px;
-    border: 1px solid rgb(120, 120, 120);
-    background: rgba(50, 50, 50, 0.6);
-    color: white;
     padding: 3px;
     padding-left: 10px;
     padding-right: 10px;
     font-size: 0.8em;
 }
 
+/*
 .object_link:hover {
     color: white;
     background: rgba(70, 70, 70, 0.9);
 }
+*/
 
 
 #footer {
@@ -315,19 +314,24 @@ strong, b {
     text-align: center;
 }
 
-.Button {
-    display: inline-block;
-    border: 1px solid gray;
+.Button, .Option, .Action, .object_link {
     padding: 5px;
-    border-radius: 3px;
+    color: rgb(240, 240, 220);
+    text-shadow: 0 0 2px black;
+    background: #2d2929;
+    background: -moz-linear-gradient(top, #2d2929 0%, #1C1C1C 100%);
+    background: -webkit-linear-gradient(top, #2d2929 0%,#1C1C1C 100%);
+    background: linear-gradient(to bottom, #2d2929 0%,#1C1C1C 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2d2929', endColorstr='#1C1C1C',GradientType=0 );
+    box-shadow: 1px 1px 2px black;
     border: 1px solid rgb(80, 80, 80);
+    border-bottom: 1px solid rgb(50, 50, 50);
+    border-right: 1px solid rgb(50, 50, 50);
+    border-radius: 3px;
     font-weight: bold;
-    font-size: 0.8em;
-    background: rgba(50, 50, 50, 0.9);
     min-width: 20px;
     text-align: center;
     text-decoration: none;
-    color: white;
     cursor: pointer;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -335,6 +339,14 @@ strong, b {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+.Button, .object_link {
+    display: inline-block;
+}
+
+.Button:hover, .Option:hover, .Action:hover, .object_link:hover {
+    background: rgba(50, 50, 50, 0.8);
 }
 
 
@@ -383,6 +395,7 @@ strong, b {
     bottom: 0;
     background: black;
     opacity: 0;
+    z-index: 10000;
 }
 
 .Screen {
@@ -392,7 +405,8 @@ strong, b {
     top: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.9);
+    z-index: 2000;
+    background: rgb(20, 20, 20);
 }
 
 .Screen .Menu {
@@ -405,7 +419,7 @@ strong, b {
 
 .Screen .Menu ul {
     list-style-type: none;
-    padding: 0;
+    padding: 5px;
     margin: 0;
 }
 
@@ -418,13 +432,19 @@ strong, b {
     transform: none;
     padding: 5px;
     z-index: 10000;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgb(20, 20, 20);
     text-align: right;
     padding: 10px;
 }
 
+.Screen .Menu *[data-type=menu-item] {
+    display: block;
+    margin-bottom: 10px;
+}
+
 .SaveScreen .Menu *[data-type=menu-item], .SettingsScreen .Menu *[data-type=menu-item] {
     display: inline-block;
+    margin-bottom: 0;
 }
 
 .SaveScreen {
@@ -490,9 +510,6 @@ strong, b {
 }
 
 .SaveScreen li[data-type=slot-button] {
-    background: rgba(0, 0, 0, 0.8);
-    border: 1px solid white;
-    border-radius: 5px;
     font-size: 0.8em;
     font-weight: bold;
     padding: 5px;
@@ -514,8 +531,9 @@ strong, b {
 }
 
 .SaveScreen *[data-template-name=empty-slot] {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(50, 50, 50, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.8);
+    opacity: 0.6;
 }
 
 .SaveScreen .disabled {
@@ -528,15 +546,9 @@ strong, b {
     padding: 10px;
     margin: 0;
     margin-bottom: 5px;
-    border: 1px solid white;
     border-radius: 5px;
     min-width: 200px;
-    background: rgba(0, 0, 0, 0.8);
     text-align: center;
-}
-
-.Screen *[data-type=menu-item]:hover {
-    background: rgba(50, 50, 50, 0.8);
 }
 
 .Screen *[data-type=menu-item]:last-child {
@@ -578,6 +590,7 @@ strong, b {
     top: 0;
     right: 0;
     bottom: 0;
+    z-index: 12000;
     background: rgba(0, 0, 0, 0.8);
 }
 
@@ -609,4 +622,30 @@ strong, b {
     font-weight: bold;
     min-width: 80px;
 }
+
+
+.UIBar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    padding: 5px;
+    box-shadow: -2px -2px 8px rgba(0, 0, 0, 0.4);
+    background: #2d2929;
+    background: -moz-linear-gradient(top, #2d2929 0%, #111111 100%);
+    background: -webkit-linear-gradient(top, #2d2929 0%,#111111 100%);
+    background: linear-gradient(to bottom, #2d2929 0%,#111111 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2d2929', endColorstr='#111111',GradientType=0 );
+}
+
+.UIBar .right {
+    float: right;
+}
+
+.UIButton {
+    padding: 8px;
+    display: inline-block;
+}
+
 

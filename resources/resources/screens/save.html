@@ -1,17 +1,36 @@
 <div class="Screen SaveScreen" data-type="screen" data-screen-name="save">
     <div class="ScreenBackground"></div>
     <div class="Menu">
-        <ul class="content" data-type="menu">
-            <li data-type="menu-item" data-target="back">Back</li>
+        <ul class="UIBar content" data-type="menu">
+            <li
+                class="Button"
+                data-focus-mode="screen"
+                data-type="menu-item"
+                data-target="back">Back</li>
         </ul>
     </div>
     <div class="Slots">
         <ul class="content" data-type="slots">
             <li data-type="slot" data-template-name="slot">
                 <ul class="ButtonContainer">
-                    <li data-type="slot-button" data-action="save" data-slot-id="{id}">Save</li>
-                    <li data-type="slot-button" data-action="load" data-slot-id="{id}">Load</li>
-                    <li data-type="slot-button" data-action="delete" data-slot-id="{id}">Delete</li>
+                    <li
+                        class="Button"
+                        data-focus-mode="save"
+                        data-type="slot-button"
+                        data-action="save"
+                        data-slot-id="{id}">Save</li>
+                    <li
+                        class="Button"
+                        data-focus-mode="save"
+                        data-type="slot-button"
+                        data-action="load"
+                        data-slot-id="{id}">Load</li>
+                    <li
+                        class="Button"
+                        data-focus-mode="save"
+                        data-type="slot-button"
+                        data-action="delete"
+                        data-slot-id="{id}">Delete</li>
                 </ul>
                 <div class="index">{i}</div>
                 <div data-type="slot-time">
@@ -24,12 +43,14 @@
             <li data-type="slot" data-template-name="empty-slot">
                 <ul class="ButtonContainer">
                     <li
+                        class="Button"
+                        data-focus-mode="save"
                         data-type="slot-button"
                         data-action="save"
                         data-slot-id="{id}"
                         data-is-empty="true">Save</li>
-                    <li data-type="slot-button" class="disabled">Load</li>
-                    <li data-type="slot-button" class="disabled">Delete</li>
+                    <li class="Button disabled" data-type="slot-button">Load</li>
+                    <li class="Button disabled" data-type="slot-button">Delete</li>
                 </ul>
                 <div class="index">{i}</div>
                 <div data-type="slot-time">

@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v1.2.0-alpha.1512192304)
-    Build time: Sun, 20 Dec 2015 14:40:21 GMT
+    Toothrot Engine (v1.3.0-beta.1512201634)
+    Build time: Mon, 21 Dec 2015 10:10:13 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -4470,6 +4470,8 @@ var SECTION_FADE_IN = 600;
 var SECTION_FADE_OUT = 300;
 var SCREEN_FADE_IN = 400;
 var SCREEN_FADE_OUT = 400;
+var UI_FADE_IN = 200;
+var UI_FADE_OUT = 200;
 
 // Wait how long before next() works again after a return?
 // This is to prevent popping more stuff from the stack than
@@ -4509,6 +4511,11 @@ var nw = (function () {
         return false;
     }
 }());
+
+var features = {
+    fullscreen: hasFullscreen(),
+    exit: canExit()
+};
 
 function run (resources, _, opt) {
     
@@ -4552,6 +4559,7 @@ function run (resources, _, opt) {
     
     // All the different DOM elements used by the interpreter:
     
+    var ui = document.createElement("div");
     var text = document.createElement("div");
     var indicator = document.createElement("div");
     var background = document.createElement("div");
@@ -4666,8 +4674,12 @@ function run (resources, _, opt) {
             if (currentMusic) {
                 currentMusic.volume(volume / 100);
             }
-        }
+        },
+        "showScreen": removeInactiveScreenElements
     };
+    
+    var fullscreenMode = false;
+    var currentSlotExists = false;
     
     _ = _ || {};
     
@@ -4702,6 +4714,9 @@ function run (resources, _, opt) {
     container.appendChild(screenContainer);
     document.body.appendChild(highlighter);
     document.body.appendChild(container);
+    document.body.appendChild(ui);
+    
+    ui.innerHTML = format(resources.templates.ui, vars);
     
     highlighter.addEventListener("click", function (event) {
         event.stopPropagation();
@@ -4721,6 +4736,32 @@ function run (resources, _, opt) {
         if (event.target.getAttribute("data-type") !== "option") {
             event.stopPropagation();
             event.preventDefault();
+        }
+    });
+    
+    ui.addEventListener("click", function (event) {
+        
+        var target = event.target;
+        var action = target.getAttribute("data-action");
+        var screen = target.getAttribute("data-screen");
+        var qsSlot = target.getAttribute("data-slot-name");
+        
+        if (action === "openScreen") {
+            runScreen(screen);
+        }
+        else if (action === "toggleFullscreen") {
+            toggleFullscreen();
+        }
+        else if (action === "quickSave") {
+            save("qs_" + qsSlot);
+        }
+        else if (action === "quickLoad") {
+            confirm("Load quick save slot and discard progress?", function (yes) {
+                if (yes) {
+                    clearState();
+                    load("qs_" + qsSlot);
+                }
+            });
         }
     });
     
@@ -4790,7 +4831,17 @@ function run (resources, _, opt) {
         
         if (type === "menu-item") {
             if (target in screens) {
-                runScreen(target);
+                if (element.getAttribute("data-confirm") === "returnToTitle") {
+                    confirm("Quit to title and discard progress?", function (yes) {
+                        if (yes) {
+                            clearState();
+                            runScreen(target);
+                        }
+                    });
+                }
+                else {
+                    runScreen(target);
+                }
             }
             else if (target === "start") {
                 exitScreenMode(function () {
@@ -4798,6 +4849,7 @@ function run (resources, _, opt) {
                 });
             }
             else if (target === "continue") {
+                clearState();
                 exitScreenMode(function () {
                     loadCurrentSlot();
                 });
@@ -4910,10 +4962,25 @@ function run (resources, _, opt) {
     
     window.addEventListener("resize", reflowElements);
     window.addEventListener("orientationchange", reflowElements);
+    document.addEventListener("fullscreenchange", reflowElements);
+    document.addEventListener("webkitfullscreenchange", reflowElements);
+    document.addEventListener("mozfullscreenchange", reflowElements);
+    document.addEventListener("MSFullscreenChange", reflowElements);
     
     document.title = story.meta.title || "Toothrot Engine";
     
-    loadSettings(runScreen.bind(undefined, "main"));
+    hasCurrentSlot(function (error, exists) {
+        currentSlotExists = !error && exists;
+        removeInactiveScreenElements();
+        loadSettings(runScreen.bind(undefined, "main"));
+    });
+    
+    function clearState () {
+        currentNode = undefined;
+        text.innerHTML = "";
+        stack = [];
+        emit("clearState")
+    }
     
     function loadSettings (then) {
         
@@ -5059,14 +5126,7 @@ function run (resources, _, opt) {
             
             screenContainer.innerHTML = format(screen, settings);
             
-            if (!nw) {
-                [].forEach.call(
-                    screenContainer.querySelectorAll("*[data-target=exit]") || [],
-                    function (element) {
-                        element.parentNode.removeChild(element);
-                    }
-                );
-            }
+            emit("showScreen");
         }
         
         function getDomNodeContent (dom) {
@@ -5189,6 +5249,12 @@ function run (resources, _, opt) {
         load("current");
     }
     
+    function hasCurrentSlot (then) {
+        storage.load("current", function (error, data) {
+            then(error, !!data);
+        });
+    }
+    
     function load (name, then) {
         
         then = then || none;
@@ -5248,6 +5314,7 @@ function run (resources, _, opt) {
         if (currentNode) {
             confirm("Load slot and discard current progress?", function (yes) {
                 if (yes) {
+                    clearState();
                     exitScreenMode(function () {
                         load(id);
                     });
@@ -5255,6 +5322,7 @@ function run (resources, _, opt) {
             });
         }
         else {
+            clearState();
             exitScreenMode(function () {
                 load(id);
             });
@@ -5460,6 +5528,7 @@ function run (resources, _, opt) {
                 }
             }
             
+            currentSlotExists = true;
             storage.save("current", serialize());
             
         }
@@ -5575,7 +5644,7 @@ function run (resources, _, opt) {
     
     function next () {
         
-        if (focusMode !== FOCUS_MODE_NODE) {
+        if (focusMode !== FOCUS_MODE_NODE || !currentNode) {
             return;
         }
         
@@ -5646,7 +5715,7 @@ function run (resources, _, opt) {
     }
     
     function animateActionsEntry (then) {
-        move(actionsParent).set("opacity", 0).duration(0).end();
+        actionsParent.style.opacity = "0";
         container.appendChild(actionsParent);
         move(actionsParent).set("opacity", 1).duration(NODE_FADE_IN).end(then);
     }
@@ -5665,6 +5734,9 @@ function run (resources, _, opt) {
     }
     
     function animateScreenEntry (inBetween, then) {
+        
+        then = then || none;
+        
         showCurtain(function () {
             
             screenContainer.style.display = "";
@@ -5672,7 +5744,10 @@ function run (resources, _, opt) {
             emit("screenEntry");
             
             inBetween();
-            hideCurtain(then);
+            hideCurtain(function () {
+                emit("showScreen");
+                then();
+            });
         });
     }
     
@@ -5818,6 +5893,7 @@ function run (resources, _, opt) {
             }
             
             emit("timerEnd");
+            resetHighlight();
             
             if (options.length && typeof node.defaultOption === "number") {
                 
@@ -6192,6 +6268,133 @@ function run (resources, _, opt) {
         
         return paths;
     }
+    
+    function toggleFullscreen () {
+        
+        if (fullscreenEnabled() || (nw && fullscreenMode)) {
+            exitFullscreen();
+        }
+        else {
+            fullscreen();
+        }
+        
+        resetHighlight();
+        reflowElements();
+    }
+    
+    function fullscreenEnabled () {
+        return document.fullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement ||
+            document.webkitFullscreenElement;
+    }
+    
+    function fullscreen () {
+        
+        fullscreenMode = true;
+        
+        if (nw) {
+            nwEnterFullscreen();
+        }
+        else {
+            requestFullscreen(document.body);
+        }
+    }
+    
+    function exitFullscreen () {
+        
+        fullscreenMode = false;
+        
+        if (nw) {
+            nwExitFullscreen();
+        }
+        else {
+            exitBrowserFullscreen();
+        }
+    }
+    
+    function nwEnterFullscreen () {
+        window.require('nw.gui').Window.get().enterKioskMode();
+    }
+    
+    function nwExitFullscreen () {
+        window.require('nw.gui').Window.get().leaveKioskMode();
+    }
+    
+    function exitBrowserFullscreen () {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+        else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+        else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        }
+        else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+    
+    function requestFullscreen (element) {
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        }
+        else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
+        else if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+        }
+        else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+        }
+    }
+    
+    function removeInactiveScreenElements () {
+        removeFeatureElements();
+        removeContinueButton();
+    }
+    
+    function removeFeatureElements () {
+        for (var feature in features) {
+            if (!features[feature]) {
+                removeElementsForFeature(feature);
+            }
+        }
+    }
+    
+    function removeContinueButton () {
+        
+        var buttons
+        
+        if (currentSlotExists) {
+            return;
+        }
+        
+        buttons = document.querySelectorAll("*[data-target=continue]");
+        
+        [].forEach.call(buttons || [], function (button) {
+            button.parentNode.removeChild(button);
+        });
+    }
+    
+    function removeElementsForFeature (feature) {
+        
+        var elements = document.querySelectorAll("*[data-feature=" + feature + "]") || [];
+        
+        [].forEach.call(elements, function (element) {
+            element.parentNode.removeChild(element);
+        });
+    }
+}
+
+function hasFullscreen () {
+    return !!nw;
+}
+
+function canExit () {
+    return !!nw;
 }
 
 function evalScript (__story, _, $, __body, __line) {
@@ -6409,19 +6612,77 @@ module.exports = {
 }
 */
 
+var storageType, getItem, setItem, memoryStorage = Object.create(null);
+var testStorageKey = "TOOTHROT-storage-test";
+
+try {
+    
+    localStorage.setItem(testStorageKey, "works");
+    
+    if (localStorage.getItem(testStorageKey) === "works") {
+        storageType = "local";
+    }
+}
+catch (error) {
+    // ...
+}
+
+if (!storageType) {
+    
+    try {
+        
+        sessionStorage.setItem(testStorageKey, "works");
+        
+        if (sessionStorage.getItem(testStorageKey) === "works") {
+            storageType = "session";
+        }
+    }
+    catch (error) {
+        // ...
+    }
+}
+
+if (!storageType) {
+    storageType = "memory"
+}
+
+if (storageType === "local") {
+    
+    getItem = function (name) {
+        return JSON.parse(localStorage.getItem(name) || "{}");
+    };
+    
+    setItem = function (name, value) {
+        return localStorage.setItem(name, JSON.stringify(value));
+    };
+}
+else if (storageType === "session") {
+    
+    getItem = function (name) {
+        return JSON.parse(sessionStorage.getItem(name) || "{}");
+    };
+    
+    setItem = function (name, value) {
+        return sessionStorage.setItem(name, JSON.stringify(value));
+    };
+}
+else {
+    
+    getItem = function (name) {
+        return JSON.parse(memoryStorage[name] || "{}");
+    };
+    
+    setItem = function (name, value) {
+        return memoryStorage[name] = JSON.stringify(value);
+    };
+}
+
+
 function storage (storageKey) {
     
     var none = function () {};
     
     storageKey = storageKey || "txe-savegames";
-    
-    function getItem (name) {
-        return JSON.parse(localStorage.getItem(name)) || {};
-    }
-    
-    function setItem (name, data) {
-        return localStorage.setItem(name, JSON.stringify(data));
-    }
     
     function save (name, data, then) {
         
