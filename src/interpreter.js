@@ -548,6 +548,7 @@ function run (resources, _, opt) {
     });
     
     function clearState () {
+        stopAudio();
         currentNode = undefined;
         text.innerHTML = "";
         stack = [];
@@ -632,6 +633,18 @@ function run (resources, _, opt) {
         
         if (typeof vars["_dim"] === "number") {
             env.dim(vars["_dim"], 0);
+        }
+        
+        if (vars._currentSound) {
+            playSound(vars._currentSound);
+        }
+        
+        if (vars._currentAmbience) {
+            playAmbience(vars._currentAmbience);
+        }
+        
+        if (vars._currentMusic) {
+            playMusic(vars._currentMusic);
         }
         
         runNode(nodes[data.node]);
@@ -1048,9 +1061,7 @@ function run (resources, _, opt) {
             text.innerHTML = content;
             
             if (copy.audio === false) {
-                stopSound();
-                stopAmbience();
-                stopMusic();
+                stopAudio();
             }
             
             if (copy.sound) {
@@ -1778,33 +1789,64 @@ function run (resources, _, opt) {
         }
     }
     
-    function playSound (path) {
-        currentSound = playTrack(path, settings.soundVolume, false, currentSound);
+    function stopAudio () {
+        stopSound();
+        stopAmbience();
+        stopMusic();
     }
     
     function stopSound () {
+        
         if (currentSound) {
             currentSound.unload();
         }
+        
+        vars._currentSound = undefined;
+        currentSound = undefined;
     }
     
     function stopAmbience () {
+        
         if (currentAmbience) {
             currentAmbience.unload();
         }
+        
+        vars._currentAmbience = undefined;
+        currentAmbience = undefined;
     }
     
     function stopMusic () {
+        
         if (currentMusic) {
             currentMusic.unload();
         }
+        
+        vars._currentMusic = undefined;
+        currentMusic = undefined;
+    }
+    
+    function playSound (path) {
+        vars._currentSound = path;
+        currentSound = playTrack(path, settings.soundVolume, false, currentSound);
     }
     
     function playAmbience (path) {
+        
+        if (currentAmbience && vars._currentAmbience === path) {
+            return;
+        }
+        
+        vars._currentAmbience = path;
         currentAmbience = playTrack(path, settings.ambienceVolume, true, currentAmbience);
     }
     
     function playMusic (path) {
+        
+        if (currentMusic && vars._currentMusic === path) {
+            return;
+        }
+        
+        vars._currentMusic = path;
         currentMusic = playTrack(path, settings.musicVolume, true, currentMusic);
     }
     

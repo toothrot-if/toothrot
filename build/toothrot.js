@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.4.0-beta.1512211114)
-    Build time: Mon, 21 Dec 2015 16:23:47 GMT
+    Build time: Mon, 21 Dec 2015 16:56:34 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5465,6 +5465,7 @@ function run (resources, _, opt) {
     });
     
     function clearState () {
+        stopAudio();
         currentNode = undefined;
         text.innerHTML = "";
         stack = [];
@@ -5549,6 +5550,18 @@ function run (resources, _, opt) {
         
         if (typeof vars["_dim"] === "number") {
             env.dim(vars["_dim"], 0);
+        }
+        
+        if (vars._currentSound) {
+            playSound(vars._currentSound);
+        }
+        
+        if (vars._currentAmbience) {
+            playAmbience(vars._currentAmbience);
+        }
+        
+        if (vars._currentMusic) {
+            playMusic(vars._currentMusic);
         }
         
         runNode(nodes[data.node]);
@@ -5965,9 +5978,7 @@ function run (resources, _, opt) {
             text.innerHTML = content;
             
             if (copy.audio === false) {
-                stopSound();
-                stopAmbience();
-                stopMusic();
+                stopAudio();
             }
             
             if (copy.sound) {
@@ -6695,33 +6706,64 @@ function run (resources, _, opt) {
         }
     }
     
-    function playSound (path) {
-        currentSound = playTrack(path, settings.soundVolume, false, currentSound);
+    function stopAudio () {
+        stopSound();
+        stopAmbience();
+        stopMusic();
     }
     
     function stopSound () {
+        
         if (currentSound) {
             currentSound.unload();
         }
+        
+        vars._currentSound = undefined;
+        currentSound = undefined;
     }
     
     function stopAmbience () {
+        
         if (currentAmbience) {
             currentAmbience.unload();
         }
+        
+        vars._currentAmbience = undefined;
+        currentAmbience = undefined;
     }
     
     function stopMusic () {
+        
         if (currentMusic) {
             currentMusic.unload();
         }
+        
+        vars._currentMusic = undefined;
+        currentMusic = undefined;
+    }
+    
+    function playSound (path) {
+        vars._currentSound = path;
+        currentSound = playTrack(path, settings.soundVolume, false, currentSound);
     }
     
     function playAmbience (path) {
+        
+        if (currentAmbience && vars._currentAmbience === path) {
+            return;
+        }
+        
+        vars._currentAmbience = path;
         currentAmbience = playTrack(path, settings.ambienceVolume, true, currentAmbience);
     }
     
     function playMusic (path) {
+        
+        if (currentMusic && vars._currentMusic === path) {
+            return;
+        }
+        
+        vars._currentMusic = path;
         currentMusic = playTrack(path, settings.musicVolume, true, currentMusic);
     }
     
