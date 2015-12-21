@@ -636,15 +636,15 @@ function run (resources, _, opt) {
         }
         
         if (vars._currentSound) {
-            playSound(vars._currentSound);
+            playSound(unserializeAudioPath(vars._currentSound));
         }
         
         if (vars._currentAmbience) {
-            playAmbience(vars._currentAmbience);
+            playAmbience(unserializeAudioPath(vars._currentAmbience));
         }
         
         if (vars._currentMusic) {
-            playMusic(vars._currentMusic);
+            playMusic(unserializeAudioPath(vars._currentMusic));
         }
         
         runNode(nodes[data.node]);
@@ -1826,27 +1826,31 @@ function run (resources, _, opt) {
     }
     
     function playSound (path) {
-        vars._currentSound = path;
+        vars._currentSound = serializeAudioPath(path);
         currentSound = playTrack(path, settings.soundVolume, false, currentSound);
     }
     
     function playAmbience (path) {
         
-        if (currentAmbience && vars._currentAmbience === path) {
+        var serialized = serializeAudioPath(path);
+        
+        if (currentAmbience && vars._currentAmbience === serialized) {
             return;
         }
         
-        vars._currentAmbience = path;
+        vars._currentAmbience = serialized;
         currentAmbience = playTrack(path, settings.ambienceVolume, true, currentAmbience);
     }
     
     function playMusic (path) {
         
-        if (currentMusic && vars._currentMusic === path) {
+        var serialized = serializeAudioPath(path);
+        
+        if (currentMusic && vars._currentMusic === serialized) {
             return;
         }
         
-        vars._currentMusic = path;
+        vars._currentMusic = serialized;
         currentMusic = playTrack(path, settings.musicVolume, true, currentMusic);
     }
     
@@ -1875,6 +1879,7 @@ function run (resources, _, opt) {
         
         if (Array.isArray(path)) {
             
+            path = path.slice();
             base = path.shift();
             
             path.forEach(function (type) {
@@ -1886,6 +1891,14 @@ function run (resources, _, opt) {
         }
         
         return paths;
+    }
+    
+    function serializeAudioPath (path) {
+        return JSON.stringify(path);
+    }
+    
+    function unserializeAudioPath (path) {
+        return JSON.parse(path);
     }
     
     function toggleFullscreen () {
