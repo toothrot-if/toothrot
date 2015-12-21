@@ -285,13 +285,6 @@ strong, b {
     font-size: 0.8em;
 }
 
-/*
-.object_link:hover {
-    color: white;
-    background: rgba(70, 70, 70, 0.9);
-}
-*/
-
 
 #footer {
     position: fixed;
@@ -344,43 +337,11 @@ strong, b {
     background: rgba(50, 50, 50, 0.8);
 }
 
-
-@media (min-width: 800px) {
-
-#content {
-    padding-top: 80px;
+.Button img {
+    margin: 0;
+    padding: 0;
+    display: block;
 }
-
-}
-
-
-@media (max-width: 600px) {
-
-#content .Text {
-    margin-bottom: 10px;
-    max-width: 90%;
-}
-
-}
-
-@media (min-width: 1000px) {
-
-#content .Text {
-    max-width: 900px;
-}
-
-}
-
-@media (min-width: 1600px) {
-
-#content .Text {
-    max-width: 1200px;
-}
-
-}
-
-
-
 
 .Curtain {
     position: absolute;
@@ -440,6 +401,7 @@ strong, b {
 .SaveScreen .Menu *[data-type=menu-item], .SettingsScreen .Menu *[data-type=menu-item] {
     display: inline-block;
     margin-bottom: 0;
+    min-width: 100px;
 }
 
 .SaveScreen {
@@ -641,6 +603,19 @@ strong, b {
 .UIButton {
     padding: 8px;
     display: inline-block;
+    margin-left: 3px;
+}
+
+.ImageButton {
+    margin-bottom: -3px;
+}
+
+.UIButton:first-child {
+    margin-left: 0;
+}
+
+.UIBar .left {
+    margin-left: 0;
 }
 
 
@@ -656,6 +631,117 @@ strong, b {
     border: 1px solid rgb(40, 40, 40);
     border-radius: 5px;
     font-weight: bold;
+}
+
+
+
+
+
+
+@media (min-width: 800px) {
+
+#content {
+    padding-top: 80px;
+}
+
+}
+
+
+@media (max-width: 600px) {
+
+.Text {
+    margin-bottom: 10px;
+    width: 95%;
+    font-size: 1.2em;
+    top: 20px;
+    transform: translate(-50%, 0);
+}
+
+.NextIndicator {
+    right: 0;
+}
+
+.ActionsContainer {
+    width: 90%;
+}
+
+.Action {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.MessageBox {
+    min-width: 0;
+    width: 90%;
+    position: relative;
+    left: 0;
+    transform: translate(0, 0);
+}
+
+.SaveScreen li[data-type=slot] {
+    width: 90%;
+    float: none;
+    margin: auto;
+}
+
+.Settings {
+    width: 90%;
+}
+
+.Settings .Label {
+    display: block;
+}
+
+}
+
+@media (max-width: 800px) {
+
+.Text {
+    margin-bottom: 10px;
+    max-width: 90%;
+    font-size: 1.3em;
+}
+
+.SaveScreen .Slots {
+    padding-top: 20px;
+    margin-left: 0;
+}
+
+}
+
+@media (min-width: 1000px) {
+
+#content .Text {
+    max-width: 900px;
+}
+
+}
+
+@media (max-width: 1220px) {
+
+.SaveScreen li[data-type=slot] {
+    border-radius: 5px;
+    display: block;
+    float: none;
+    width: 90%;
+    height: auto;
+    margin: auto;
+    margin-bottom: 20px;
+}
+
+.SaveScreen .Slots {
+    left: -20px;
+}
+
+}
+
+@media (min-width: 1600px) {
+
+#content .Text {
+    max-width: 1200px;
+}
+
 }
 
 

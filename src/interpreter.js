@@ -292,7 +292,10 @@ function run (resources, _, opt) {
     
     ui.addEventListener("click", function (event) {
         
-        var target = event.target;
+        var target = event.target.getAttribute("data-action") ?
+            event.target :
+            getClickableParent(event.target);
+        
         var action = target.getAttribute("data-action");
         var screen = target.getAttribute("data-screen");
         var qsSlot = target.getAttribute("data-slot-name");
