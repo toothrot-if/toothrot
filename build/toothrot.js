@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.4.0-beta.1512211114)
-    Build time: Mon, 21 Dec 2015 18:44:38 GMT
+    Build time: Mon, 21 Dec 2015 21:01:48 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5410,7 +5410,7 @@ function run (resources, _, opt) {
                 focusMode = FOCUS_MODE_NODE;
                 animateActionsExit();
             }
-            else if (focusMode === FOCUS_MODE_NODE) {
+            else if (focusMode === FOCUS_MODE_NODE && typeof focusOffset !== "number") {
                 runScreen("pause");
             }
             else if (focusMode === FOCUS_MODE_SCREEN && currentScreen !== "main") {
@@ -6543,12 +6543,16 @@ function run (resources, _, opt) {
         
         var options = document.querySelectorAll("[data-type=option]");
         var links = document.querySelectorAll("[data-type=link]");
+        var buttons = document.querySelectorAll("[data-type=button]");
         
         if (focusOffset < options.length) {
             return options[focusOffset];
         }
+        else if (focusOffset < options.length + links.length) {
+            return links[focusOffset - options.length];
+        }
         else {
-            return links[focusOffset];
+            return buttons[focusOffset - options.length - links.length];
         }
     }
     
@@ -6556,8 +6560,9 @@ function run (resources, _, opt) {
         
         var options = document.querySelectorAll("[data-type=option]");
         var links = document.querySelectorAll("[data-type=link]");
+        var buttons = document.querySelectorAll("[data-type=button]");
         
-        return options.length + links.length;
+        return options.length + links.length + buttons.length;
     }
     
     function getFocusedAction () {
@@ -6678,6 +6683,7 @@ function run (resources, _, opt) {
     function confirm (text, then) {
         
         var boxContainer = document.createElement("div");
+        var oldFocus = focusMode;
         
         focusMode = FOCUS_MODE_MESSAGEBOX;
         resetHighlight();
@@ -6698,6 +6704,7 @@ function run (resources, _, opt) {
             
             if (type === "messagebox-button") {
                 
+                focusMode = oldFocus;
                 boxContainer.parentNode.removeChild(boxContainer);
                 boxContainer.removeEventListener("click", onClick);
                 

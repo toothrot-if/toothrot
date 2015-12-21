@@ -493,7 +493,7 @@ function run (resources, _, opt) {
                 focusMode = FOCUS_MODE_NODE;
                 animateActionsExit();
             }
-            else if (focusMode === FOCUS_MODE_NODE) {
+            else if (focusMode === FOCUS_MODE_NODE && typeof focusOffset !== "number") {
                 runScreen("pause");
             }
             else if (focusMode === FOCUS_MODE_SCREEN && currentScreen !== "main") {
@@ -1626,12 +1626,16 @@ function run (resources, _, opt) {
         
         var options = document.querySelectorAll("[data-type=option]");
         var links = document.querySelectorAll("[data-type=link]");
+        var buttons = document.querySelectorAll("[data-type=button]");
         
         if (focusOffset < options.length) {
             return options[focusOffset];
         }
+        else if (focusOffset < options.length + links.length) {
+            return links[focusOffset - options.length];
+        }
         else {
-            return links[focusOffset];
+            return buttons[focusOffset - options.length - links.length];
         }
     }
     
@@ -1639,8 +1643,9 @@ function run (resources, _, opt) {
         
         var options = document.querySelectorAll("[data-type=option]");
         var links = document.querySelectorAll("[data-type=link]");
+        var buttons = document.querySelectorAll("[data-type=button]");
         
-        return options.length + links.length;
+        return options.length + links.length + buttons.length;
     }
     
     function getFocusedAction () {
@@ -1761,6 +1766,7 @@ function run (resources, _, opt) {
     function confirm (text, then) {
         
         var boxContainer = document.createElement("div");
+        var oldFocus = focusMode;
         
         focusMode = FOCUS_MODE_MESSAGEBOX;
         resetHighlight();
@@ -1781,6 +1787,7 @@ function run (resources, _, opt) {
             
             if (type === "messagebox-button") {
                 
+                focusMode = oldFocus;
                 boxContainer.parentNode.removeChild(boxContainer);
                 boxContainer.removeEventListener("click", onClick);
                 
