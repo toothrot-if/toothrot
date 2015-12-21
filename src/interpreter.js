@@ -1067,7 +1067,7 @@ function run (resources, _, opt) {
             if (copy.sound) {
                 playSound(copy.sound);
             }
-            else if (copy.sound === false) {
+            else {
                 stopSound();
             }
             
