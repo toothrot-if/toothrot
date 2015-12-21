@@ -337,6 +337,13 @@ strong, b {
     background: rgba(50, 50, 50, 0.8);
 }
 
+.Button:active, .Option:active, .Action:active, .object_link:active {
+    box-shadow: inset 1px 1px 2px black;
+    border: 1px solid rgb(50, 50, 50);
+    border-bottom: 1px solid rgb(80, 80, 80);
+    border-right: 1px solid rgb(80, 80, 80);
+}
+
 .Button img {
     margin: 0;
     padding: 0;
