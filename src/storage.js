@@ -14,19 +14,77 @@
 }
 */
 
+var storageType, getItem, setItem, memoryStorage = Object.create(null);
+var testStorageKey = "TOOTHROT-storage-test";
+
+try {
+    
+    localStorage.setItem(testStorageKey, "works");
+    
+    if (localStorage.getItem(testStorageKey) === "works") {
+        storageType = "local";
+    }
+}
+catch (error) {
+    // ...
+}
+
+if (!storageType) {
+    
+    try {
+        
+        sessionStorage.setItem(testStorageKey, "works");
+        
+        if (sessionStorage.getItem(testStorageKey) === "works") {
+            storageType = "session";
+        }
+    }
+    catch (error) {
+        // ...
+    }
+}
+
+if (!storageType) {
+    storageType = "memory"
+}
+
+if (storageType === "local") {
+    
+    getItem = function (name) {
+        return JSON.parse(localStorage.getItem(name) || "{}");
+    };
+    
+    setItem = function (name, value) {
+        return localStorage.setItem(name, JSON.stringify(value));
+    };
+}
+else if (storageType === "session") {
+    
+    getItem = function (name) {
+        return JSON.parse(sessionStorage.getItem(name) || "{}");
+    };
+    
+    setItem = function (name, value) {
+        return sessionStorage.setItem(name, JSON.stringify(value));
+    };
+}
+else {
+    
+    getItem = function (name) {
+        return JSON.parse(memoryStorage[name] || "{}");
+    };
+    
+    setItem = function (name, value) {
+        return memoryStorage[name] = JSON.stringify(value);
+    };
+}
+
+
 function storage (storageKey) {
     
     var none = function () {};
     
     storageKey = storageKey || "txe-savegames";
-    
-    function getItem (name) {
-        return JSON.parse(localStorage.getItem(name)) || {};
-    }
-    
-    function setItem (name, data) {
-        return localStorage.setItem(name, JSON.stringify(data));
-    }
     
     function save (name, data, then) {
         
