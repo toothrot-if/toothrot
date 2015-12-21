@@ -218,9 +218,9 @@ strong, b {
     border-radius: 5px;
     cursor: pointer;
     font-size: 1em;
-    padding: 10px;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding: 20px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     display: inline-block;
     margin-right: 5px;
     -webkit-touch-callout: none;
@@ -229,6 +229,7 @@ strong, b {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    box-shadow: 2px 2px 3px black;
 }
 
 .Action:last-child {
@@ -242,7 +243,7 @@ strong, b {
     right: 0;
     bottom: 0;
     z-index: 2000;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.8);
 }
 
 .ActionsContainer {
@@ -257,12 +258,6 @@ strong, b {
     -webkit-transform: translate(-50%, -50%);
     transform: translate(-50%, -50%);
     max-width: 700px;
-    /*
-    background: rgb(20, 20, 20);
-    border: 1px solid rgb(20, 20, 20);
-    box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.8);
-    border-radius: 5px;
-    */
     padding: 0;
 }
 
@@ -315,7 +310,6 @@ strong, b {
 }
 
 .Button, .Option, .Action, .object_link {
-    padding: 5px;
     color: rgb(240, 240, 220);
     text-shadow: 0 0 2px black;
     background: #2d2929;
@@ -342,6 +336,7 @@ strong, b {
 }
 
 .Button, .object_link {
+    padding: 5px;
     display: inline-block;
 }
 
@@ -646,6 +641,21 @@ strong, b {
 .UIButton {
     padding: 8px;
     display: inline-block;
+}
+
+
+.Notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 500px;
+    padding: 15px;
+    background: black;
+    color: rgb(240, 240, 220);
+    box-shadow: 2px 2px 3px black;
+    border: 1px solid rgb(40, 40, 40);
+    border-radius: 5px;
+    font-weight: bold;
 }
 
 

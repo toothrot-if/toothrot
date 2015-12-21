@@ -25,6 +25,7 @@
     "ncp": "^2.0.0",
     "nw-builder": "^2.1.0",
     "rimraf": "^2.4.4",
+    "transform-js": "^1.1.0-final.1512141547",
     "vrep": "^1.0.0-final.1512151612"
   },
   "repository": {

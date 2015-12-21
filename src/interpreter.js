@@ -27,6 +27,8 @@ var FOCUS_MODE_ACTIONS = "actions";
 var FOCUS_MODE_SCREEN = "screen";
 var FOCUS_MODE_MESSAGEBOX = "messagebox";
 
+var NOTIFICATION_DURATION = 3000;
+
 var MAX_SLOTS = 20;
 
 var none = function () {};
@@ -37,6 +39,7 @@ var merge = require("deepmerge");
 var format = require("vrep").format;
 var Howl = require("howler").Howl;
 var objects = require("./objects.js");
+var createNotification = require("./notifications.js").create;
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
@@ -225,6 +228,8 @@ function run (resources, _, opt) {
     var fullscreenMode = false;
     var currentSlotExists = false;
     
+    var notify = createNotification(templates.notification);
+    
     _ = _ || {};
     
     for (key in _) {
@@ -259,6 +264,8 @@ function run (resources, _, opt) {
     document.body.appendChild(highlighter);
     document.body.appendChild(container);
     document.body.appendChild(ui);
+    
+    ui.style.opacity = "0";
     
     ui.innerHTML = format(resources.templates.ui, vars);
     
@@ -297,14 +304,30 @@ function run (resources, _, opt) {
             toggleFullscreen();
         }
         else if (action === "quickSave") {
-            save("qs_" + qsSlot);
+            save("qs_" + qsSlot, function () {
+                notify("Game saved in quick save slot.", "success", NOTIFICATION_DURATION);
+            });
         }
         else if (action === "quickLoad") {
-            confirm("Load quick save slot and discard progress?", function (yes) {
-                if (yes) {
-                    clearState();
-                    load("qs_" + qsSlot);
+            hasSlot("qs_" + qsSlot, function (error, exists) {
+                
+                if (!exists) {
+                    notify("Quick save slot is empty.", "error", NOTIFICATION_DURATION);
+                    return;
                 }
+                
+                confirm("Load quick save slot and discard progress?", function (yes) {
+                    if (yes) {
+                        clearState();
+                        load("qs_" + qsSlot, function () {
+                            notify(
+                                "Game loaded from quick save slot.",
+                                "success",
+                                NOTIFICATION_DURATION
+                            );
+                        });
+                    }
+                });
             });
         }
     });
@@ -516,7 +539,9 @@ function run (resources, _, opt) {
     hasCurrentSlot(function (error, exists) {
         currentSlotExists = !error && exists;
         removeInactiveScreenElements();
-        loadSettings(runScreen.bind(undefined, "main"));
+        loadSettings(runScreen.bind(undefined, "main", function () {
+            ui.style.opacity = "1";
+        }));
     });
     
     function clearState () {
@@ -615,11 +640,12 @@ function run (resources, _, opt) {
         }
     }
     
-    function runScreen (name) {
+    function runScreen (name, then) {
         
         var screen = screens[name];
         var isSameScreen = currentScreen === name;
         
+        then = then || none;
         focusMode = FOCUS_MODE_SCREEN;
         resetHighlight();
         
@@ -671,6 +697,7 @@ function run (resources, _, opt) {
             screenContainer.innerHTML = format(screen, settings);
             
             emit("showScreen");
+            then();
         }
         
         function getDomNodeContent (dom) {
@@ -794,7 +821,11 @@ function run (resources, _, opt) {
     }
     
     function hasCurrentSlot (then) {
-        storage.load("current", function (error, data) {
+        return hasSlot("current", then);
+    }
+    
+    function hasSlot (name, then) {
+        storage.load(name, function (error, data) {
             then(error, !!data);
         });
     }
@@ -1340,7 +1371,6 @@ function run (resources, _, opt) {
             addAction(key, link.target[key], objectName);
         }
         
-        positionBelow(actionsContainer, eventTarget);
         animateActionsEntry();
         
         emit("showActions");
@@ -1952,21 +1982,6 @@ function evalScript (__story, _, $, __body, __line) {
     window.__line = __line;
     
     return eval(__body);
-}
-
-function positionBelow (element, anchorElement) {
-    
-    var rect;
-    
-    element.style.position = "absolute";
-    
-    element.style.right = "auto";
-    element.style.bottom = "auto";
-    
-    rect = anchorElement.getBoundingClientRect();
-    
-    element.style.top = (rect.bottom + rect.height + 10) + "px";
-    element.style.left = (rect.left + ((rect.right - rect.left) / 2)) + "px";
 }
 
 function getStylePropertyValue (element, property) {
