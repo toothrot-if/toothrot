@@ -6,6 +6,7 @@ var rimraf = require("rimraf");
 var normalize = require("path").normalize;
 var pack = require("./packer").pack;
 var os = require("os");
+var osenv = require("osenv");
 
 var engineFile = normalize(__dirname + "/../build/toothrot.js");
 
@@ -139,18 +140,22 @@ function buildDesktopApps (buildDir, platforms, version) {
     var NwBuilder = require("nw-builder");
     var browserDir = normalize(buildDir + "/browser/");
     var desktopDir = normalize(buildDir + "/desktop/");
+    var cacheDir = normalize(osenv.home() + "/toothrot-cache/");
     
     if (!Array.isArray(platforms) || platforms.length < 1) {
         return;
     }
     
-    console.log("dirs:", browserDir, desktopDir);
+    if (!fs.existsSync(cacheDir)) {
+        fs.mkdirSync(cacheDir);
+    }
     
     var nw = new NwBuilder({
         files: browserDir + "**",
         buildDir: desktopDir,
         platforms: platforms,
-        version: version
+        version: version,
+        cacheDir: cacheDir
     });
     
     return nw.build();
