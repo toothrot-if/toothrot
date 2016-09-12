@@ -7,3 +7,4 @@ Adds some new methods to the env ("_") object given to a node's JavaScript snipp
  * _.node() returns the node about to be displayed
  * _.addOption(label, target, value) adds a new option to the options menu of the node
  * Using next or back on nodes with options now works, too
+ * Fixed: Variables not cleared in clearState()

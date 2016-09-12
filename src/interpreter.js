@@ -543,7 +543,14 @@ function run (resources, _, opt) {
         currentNode = undefined;
         text.innerHTML = "";
         stack = [];
+        clearVars();
         emit("clearState");
+    }
+    
+    function clearVars () {
+        Object.keys(vars).forEach(function (key) {
+            delete vars[key];
+        });
     }
     
     function loadSettings (then) {
