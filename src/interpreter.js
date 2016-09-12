@@ -379,10 +379,6 @@ function run (resources, _, opt) {
                 return parent.click();
             }
             
-            if (currentNode && currentNode.options.length) {
-                return;
-            }
-            
             if (!cancelCharAnimation || !cancelCharAnimation()) {
                 next();
             }
@@ -472,11 +468,6 @@ function run (resources, _, opt) {
     
     window.addEventListener("keyup", function (event) {
         if (event.keyCode === KEY_CODE_RIGHT || event.keyCode === KEY_CODE_SPACE) {
-            
-            if (currentNode && currentNode.options.length) {
-                return;
-            }
-            
             if (!cancelCharAnimation || !cancelCharAnimation()) {
                 next();
             }
@@ -1126,7 +1117,8 @@ function run (resources, _, opt) {
                 if (copy.options.length) {
                     addOptions(text, copy);
                 }
-                else if (copy.next || copy.returnToLast) {
+                
+                if (copy.next || copy.returnToLast) {
                     text.appendChild(indicator);
                 }
             }

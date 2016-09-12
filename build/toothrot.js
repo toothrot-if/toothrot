@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v1.4.1-beta.1603051543)
-    Build time: Mon, 12 Sep 2016 14:19:30 GMT
+    Toothrot Engine (v1.5.0)
+    Build time: Mon, 12 Sep 2016 15:59:37 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5296,10 +5296,6 @@ function run (resources, _, opt) {
                 return parent.click();
             }
             
-            if (currentNode && currentNode.options.length) {
-                return;
-            }
-            
             if (!cancelCharAnimation || !cancelCharAnimation()) {
                 next();
             }
@@ -5389,11 +5385,6 @@ function run (resources, _, opt) {
     
     window.addEventListener("keyup", function (event) {
         if (event.keyCode === KEY_CODE_RIGHT || event.keyCode === KEY_CODE_SPACE) {
-            
-            if (currentNode && currentNode.options.length) {
-                return;
-            }
-            
             if (!cancelCharAnimation || !cancelCharAnimation()) {
                 next();
             }
@@ -5867,8 +5858,18 @@ function run (resources, _, opt) {
             skipTo = id;
         };
         
-        env.getNode = function () {
+        env.node = function () {
             return copy;
+        };
+        
+        env.addOption = function (label, target, value) {
+            copy.options.push({
+                type: "option",
+                value: value || "",
+                line: 0,
+                label: "" + label,
+                target: "" + (target || "")
+            });
         };
         
         copy.scripts.forEach(function (script, i) {
@@ -6033,7 +6034,8 @@ function run (resources, _, opt) {
                 if (copy.options.length) {
                     addOptions(text, copy);
                 }
-                else if (copy.next || copy.returnToLast) {
+                
+                if (copy.next || copy.returnToLast) {
                     text.appendChild(indicator);
                 }
             }
