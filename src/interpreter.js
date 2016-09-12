@@ -1292,7 +1292,13 @@ function run (resources, _, opt) {
         move(curtain).set("opacity", 0).duration(SCREEN_FADE_OUT).end(function () {
             
             curtain.style.display = "none";
-            container.removeChild(curtain);
+            
+            try {
+                container.removeChild(curtain);
+            }
+            catch (error) {
+                console.error(error);
+            }
             
             if (then) {
                 then();
@@ -1301,11 +1307,11 @@ function run (resources, _, opt) {
     }
     
     function animateSectionExit (then) {
-        move(container).set("opacity", 0).duration(SECTION_FADE_OUT).end(then);
+        showCurtain(then);
     }
     
     function animateSectionEntry (then) {
-        move(container).set("opacity", 1).duration(SECTION_FADE_IN).end(then);
+        hideCurtain(then);
     }
     
     function animateNodeExit (then) {
