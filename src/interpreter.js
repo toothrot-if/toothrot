@@ -185,7 +185,7 @@ function run (resources, _, opt) {
                 set("opacity", opacity).
                 duration(arguments.length > 1 ? duration : 800).
                 end(function () {
-                    vars["_dim"] = opacity;
+                    vars._dim = opacity;
                 });
         },
         o: function (name) {
@@ -360,7 +360,7 @@ function run (resources, _, opt) {
         }
         else if (link.getAttribute("data-type") === "option") {
             
-            vars["_choice"] = JSON.parse(window.atob(link.getAttribute("data-value")));
+            vars._choice = JSON.parse(window.atob(link.getAttribute("data-value")));
             
             if (link.getAttribute("data-target")) {
                 runNode(nodes[link.getAttribute("data-target")]);
@@ -432,7 +432,7 @@ function run (resources, _, opt) {
                     if (yes) {
                         exit();
                     }
-                })
+                });
             }
             else if (target === "back") {
                 returnToLastScreen();
@@ -552,7 +552,7 @@ function run (resources, _, opt) {
         currentNode = undefined;
         text.innerHTML = "";
         stack = [];
-        emit("clearState")
+        emit("clearState");
     }
     
     function loadSettings (then) {
@@ -631,8 +631,8 @@ function run (resources, _, opt) {
         stack = data.stack;
         vars = data.vars;
         
-        if (typeof vars["_dim"] === "number") {
-            env.dim(vars["_dim"], 0);
+        if (typeof vars._dim === "number") {
+            env.dim(vars._dim, 0);
         }
         
         if (vars._currentSound) {
@@ -948,6 +948,20 @@ function run (resources, _, opt) {
         
         env.skipTo = function (id) {
             skipTo = id;
+        };
+        
+        env.node = function () {
+            return copy;
+        };
+        
+        env.addOption = function (label, target, value) {
+            copy.options.push({
+                type: "option",
+                value: value || "",
+                line: 0,
+                label: "" + label,
+                target: "" + (target || "")
+            });
         };
         
         copy.scripts.forEach(function (script, i) {
@@ -1312,7 +1326,7 @@ function run (resources, _, opt) {
     function animateActionsExit (then) {
         move(actionsParent).set("opacity", 0).duration(NODE_FADE_OUT).end(function () {
             
-            focusMode === FOCUS_MODE_NODE;
+            focusMode = FOCUS_MODE_NODE;
             container.removeChild(actionsParent);
             clearActions();
             
@@ -1347,7 +1361,7 @@ function run (resources, _, opt) {
             screenContainer.style.display = "none";
             screenContainer.innerHTML = "";
             
-            emit("screenExit")
+            emit("screenExit");
             
             hideCurtain(then);
         });
@@ -1423,7 +1437,7 @@ function run (resources, _, opt) {
         container.appendChild(optionsParent);
     }
     
-    function addOption (opt, node) {
+    function addOption (opt) {
         
         var option = document.createElement("span");
         
@@ -1490,13 +1504,13 @@ function run (resources, _, opt) {
                         "' in node '" + node.id + "' (line " + node.line + ").");
                 }
                 
-                vars["_choice"] = options[node.defaultOption].value;
+                vars._choice = options[node.defaultOption].value;
                 
                 runNode(nodes[options[node.defaultOption].target]);
             }
             else if (options.length) {
                 
-                vars["_choice"] = options[0].value;
+                vars._choice = options[0].value;
                 
                 runNode(nodes[options[0].target]);
             }
@@ -2005,7 +2019,7 @@ function run (resources, _, opt) {
     
     function removeContinueButton () {
         
-        var buttons
+        var buttons;
         
         if (currentSlotExists) {
             return;

@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.4.1-beta.1603051543)
-    Build time: Sat, 05 Mar 2016 14:43:51 GMT
+    Build time: Mon, 12 Sep 2016 14:19:30 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5102,7 +5102,7 @@ function run (resources, _, opt) {
                 set("opacity", opacity).
                 duration(arguments.length > 1 ? duration : 800).
                 end(function () {
-                    vars["_dim"] = opacity;
+                    vars._dim = opacity;
                 });
         },
         o: function (name) {
@@ -5277,7 +5277,7 @@ function run (resources, _, opt) {
         }
         else if (link.getAttribute("data-type") === "option") {
             
-            vars["_choice"] = JSON.parse(window.atob(link.getAttribute("data-value")));
+            vars._choice = JSON.parse(window.atob(link.getAttribute("data-value")));
             
             if (link.getAttribute("data-target")) {
                 runNode(nodes[link.getAttribute("data-target")]);
@@ -5349,7 +5349,7 @@ function run (resources, _, opt) {
                     if (yes) {
                         exit();
                     }
-                })
+                });
             }
             else if (target === "back") {
                 returnToLastScreen();
@@ -5469,7 +5469,7 @@ function run (resources, _, opt) {
         currentNode = undefined;
         text.innerHTML = "";
         stack = [];
-        emit("clearState")
+        emit("clearState");
     }
     
     function loadSettings (then) {
@@ -5548,8 +5548,8 @@ function run (resources, _, opt) {
         stack = data.stack;
         vars = data.vars;
         
-        if (typeof vars["_dim"] === "number") {
-            env.dim(vars["_dim"], 0);
+        if (typeof vars._dim === "number") {
+            env.dim(vars._dim, 0);
         }
         
         if (vars._currentSound) {
@@ -5865,6 +5865,10 @@ function run (resources, _, opt) {
         
         env.skipTo = function (id) {
             skipTo = id;
+        };
+        
+        env.getNode = function () {
+            return copy;
         };
         
         copy.scripts.forEach(function (script, i) {
@@ -6229,7 +6233,7 @@ function run (resources, _, opt) {
     function animateActionsExit (then) {
         move(actionsParent).set("opacity", 0).duration(NODE_FADE_OUT).end(function () {
             
-            focusMode === FOCUS_MODE_NODE;
+            focusMode = FOCUS_MODE_NODE;
             container.removeChild(actionsParent);
             clearActions();
             
@@ -6264,7 +6268,7 @@ function run (resources, _, opt) {
             screenContainer.style.display = "none";
             screenContainer.innerHTML = "";
             
-            emit("screenExit")
+            emit("screenExit");
             
             hideCurtain(then);
         });
@@ -6340,7 +6344,7 @@ function run (resources, _, opt) {
         container.appendChild(optionsParent);
     }
     
-    function addOption (opt, node) {
+    function addOption (opt) {
         
         var option = document.createElement("span");
         
@@ -6407,13 +6411,13 @@ function run (resources, _, opt) {
                         "' in node '" + node.id + "' (line " + node.line + ").");
                 }
                 
-                vars["_choice"] = options[node.defaultOption].value;
+                vars._choice = options[node.defaultOption].value;
                 
                 runNode(nodes[options[node.defaultOption].target]);
             }
             else if (options.length) {
                 
-                vars["_choice"] = options[0].value;
+                vars._choice = options[0].value;
                 
                 runNode(nodes[options[0].target]);
             }
@@ -6922,7 +6926,7 @@ function run (resources, _, opt) {
     
     function removeContinueButton () {
         
-        var buttons
+        var buttons;
         
         if (currentSlotExists) {
             return;
