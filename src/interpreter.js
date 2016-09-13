@@ -543,6 +543,7 @@ function run (resources, _, opt) {
         currentNode = undefined;
         text.innerHTML = "";
         stack = [];
+        container.setAttribute("data-section", nodes.start.section);
         clearVars();
         emit("clearState");
     }
