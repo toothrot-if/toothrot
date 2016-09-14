@@ -7,6 +7,7 @@ var normalize = require("path").normalize;
 var pack = require("./packer").pack;
 var os = require("os");
 var osenv = require("osenv");
+var recurse = require('recursive-readdir');
 
 var engineFile = normalize(__dirname + "/../build/toothrot.js");
 
@@ -104,6 +105,8 @@ function build (dir, outputDir, buildDesktop, then) {
                 
                 console.log("Toothrot Engine project built successfully in: " + browserDir);
                 
+                createAppCacheFile(browserDir);
+                
                 if (
                     buildDesktop &&
                     Array.isArray(project.platforms) &&
@@ -160,6 +163,37 @@ function buildDesktopApps (buildDir, platforms, version) {
     
     return nw.build();
     
+}
+
+function createAppCacheFile (dir) {
+    
+    var cacheFile = "" +
+        "CACHE MANIFEST\n" +
+        "# Timestamp: " + Date.now() + "\n" +
+        "# Automatically created by Toothrot Engine\n" +
+        "\n" +
+        "CACHE:\n";
+    
+    var cacheFilePath = normalize(dir + "/toothrot.appcache");
+    
+    recurse(dir, function (error, files) {
+        
+        if (error) {
+            return console.error(error);
+        }
+        
+        files.forEach(function (file) {
+            cacheFile += normalizePath(file) + "\n";
+        });
+        
+        fs.writeFileSync(cacheFilePath, cacheFile);
+        
+        console.log("Created appcache file at: " + cacheFilePath);
+    });
+    
+    function normalizePath (path) {
+        return (path.split(dir)[1] || "").replace("\\", "/");
+    }
 }
 
 module.exports.build = build;

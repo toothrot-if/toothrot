@@ -1,9 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html manifest="toothrot.appcache">
     <head>
         <title>Toothrot Engine</title>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
+        <!-- For "add to homescreen" feature on mobile: -->
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+        
+        <!-- Disable scaling on mobile: -->
+        <meta name="viewport" content="width=device-width" />
+        <meta name="viewport" content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, height=device-height, width=device-width" />
+        
         <link rel="stylesheet" type="text/css" href="style/default.css" />
     </head>
     <body>
