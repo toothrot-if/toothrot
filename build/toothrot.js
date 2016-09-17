@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.5.0)
-    Build time: Sat, 17 Sep 2016 11:13:16 GMT
+    Build time: Sat, 17 Sep 2016 20:08:37 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5383,6 +5383,12 @@ function run (resources, _, opt) {
         }, then);
     }
     
+    window.addEventListener("keydown", function (event) {
+        if (event.keyCode === KEY_CODE_UP || event.keyCode === KEY_CODE_DOWN) {
+            event.preventDefault();
+        }
+    });
+    
     window.addEventListener("keyup", function (event) {
         if (event.keyCode === KEY_CODE_RIGHT || event.keyCode === KEY_CODE_SPACE) {
             if (!cancelCharAnimation || !cancelCharAnimation()) {
@@ -6490,11 +6496,56 @@ function run (resources, _, opt) {
         return html;
     }
     
+    function getScrollX () {
+        return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
+    }
+    
+    function getScrollY () {
+        return (window.pageYOffset || document.scrollTop || 0) - (document.clientTop || 0);
+    }
+    
+    function scrollToElement (element) {
+        
+        if (isElementInView(element)) {
+            return;
+        }
+        
+        try {
+            element.scrollIntoView();
+        }
+        catch (error) {
+            console.error(error);
+        }
+    }
+    
+    function isElementInView (element) {
+        
+        var rect = getAbsoluteRect(element);
+        var scrollX = getScrollX();
+        var scrollY = getScrollY();
+        var xInView = (scrollX <= rect.left) && (rect.left <= (scrollX + window.innerWidth));
+        var yInView = (scrollY <= rect.top) && (rect.top <= (scrollY + window.innerHeight));
+        
+        return (xInView && yInView);
+    }
+    
+    function getAbsoluteRect (element) {
+        
+        var rect = element.getBoundingClientRect();
+        
+        return {
+            left: rect.left + getScrollX(),
+            top: rect.top + getScrollY(),
+            width: rect.width,
+            height: rect.height
+        };
+    }
+    
     function highlight (element) {
         
         var left, top, width, height;
         var padding = 1;
-        var targetRect = element.getBoundingClientRect();
+        var targetRect = getAbsoluteRect(element);
         
         highlightCurrent = highlight.bind(undefined, element);
         
@@ -6514,6 +6565,10 @@ function run (resources, _, opt) {
             duration(200).
             ease("out").
             end();
+        
+        setTimeout(function () {
+            scrollToElement(element);
+        }, 10);
     }
     
     function resetHighlight () {

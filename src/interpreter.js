@@ -466,6 +466,12 @@ function run (resources, _, opt) {
         }, then);
     }
     
+    window.addEventListener("keydown", function (event) {
+        if (event.keyCode === KEY_CODE_UP || event.keyCode === KEY_CODE_DOWN) {
+            event.preventDefault();
+        }
+    });
+    
     window.addEventListener("keyup", function (event) {
         if (event.keyCode === KEY_CODE_RIGHT || event.keyCode === KEY_CODE_SPACE) {
             if (!cancelCharAnimation || !cancelCharAnimation()) {
@@ -1573,11 +1579,56 @@ function run (resources, _, opt) {
         return html;
     }
     
+    function getScrollX () {
+        return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
+    }
+    
+    function getScrollY () {
+        return (window.pageYOffset || document.scrollTop || 0) - (document.clientTop || 0);
+    }
+    
+    function scrollToElement (element) {
+        
+        if (isElementInView(element)) {
+            return;
+        }
+        
+        try {
+            element.scrollIntoView();
+        }
+        catch (error) {
+            console.error(error);
+        }
+    }
+    
+    function isElementInView (element) {
+        
+        var rect = getAbsoluteRect(element);
+        var scrollX = getScrollX();
+        var scrollY = getScrollY();
+        var xInView = (scrollX <= rect.left) && (rect.left <= (scrollX + window.innerWidth));
+        var yInView = (scrollY <= rect.top) && (rect.top <= (scrollY + window.innerHeight));
+        
+        return (xInView && yInView);
+    }
+    
+    function getAbsoluteRect (element) {
+        
+        var rect = element.getBoundingClientRect();
+        
+        return {
+            left: rect.left + getScrollX(),
+            top: rect.top + getScrollY(),
+            width: rect.width,
+            height: rect.height
+        };
+    }
+    
     function highlight (element) {
         
         var left, top, width, height;
         var padding = 1;
-        var targetRect = element.getBoundingClientRect();
+        var targetRect = getAbsoluteRect(element);
         
         highlightCurrent = highlight.bind(undefined, element);
         
@@ -1597,6 +1648,10 @@ function run (resources, _, opt) {
             duration(200).
             ease("out").
             end();
+        
+        setTimeout(function () {
+            scrollToElement(element);
+        }, 10);
     }
     
     function resetHighlight () {

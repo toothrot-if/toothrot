@@ -18,3 +18,5 @@ And improves some things and fixes some bugs:
  * Fixed: Variables not cleared in clearState()
  * Show curtain when the section changes
  * Disable zoom on mobile devices
+ * Builder now puts out colored messages on console
+ * Keyboard highlighter now works for scrolled content
