@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.5.0)
-    Build time: Sat, 17 Sep 2016 20:08:37 GMT
+    Build time: Sat, 17 Sep 2016 20:58:27 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -1770,6 +1770,444 @@ module.exports = Array.isArray || function (arr) {
 };
 
 },{}],5:[function(require,module,exports){
+//
+// # class-manipulator
+//
+// A chainable wrapper API for manipulating a DOM Element's classes or class strings.
+//
+
+/* global module */
+
+//
+// ## Public API
+//
+
+//
+// **list(element) / list(classString)**
+//
+// Creates a chainable API for manipulating an element's list of classes. No changes
+// are made to the DOM Element unless `.apply()` is called.
+//
+//     DOMElement|string -> object
+//
+
+function list (element) {
+    
+    element = typeof element === "object" ? element : dummy(element);
+    
+    var classes = parse(element), controls;
+    
+//
+// **.apply()**
+//
+// Applies class list to the source element.
+//
+//     void -> object
+//
+    
+    function apply () {
+        element.setAttribute("class", toString());
+        return controls;
+    }
+    
+//
+// **.add(name)**
+//
+// Adds a class to the element's list of class names.
+//
+//     string -> object
+//
+    
+    function add (name) {
+        
+        if (hasSpaces(name)) {
+            return addMany(classStringToArray(name));
+        }
+        
+        if (!has(name)) {
+            classes.push(name);
+        }
+        
+        return controls;
+    }
+    
+//
+// **.addMany(names)**
+//
+// Adds many classes to the list at once.
+//
+//     [string] -> object
+//
+    
+    function addMany (newClasses) {
+        
+        if (!Array.isArray(newClasses)) {
+            return add(newClasses);
+        }
+        
+        newClasses.forEach(add);
+        
+        return controls;
+    }
+    
+//
+// **.has(name)**
+//
+// Checks whether a class is in the element's list of class names.
+//
+//     string -> boolean
+//
+    
+    function has (name) {
+        
+        if (hasSpaces(name)) {
+            return hasAll(name);
+        }
+        
+        return classes.indexOf(name) >= 0;
+    }
+    
+//
+// **.hasSome(names)**
+//
+// Checks whether the list contains at least one of the supplied classes.
+//
+//     [string] -> boolean
+//
+    
+    function hasSome (names) {
+        return Array.isArray(names) ?
+            names.some(has) :
+            hasSome(classStringToArray(names));
+    }
+    
+//
+// **.hasAll(names)**
+//
+// Checks whether the list contains all of the supplied classes.
+//
+//     [string] -> boolean
+//
+    
+    function hasAll (names) {
+        return Array.isArray(names) ?
+            names.every(has) :
+            hasAll(classStringToArray(names));
+    }
+    
+//
+// **.remove(name)**
+//
+// Removes a class from the element's list of class names.
+//
+//     string -> object
+//
+    
+    function remove (name) {
+        
+        if (hasSpaces(name)) {
+            return removeMany(classStringToArray(name));
+        }
+        
+        if (has(name)) {
+            classes.splice(classes.indexOf(name), 1);
+        }
+        
+        return controls;
+    }
+    
+//
+// **.removeMany(names)**
+//
+// Removes many classes from the list at once.
+//
+//     [string] -> object
+//
+    
+    function removeMany (toRemove) {
+        
+        if (!Array.isArray(toRemove)) {
+            return remove(toRemove);
+        }
+        
+        toRemove.forEach(remove);
+        
+        return controls;
+    }
+    
+//
+// **.toggle(name)**
+//
+// Removes a class from the class list when it's present or adds it to the list when it's not.
+//
+//     string -> object
+//
+    
+    function toggle (name) {
+        
+        if (hasSpaces(name)) {
+            return toggleMany(classStringToArray(name));
+        }
+        
+        return (has(name) ? remove(name) : add(name));
+    }
+    
+//
+// **.toggleMany(names)**
+//
+// Toggles many classes at once.
+//
+//     [string] -> object
+//
+    
+    function toggleMany (names) {
+        
+        if (Array.isArray(names)) {
+            names.forEach(toggle);
+            return controls;
+        }
+        
+        return toggleMany(classStringToArray(names));
+    }
+    
+//
+// **.toArray()**
+//
+// Creates an array containing all of the list's class names.
+//
+//     void -> [string]
+//
+    
+    function toArray () {
+        return classes.slice();
+    }
+    
+//
+// **.toString()**
+//
+// Returns a string containing all the classes in the list separated by a space character.
+//
+    
+    function toString () {
+        return classes.join(" ");
+    }
+    
+//
+// **.copyTo(otherElement)**
+//
+// Creates a new empty list for another element and copies the source element's class list to it.
+//
+//     DOM Element -> object
+//
+    
+    function copyTo (otherElement) {
+        return list(otherElement).clear().addMany(classes);
+    }
+    
+//
+// **.clear()**
+//
+// Removes all classes from the list.
+//
+//     void -> object
+//
+    
+    function clear () {
+        classes.length = 0;
+        return controls;
+    }
+    
+//
+// **.filter(fn)**
+//
+// Removes those class names from the list that fail a predicate test function.
+//
+//     (string -> number -> object -> boolean) -> object
+//
+    
+    function filter (fn) {
+        
+        classes.forEach(function (name, i) {
+            if (!fn(name, i, controls)) {
+                remove(name);
+            }
+        });
+        
+        return controls;
+    }
+    
+//
+// **.sort([fn])**
+//
+// Sorts the names in place. A custom sort function can be applied optionally. It must have
+// the same signature as JS Array.prototype.sort() callbacks.
+//
+//     void|function -> object
+//
+    
+    function sort (fn) {
+        classes.sort(fn);
+        return controls;
+    }
+    
+//
+// **.size()**
+//
+// Returns the number of classes in the list.
+//
+//     void -> number
+//
+    
+    function size () {
+        return classes.length;
+    }
+    
+    controls = {
+        add: add,
+        addMany: addMany,
+        has: has,
+        hasSome: hasSome,
+        hasAll: hasAll,
+        remove: remove,
+        removeMany: removeMany,
+        toggle: toggle,
+        toggleMany: toggleMany,
+        apply: apply,
+        clear: clear,
+        copyTo: copyTo,
+        toArray: toArray,
+        toString: toString,
+        filter: filter,
+        sort: sort,
+        size: size
+    };
+    
+    return controls;
+}
+
+//
+// **add(element, name)**
+//
+// Adds a class to a DOM Element.
+//
+//    DOM Element -> string -> object
+//
+
+function add (element, name) {
+    return list(element).add(name).apply();
+}
+
+//
+// **remove(element, name)**
+//
+// Removes a class from a DOM Element.
+//
+//     DOM Element -> string -> object
+//
+
+function remove (element, name) {
+    return list(element).remove(name).apply();
+}
+
+//
+// **toggle(element, name)**
+//
+// Removes a class from a DOM Element when it has the class or adds it when the element doesn't
+// have it.
+//
+//     DOMElement -> string -> object
+//
+
+function toggle (element, name) {
+    return list(element).toggle(name).apply();
+}
+
+//
+// **has(element, name)**
+//
+// Checks whether a DOM Element has a class.
+//
+//     DOMElement -> string -> boolean
+//
+
+function has (element, name) {
+    return list(element).has(name);
+}
+
+//
+// ## Exported functions
+//
+
+module.exports = {
+    add: add,
+    remove: remove,
+    toggle: toggle,
+    has: has,
+    list: list
+};
+
+
+//
+// ## Private functions
+//
+
+//
+// Extracts the class names from a DOM Element and returns them in an array.
+//
+//     DOMElement -> [string]
+//
+
+function parse (element) {
+    return classStringToArray(element.getAttribute("class") || "");
+}
+
+//
+//     string -> [string]
+//
+
+function classStringToArray (classString) {
+    return ("" + classString).replace(/\s+/, " ").trim().split(" ").filter(stringNotEmpty);
+}
+
+//
+//     string -> boolean
+//
+
+function stringNotEmpty (str) {
+    return str !== "";
+}
+
+//
+//     string -> boolean
+//
+
+function hasSpaces (str) {
+    return !!str.match(/\s/);
+}
+
+//
+// Creates a dummy DOMElement for when we don't have an actual one for a list.
+//
+//     string -> object
+//
+
+function dummy (classList) {
+    
+    if (typeof classList !== "string") {
+        throw new Error("Function list() expects an object or string as its argument.");
+    }
+    
+    var attributes = {
+        "class": "" + classStringToArray(classList).join(" ")
+    };
+    
+    return {
+        setAttribute: function (name, value) { attributes[name] = value; },
+        getAttribute: function (name) { return attributes[name]; }
+    };
+}
+
+},{}],6:[function(require,module,exports){
 (function (Buffer){
 var clone = (function() {
 'use strict';
@@ -1933,7 +2371,7 @@ if (typeof module === 'object' && module.exports) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":1}],6:[function(require,module,exports){
+},{"buffer":1}],7:[function(require,module,exports){
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
         define(factory);
@@ -1987,7 +2425,7 @@ return function deepmerge(target, src) {
 
 }));
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /*!
  *  howler.js v1.1.28
  *  howlerjs.com
@@ -3342,7 +3780,7 @@ return function deepmerge(target, src) {
 
 })();
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 // Patch IE9 and below
 try {
   document.createElement('DIV').style.setProperty('opacity', 0, '');
@@ -3942,7 +4380,7 @@ function fixUnits(val) {
   return 'string' === typeof val && isNaN(+val) ? val : val + 'px';
 }
 
-},{"after-transition":9,"component-emitter":13,"component-query":14,"css-ease":15,"has-translate3d":16}],9:[function(require,module,exports){
+},{"after-transition":10,"component-emitter":14,"component-query":15,"css-ease":16,"has-translate3d":17}],10:[function(require,module,exports){
 var hasTransitions = require('has-transitions');
 var emitter = require('css-emitter');
 
@@ -3961,7 +4399,7 @@ afterTransition.once = function(el, callback) {
 };
 
 module.exports = afterTransition;
-},{"css-emitter":10,"has-transitions":12}],10:[function(require,module,exports){
+},{"css-emitter":11,"has-transitions":13}],11:[function(require,module,exports){
 /**
  * Module Dependencies
  */
@@ -4040,7 +4478,7 @@ CssEmitter.prototype.once = function(fn){
 };
 
 
-},{"event":11}],11:[function(require,module,exports){
+},{"event":12}],12:[function(require,module,exports){
 
 /**
  * Bind `el` event `type` to `fn`.
@@ -4082,7 +4520,7 @@ exports.unbind = function(el, type, fn, capture){
   return fn;
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /**
  * This will store the property that the current
  * browser uses for transitionDuration
@@ -4131,7 +4569,7 @@ function hasTransitions(el){
 }
 
 module.exports = hasTransitions;
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -4294,7 +4732,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 function one(selector, el) {
   return el.querySelector(selector);
 }
@@ -4317,7 +4755,7 @@ exports.engine = function(obj){
   return exports;
 };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 
 /**
  * CSS Easing functions
@@ -4355,7 +4793,7 @@ module.exports = {
   , 'ease-in-out-back':  'cubic-bezier(0.680, -0.550, 0.265, 1.550)'
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 
 var prop = require('transform-property');
 
@@ -4381,7 +4819,7 @@ if (!prop || !window.getComputedStyle) {
   module.exports = null != val && val.length && 'none' != val;
 }
 
-},{"transform-property":17}],17:[function(require,module,exports){
+},{"transform-property":18}],18:[function(require,module,exports){
 
 var styles = [
   'webkitTransform',
@@ -4402,7 +4840,7 @@ for (var i = 0; i < styles.length; i++) {
   }
 }
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /* global requestAnimationFrame */
 
 var eases = require("eases");
@@ -4597,7 +5035,7 @@ module.exports = {
     transform: transform
 };
 
-},{"eases":37}],19:[function(require,module,exports){
+},{"eases":38}],20:[function(require,module,exports){
 function backInOut(t) {
   var s = 1.70158 * 1.525
   if ((t *= 2) < 1)
@@ -4606,21 +5044,21 @@ function backInOut(t) {
 }
 
 module.exports = backInOut
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 function backIn(t) {
   var s = 1.70158
   return t * t * ((s + 1) * t - s)
 }
 
 module.exports = backIn
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 function backOut(t) {
   var s = 1.70158
   return --t * t * ((s + 1) * t + s) + 1
 }
 
 module.exports = backOut
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var bounceOut = require('./bounce-out')
 
 function bounceInOut(t) {
@@ -4630,7 +5068,7 @@ function bounceInOut(t) {
 }
 
 module.exports = bounceInOut
-},{"./bounce-out":24}],23:[function(require,module,exports){
+},{"./bounce-out":25}],24:[function(require,module,exports){
 var bounceOut = require('./bounce-out')
 
 function bounceIn(t) {
@@ -4638,7 +5076,7 @@ function bounceIn(t) {
 }
 
 module.exports = bounceIn
-},{"./bounce-out":24}],24:[function(require,module,exports){
+},{"./bounce-out":25}],25:[function(require,module,exports){
 function bounceOut(t) {
   var a = 4.0 / 11.0
   var b = 8.0 / 11.0
@@ -4660,26 +5098,26 @@ function bounceOut(t) {
 }
 
 module.exports = bounceOut
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 function circInOut(t) {
   if ((t *= 2) < 1) return -0.5 * (Math.sqrt(1 - t * t) - 1)
   return 0.5 * (Math.sqrt(1 - (t -= 2) * t) + 1)
 }
 
 module.exports = circInOut
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 function circIn(t) {
   return 1.0 - Math.sqrt(1.0 - t * t)
 }
 
 module.exports = circIn
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 function circOut(t) {
   return Math.sqrt(1 - ( --t * t ))
 }
 
 module.exports = circOut
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 function cubicInOut(t) {
   return t < 0.5
     ? 4.0 * t * t * t
@@ -4687,20 +5125,20 @@ function cubicInOut(t) {
 }
 
 module.exports = cubicInOut
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 function cubicIn(t) {
   return t * t * t
 }
 
 module.exports = cubicIn
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 function cubicOut(t) {
   var f = t - 1.0
   return f * f * f + 1.0
 }
 
 module.exports = cubicOut
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 function elasticInOut(t) {
   return t < 0.5
     ? 0.5 * Math.sin(+13.0 * Math.PI/2 * 2.0 * t) * Math.pow(2.0, 10.0 * (2.0 * t - 1.0))
@@ -4708,19 +5146,19 @@ function elasticInOut(t) {
 }
 
 module.exports = elasticInOut
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 function elasticIn(t) {
   return Math.sin(13.0 * t * Math.PI/2) * Math.pow(2.0, 10.0 * (t - 1.0))
 }
 
 module.exports = elasticIn
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 function elasticOut(t) {
   return Math.sin(-13.0 * (t + 1.0) * Math.PI/2) * Math.pow(2.0, -10.0 * t) + 1.0
 }
 
 module.exports = elasticOut
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 function expoInOut(t) {
   return (t === 0.0 || t === 1.0)
     ? t
@@ -4730,19 +5168,19 @@ function expoInOut(t) {
 }
 
 module.exports = expoInOut
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 function expoIn(t) {
   return t === 0.0 ? t : Math.pow(2.0, 10.0 * (t - 1.0))
 }
 
 module.exports = expoIn
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 function expoOut(t) {
   return t === 1.0 ? t : 1.0 - Math.pow(2.0, -10.0 * t)
 }
 
 module.exports = expoOut
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 module.exports = {
 	'backInOut': require('./back-in-out'),
 	'backIn': require('./back-in'),
@@ -4776,13 +5214,13 @@ module.exports = {
 	'sineIn': require('./sine-in'),
 	'sineOut': require('./sine-out')
 }
-},{"./back-in":20,"./back-in-out":19,"./back-out":21,"./bounce-in":23,"./bounce-in-out":22,"./bounce-out":24,"./circ-in":26,"./circ-in-out":25,"./circ-out":27,"./cubic-in":29,"./cubic-in-out":28,"./cubic-out":30,"./elastic-in":32,"./elastic-in-out":31,"./elastic-out":33,"./expo-in":35,"./expo-in-out":34,"./expo-out":36,"./linear":38,"./quad-in":40,"./quad-in-out":39,"./quad-out":41,"./quart-in":43,"./quart-in-out":42,"./quart-out":44,"./quint-in":46,"./quint-in-out":45,"./quint-out":47,"./sine-in":49,"./sine-in-out":48,"./sine-out":50}],38:[function(require,module,exports){
+},{"./back-in":21,"./back-in-out":20,"./back-out":22,"./bounce-in":24,"./bounce-in-out":23,"./bounce-out":25,"./circ-in":27,"./circ-in-out":26,"./circ-out":28,"./cubic-in":30,"./cubic-in-out":29,"./cubic-out":31,"./elastic-in":33,"./elastic-in-out":32,"./elastic-out":34,"./expo-in":36,"./expo-in-out":35,"./expo-out":37,"./linear":39,"./quad-in":41,"./quad-in-out":40,"./quad-out":42,"./quart-in":44,"./quart-in-out":43,"./quart-out":45,"./quint-in":47,"./quint-in-out":46,"./quint-out":48,"./sine-in":50,"./sine-in-out":49,"./sine-out":51}],39:[function(require,module,exports){
 function linear(t) {
   return t
 }
 
 module.exports = linear
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 function quadInOut(t) {
     t /= 0.5
     if (t < 1) return 0.5*t*t
@@ -4791,19 +5229,19 @@ function quadInOut(t) {
 }
 
 module.exports = quadInOut
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 function quadIn(t) {
   return t * t
 }
 
 module.exports = quadIn
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 function quadOut(t) {
   return -t * (t - 2.0)
 }
 
 module.exports = quadOut
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 function quarticInOut(t) {
   return t < 0.5
     ? +8.0 * Math.pow(t, 4.0)
@@ -4811,44 +5249,44 @@ function quarticInOut(t) {
 }
 
 module.exports = quarticInOut
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 function quarticIn(t) {
   return Math.pow(t, 4.0)
 }
 
 module.exports = quarticIn
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 function quarticOut(t) {
   return Math.pow(t - 1.0, 3.0) * (1.0 - t) + 1.0
 }
 
 module.exports = quarticOut
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 function qinticInOut(t) {
     if ( ( t *= 2 ) < 1 ) return 0.5 * t * t * t * t * t
     return 0.5 * ( ( t -= 2 ) * t * t * t * t + 2 )
 }
 
 module.exports = qinticInOut
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 function qinticIn(t) {
   return t * t * t * t * t
 }
 
 module.exports = qinticIn
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 function qinticOut(t) {
   return --t * t * t * t * t + 1
 }
 
 module.exports = qinticOut
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 function sineInOut(t) {
   return -0.5 * (Math.cos(Math.PI*t) - 1)
 }
 
 module.exports = sineInOut
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 function sineIn (t) {
   var v = Math.cos(t * Math.PI * 0.5)
   if (Math.abs(v) < 1e-14) return 1
@@ -4857,13 +5295,13 @@ function sineIn (t) {
 
 module.exports = sineIn
 
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 function sineOut(t) {
   return Math.sin(t * Math.PI/2)
 }
 
 module.exports = sineOut
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 /* global module */
 
 (function () {
@@ -4909,12 +5347,12 @@ module.exports = sineOut
     
 }());
 
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 /* global require */
 
 window.TOOTHROT = require("./interpreter.js");
 
-},{"./interpreter.js":53}],53:[function(require,module,exports){
+},{"./interpreter.js":54}],54:[function(require,module,exports){
 /* global __line, setInterval, clearInterval */
 
 var KEY_CODE_ENTER = 13;
@@ -4955,6 +5393,8 @@ var clone = require("clone");
 var merge = require("deepmerge");
 var format = require("vrep").format;
 var Howl = require("howler").Howl;
+var classList = require("class-manipulator").list;
+
 var objects = require("./objects.js");
 var createNotification = require("./notifications.js").create;
 
@@ -5996,6 +6436,18 @@ function run (resources, _, opt) {
             
             text.innerHTML = content;
             
+            setTimeout(function () {
+                
+                var className = "fitsInWindow";
+                
+                if (fitsInWindow(text)) {
+                    classList(text).add(className).apply();
+                }
+                else {
+                    classList(text).remove(className).apply();
+                }
+            }, 50);
+            
             if (copy.audio === false) {
                 stopAudio();
             }
@@ -6527,6 +6979,13 @@ function run (resources, _, opt) {
         var yInView = (scrollY <= rect.top) && (rect.top <= (scrollY + window.innerHeight));
         
         return (xInView && yInView);
+    }
+    
+    function fitsInWindow (element) {
+        
+        var rect = element.getBoundingClientRect();
+        
+        return ((rect.width < window.innerWidth) && (rect.height < window.innerHeight));
     }
     
     function getAbsoluteRect (element) {
@@ -7074,7 +7533,7 @@ module.exports = {
 };
 
 
-},{"./notifications.js":54,"./objects.js":55,"./storage.js":56,"clone":5,"deepmerge":6,"howler":7,"move-js":8,"vrep":51}],54:[function(require,module,exports){
+},{"./notifications.js":55,"./objects.js":56,"./storage.js":57,"class-manipulator":5,"clone":6,"deepmerge":7,"howler":8,"move-js":9,"vrep":52}],55:[function(require,module,exports){
 /* global require, module, setTimeout */
 
 var format = require("vrep").format;
@@ -7155,7 +7614,7 @@ module.exports = {
     create: create
 };
 
-},{"transform-js":18,"vrep":51}],55:[function(require,module,exports){
+},{"transform-js":19,"vrep":52}],56:[function(require,module,exports){
 /* global require, module */
 
 var format = require("vrep").format;
@@ -7292,7 +7751,7 @@ module.exports = {
     find: find
 };
 
-},{"deepmerge":6,"vrep":51}],56:[function(require,module,exports){
+},{"deepmerge":7,"vrep":52}],57:[function(require,module,exports){
 /* global using */
 
 //
@@ -7489,4 +7948,4 @@ function storage (storageKey) {
 
 module.exports = storage;
 
-},{}]},{},[52]);
+},{}]},{},[53]);

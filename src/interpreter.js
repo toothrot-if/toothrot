@@ -38,6 +38,8 @@ var clone = require("clone");
 var merge = require("deepmerge");
 var format = require("vrep").format;
 var Howl = require("howler").Howl;
+var classList = require("class-manipulator").list;
+
 var objects = require("./objects.js");
 var createNotification = require("./notifications.js").create;
 
@@ -1079,6 +1081,18 @@ function run (resources, _, opt) {
             
             text.innerHTML = content;
             
+            setTimeout(function () {
+                
+                var className = "fitsInWindow";
+                
+                if (fitsInWindow(text)) {
+                    classList(text).add(className).apply();
+                }
+                else {
+                    classList(text).remove(className).apply();
+                }
+            }, 50);
+            
             if (copy.audio === false) {
                 stopAudio();
             }
@@ -1610,6 +1624,13 @@ function run (resources, _, opt) {
         var yInView = (scrollY <= rect.top) && (rect.top <= (scrollY + window.innerHeight));
         
         return (xInView && yInView);
+    }
+    
+    function fitsInWindow (element) {
+        
+        var rect = element.getBoundingClientRect();
+        
+        return ((rect.width < window.innerWidth) && (rect.height < window.innerHeight));
     }
     
     function getAbsoluteRect (element) {
