@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.5.0)
-    Build time: Sat, 17 Sep 2016 21:36:25 GMT
+    Build time: Sat, 17 Sep 2016 23:07:10 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5394,6 +5394,7 @@ var merge = require("deepmerge");
 var format = require("vrep").format;
 var Howl = require("howler").Howl;
 var classList = require("class-manipulator").list;
+var transform = require("transform-js").transform;
 
 var objects = require("./objects.js");
 var createNotification = require("./notifications.js").create;
@@ -6375,8 +6376,8 @@ function run (resources, _, opt) {
         
         function animateSectionTransition () {
             animateNodeExit(function () {
+                // window.scrollTo(0, 0);
                 animateSectionExit(function () {
-                    window.scrollTo(0, 0);
                     container.setAttribute("data-section", node.section);
                     animateSectionEntry(function () {
                         replaceContent();
@@ -6532,7 +6533,7 @@ function run (resources, _, opt) {
                     return;
                 }
                 
-                move(char).set("opacity", 1).duration(10 * offset).end(function () {
+                transform(0, 1, setOpacity(char), {duration: 10 * offset}, function () {
                     
                     left -= 1;
                     
@@ -6546,6 +6547,21 @@ function run (resources, _, opt) {
                     
                 });
                 
+                /*
+                move(char).set("opacity", 1).duration(10 * offset).end(function () {
+                    
+                    left -= 1;
+                    
+                    if (stop) {
+                        return;
+                    }
+                    
+                    if (left <= 0) {
+                        then();
+                    }
+                    
+                });
+                */
             }, i * offset);
             
             timeouts.push(id);
@@ -6692,12 +6708,32 @@ function run (resources, _, opt) {
         hideCurtain(then);
     }
     
+    function setOpacity (element) {
+        return function (v) {
+            element.style.opacity = v;
+        };
+    }
+    
     function animateNodeExit (then) {
-        move(text).set("opacity", 0).duration(NODE_FADE_OUT).end(then);
+        
+        transform(1, 0, setOpacity(text), {duration: NODE_FADE_OUT}, then);
+        
+        /*
+        move(text).set("opacity", 0).duration(NODE_FADE_OUT).end(function () {
+            move(text).duration(0).end(then);
+        });
+        */
     }
     
     function animateNodeEntry (then) {
-        move(text).set("opacity", 1).duration(NODE_FADE_IN).end(then);
+        
+        transform(0, 1, setOpacity(text), {duration: NODE_FADE_IN}, then);
+        
+        /*
+        move(text).set("opacity", 1).duration(NODE_FADE_IN).end(function () {
+            move(text).duration(0).end(then);
+        });
+        */
     }
     
     function animateActionsEntry (then) {
@@ -7535,7 +7571,7 @@ module.exports = {
 };
 
 
-},{"./notifications.js":55,"./objects.js":56,"./storage.js":57,"class-manipulator":5,"clone":6,"deepmerge":7,"howler":8,"move-js":9,"vrep":52}],55:[function(require,module,exports){
+},{"./notifications.js":55,"./objects.js":56,"./storage.js":57,"class-manipulator":5,"clone":6,"deepmerge":7,"howler":8,"move-js":9,"transform-js":19,"vrep":52}],55:[function(require,module,exports){
 /* global require, module, setTimeout */
 
 var format = require("vrep").format;

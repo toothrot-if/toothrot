@@ -39,6 +39,7 @@ var merge = require("deepmerge");
 var format = require("vrep").format;
 var Howl = require("howler").Howl;
 var classList = require("class-manipulator").list;
+var transform = require("transform-js").transform;
 
 var objects = require("./objects.js");
 var createNotification = require("./notifications.js").create;
@@ -1020,8 +1021,8 @@ function run (resources, _, opt) {
         
         function animateSectionTransition () {
             animateNodeExit(function () {
+                // window.scrollTo(0, 0);
                 animateSectionExit(function () {
-                    window.scrollTo(0, 0);
                     container.setAttribute("data-section", node.section);
                     animateSectionEntry(function () {
                         replaceContent();
@@ -1177,7 +1178,7 @@ function run (resources, _, opt) {
                     return;
                 }
                 
-                move(char).set("opacity", 1).duration(10 * offset).end(function () {
+                transform(0, 1, setOpacity(char), {duration: 10 * offset}, function () {
                     
                     left -= 1;
                     
@@ -1337,12 +1338,18 @@ function run (resources, _, opt) {
         hideCurtain(then);
     }
     
+    function setOpacity (element) {
+        return function (v) {
+            element.style.opacity = v;
+        };
+    }
+    
     function animateNodeExit (then) {
-        move(text).set("opacity", 0).duration(NODE_FADE_OUT).end(then);
+        transform(1, 0, setOpacity(text), {duration: NODE_FADE_OUT}, then);
     }
     
     function animateNodeEntry (then) {
-        move(text).set("opacity", 1).duration(NODE_FADE_IN).end(then);
+        transform(0, 1, setOpacity(text), {duration: NODE_FADE_IN}, then);
     }
     
     function animateActionsEntry (then) {
