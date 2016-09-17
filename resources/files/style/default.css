@@ -80,7 +80,7 @@ strong, b {
 }
 
 .BackgroundDimmer {
-    position: absolute;
+    position: fixed;
     left: 0;
     top: 0;
     bottom: 0;
@@ -90,7 +90,7 @@ strong, b {
 
 .Background {
     background: rgb(20, 20, 20);
-    position: absolute;
+    position: fixed;
     left: 0;
     top: 0;
     right: 0;
