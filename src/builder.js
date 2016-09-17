@@ -8,6 +8,7 @@ var pack = require("./packer").pack;
 var os = require("os");
 var osenv = require("osenv");
 var recurse = require('recursive-readdir');
+var colors = require("colors");
 
 var engineFile = normalize(__dirname + "/../build/toothrot.js");
 
@@ -86,7 +87,7 @@ function build (dir, outputDir, buildDesktop, then) {
                     
                     if (error.isToothrotError) {
                         then(error);
-                        console.error(error.toothrotMessage);
+                        console.error(colors.red(error.toothrotMessage));
                         return;
                     }
                     
@@ -103,7 +104,9 @@ function build (dir, outputDir, buildDesktop, then) {
                 fs.writeFileSync(browserDir + "resources.js", indexContent);
                 fs.writeFileSync(projectFile, JSON.stringify(project, null, 4));
                 
-                console.log("Toothrot Engine project built successfully in: " + browserDir);
+                console.log(
+                    colors.green("Toothrot Engine project built successfully in: " + browserDir)
+                );
                 
                 createAppCacheFile(browserDir);
                 
@@ -123,11 +126,11 @@ function build (dir, outputDir, buildDesktop, then) {
                     buildDesktopApps(buildDir, project.platforms, project.nwVersion).
                     then(function () {
                         then(null);
-                        console.log("Desktop apps build in: " + desktopDir);
+                        console.log(colors.green("Desktop apps build in: " + desktopDir));
                     }).
                     catch(function (error) {
                         then(error);
-                        console.error("Cannot build desktop apps: " + error);
+                        console.error(colors.red("Cannot build desktop apps: " + error));
                     });
                 }
                 else {
@@ -174,7 +177,7 @@ function createAppCacheFile (dir) {
         "\n" +
         "CACHE:\n";
     
-    var cacheFilePath = normalize(dir + "/toothrot.appcache");
+    var cacheFilePath = normalize(dir + "/cache.manifest");
     
     recurse(dir, function (error, files) {
         
@@ -188,7 +191,7 @@ function createAppCacheFile (dir) {
         
         fs.writeFileSync(cacheFilePath, cacheFile);
         
-        console.log("Created appcache file at: " + cacheFilePath);
+        console.log(colors.green("Created appcache file at: " + cacheFilePath));
     });
     
     function normalizePath (path) {
