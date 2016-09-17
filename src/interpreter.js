@@ -1009,6 +1009,7 @@ function run (resources, _, opt) {
         }
         
         function animateNodeTransition () {
+            window.scrollTo(0, 0);
             animateNodeExit(function () {
                 replaceContent();
                 setTimeout(function () {
@@ -1018,6 +1019,7 @@ function run (resources, _, opt) {
         }
         
         function animateSectionTransition () {
+            window.scrollTo(0, 0);
             animateNodeExit(function () {
                 animateSectionExit(function () {
                     container.setAttribute("data-section", node.section);
