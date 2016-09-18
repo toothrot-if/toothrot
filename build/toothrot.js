@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.5.0)
-    Build time: Sat, 17 Sep 2016 23:07:10 GMT
+    Build time: Sun, 18 Sep 2016 11:02:47 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5600,7 +5600,14 @@ function run (resources, _, opt) {
     container.setAttribute("data-section", nodes.start.section);
     
     container.setAttribute("class", "Toothrot");
+    
     text.setAttribute("class", "Text");
+    text.setAttribute("aria-live", "polite");
+    text.setAttribute("aria-atomic", "true");
+    text.setAttribute("aria-relevant", "text");
+    text.setAttribute("tabindex", "0");
+    text.setAttribute("role", "main");
+    
     indicator.setAttribute("class", "NextIndicator");
     highlighter.setAttribute("class", "Highlighter");
     highlighter.setAttribute("data-type", "highlighter");
@@ -5626,6 +5633,44 @@ function run (resources, _, opt) {
     ui.style.opacity = "0";
     
     ui.innerHTML = format(resources.templates.ui, vars);
+    
+    ui.setAttribute("role", "navigation");
+    
+    document.addEventListener("focus", handleFocus, true);
+    
+    function isClickableType (type) {
+        
+        var clickables = [
+            "action",
+            "option",
+            "link", "button",
+            "menu-item",
+            "messagebox-button"
+        ];
+        
+        return (clickables.indexOf(type) >= 0);
+    }
+    
+    function handleFocus (event) {
+        
+        var type;
+        
+        console.log("event target:", event.target);
+        
+        if (!event.target || !event.target.getAttribute) {
+            resetHighlight();
+            return;
+        }
+        
+        type = event.target.getAttribute("data-type");
+        
+        if (isClickableType(type)) {
+            highlight(event.target);
+        }
+        else {
+            resetHighlight();
+        }
+    }
     
     highlighter.addEventListener("click", function (event) {
         event.stopPropagation();
@@ -5882,6 +5927,9 @@ function run (resources, _, opt) {
             }
             
             resetHighlight();
+        }
+        else {
+            document.activeElement.click();
         }
     }
     
@@ -6486,11 +6534,11 @@ function run (resources, _, opt) {
                 insertSpecials();
             }
             else {
+                insertSpecials();
                 hideCharacters(text);
                 cancelCharAnimation = revealCharacters(
                     text,
-                    (settings.textSpeed / 100) * 60,
-                    insertSpecials
+                    (settings.textSpeed / 100) * 60
                 ).cancel;
             }
             
@@ -6511,6 +6559,8 @@ function run (resources, _, opt) {
             
             currentSlotExists = true;
             storage.save("current", serialize());
+            
+            // text.focus();
             
         }
     }
@@ -6547,21 +6597,6 @@ function run (resources, _, opt) {
                     
                 });
                 
-                /*
-                move(char).set("opacity", 1).duration(10 * offset).end(function () {
-                    
-                    left -= 1;
-                    
-                    if (stop) {
-                        return;
-                    }
-                    
-                    if (left <= 0) {
-                        then();
-                    }
-                    
-                });
-                */
             }, i * offset);
             
             timeouts.push(id);
@@ -6715,25 +6750,11 @@ function run (resources, _, opt) {
     }
     
     function animateNodeExit (then) {
-        
         transform(1, 0, setOpacity(text), {duration: NODE_FADE_OUT}, then);
-        
-        /*
-        move(text).set("opacity", 0).duration(NODE_FADE_OUT).end(function () {
-            move(text).duration(0).end(then);
-        });
-        */
     }
     
     function animateNodeEntry (then) {
-        
         transform(0, 1, setOpacity(text), {duration: NODE_FADE_IN}, then);
-        
-        /*
-        move(text).set("opacity", 1).duration(NODE_FADE_IN).end(function () {
-            move(text).duration(0).end(then);
-        });
-        */
     }
     
     function animateActionsEntry (then) {
@@ -6830,6 +6851,8 @@ function run (resources, _, opt) {
         option.setAttribute("class", "Action");
         option.setAttribute("data-type", "action");
         option.setAttribute("data-target", target);
+        option.setAttribute("tabindex", "0");
+        option.setAttribute("title", "Action");
         option.setAttribute("data-action-name", label);
         
         if (objectName) {
@@ -6863,6 +6886,8 @@ function run (resources, _, opt) {
         option.setAttribute("class", "Option");
         option.setAttribute("data-type", "option");
         option.setAttribute("data-target", opt.target);
+        option.setAttribute("tabindex", "0");
+        option.setAttribute("title", "Option");
         option.setAttribute("data-value", window.btoa(JSON.stringify(opt.value)));
         
         option.innerHTML = opt.label;
@@ -6947,8 +6972,8 @@ function run (resources, _, opt) {
             );
         }
         
-        return '<span class="link direct_link" data-target="' + target +
-            '" data-type="link" data-link-type="direct_link">' +
+        return '<span class="link direct_link" tabindex="0" data-target="' + target +
+            '" data-type="link" title="Link: ' + label + '" data-link-type="direct_link">' +
             label + '</span>';
     }
     
@@ -6956,8 +6981,8 @@ function run (resources, _, opt) {
         
         var key, html;
         
-        html = '<span class="link object_link" data-type="link" ' + 
-            'data-link-type="object_link"';
+        html = '<span class="link object_link" tabindex="0" data-type="link" ' + 
+            'data-link-type="object_link" title="Object: ' + label + '"';
         
         if (typeof nodeId !== "undefined" && typeof linkId !== "undefined") {
             html += ' data-node="' + nodeId + '" data-id="' + linkId + '"';

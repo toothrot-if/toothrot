@@ -11,6 +11,7 @@ Also introduces these new features:
 
  * Automatically create an appcache file for browser builds
  * Remove browser UI when a game is added to the homescreen
+ * Add basic ARIA / screen reader support
 
 And improves some things and fixes some bugs:
 
