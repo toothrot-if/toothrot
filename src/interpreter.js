@@ -225,7 +225,9 @@ function run (resources, _, opt) {
                 currentMusic.volume(volume / 100);
             }
         },
-        "showScreen": removeInactiveScreenElements
+        "showScreen": removeInactiveScreenElements,
+        "screenEntry": hideGameElements,
+        "screenExit": showGameElements
     };
     
     var fullscreenMode = false;
@@ -250,10 +252,13 @@ function run (resources, _, opt) {
     text.setAttribute("aria-live", "polite");
     text.setAttribute("aria-atomic", "true");
     text.setAttribute("aria-relevant", "text");
-    text.setAttribute("tabindex", "0");
     text.setAttribute("role", "main");
     
     indicator.setAttribute("class", "NextIndicator");
+    indicator.setAttribute("title", "Click or press space to continue");
+    indicator.setAttribute("tabindex", "1");
+    
+    
     highlighter.setAttribute("class", "Highlighter");
     highlighter.setAttribute("data-type", "highlighter");
     background.setAttribute("class", "Background");
@@ -283,6 +288,18 @@ function run (resources, _, opt) {
     
     document.addEventListener("focus", handleFocus, true);
     
+    function hideGameElements () {
+        resetHighlight();
+        ui.style.display = "none";
+        text.style.display = "none";
+    }
+    
+    function showGameElements () {
+        resetHighlight();
+        ui.style.display = "";
+        text.style.display = "";
+    }
+    
     function isClickableType (type) {
         
         var clickables = [
@@ -299,8 +316,6 @@ function run (resources, _, opt) {
     function handleFocus (event) {
         
         var type;
-        
-        console.log("event target:", event.target);
         
         if (!event.target || !event.target.getAttribute) {
             resetHighlight();
@@ -594,6 +609,8 @@ function run (resources, _, opt) {
             ui.style.opacity = "1";
         }));
     });
+    
+    
     
     function clearState () {
         stopAudio();
@@ -1496,7 +1513,7 @@ function run (resources, _, opt) {
         option.setAttribute("class", "Action");
         option.setAttribute("data-type", "action");
         option.setAttribute("data-target", target);
-        option.setAttribute("tabindex", "0");
+        option.setAttribute("tabindex", "1");
         option.setAttribute("title", "Action");
         option.setAttribute("data-action-name", label);
         
@@ -1531,7 +1548,7 @@ function run (resources, _, opt) {
         option.setAttribute("class", "Option");
         option.setAttribute("data-type", "option");
         option.setAttribute("data-target", opt.target);
-        option.setAttribute("tabindex", "0");
+        option.setAttribute("tabindex", "1");
         option.setAttribute("title", "Option");
         option.setAttribute("data-value", window.btoa(JSON.stringify(opt.value)));
         
@@ -1617,8 +1634,8 @@ function run (resources, _, opt) {
             );
         }
         
-        return '<span class="link direct_link" tabindex="0" data-target="' + target +
-            '" data-type="link" title="Link: ' + label + '" data-link-type="direct_link">' +
+        return '<span class="link direct_link" tabindex="1" data-target="' + target +
+            '" data-type="link" title="Link" data-link-type="direct_link">' +
             label + '</span>';
     }
     
@@ -1626,8 +1643,8 @@ function run (resources, _, opt) {
         
         var key, html;
         
-        html = '<span class="link object_link" tabindex="0" data-type="link" ' + 
-            'data-link-type="object_link" title="Object: ' + label + '"';
+        html = '<span class="link object_link" tabindex="1" data-type="link" ' + 
+            'data-link-type="object_link" title="Object"';
         
         if (typeof nodeId !== "undefined" && typeof linkId !== "undefined") {
             html += ' data-node="' + nodeId + '" data-id="' + linkId + '"';
