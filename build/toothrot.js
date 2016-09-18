@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.5.0)
-    Build time: Sun, 18 Sep 2016 12:22:34 GMT
+    Build time: Sun, 18 Sep 2016 19:13:54 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5641,8 +5641,6 @@ function run (resources, _, opt) {
     
     ui.setAttribute("role", "navigation");
     
-    document.addEventListener("focus", handleFocus, true);
-    
     function hideGameElements () {
         resetHighlight();
         ui.style.display = "none";
@@ -5653,38 +5651,6 @@ function run (resources, _, opt) {
         resetHighlight();
         ui.style.display = "";
         text.style.display = "";
-    }
-    
-    function isClickableType (type) {
-        
-        var clickables = [
-            "action",
-            "option",
-            "link", "button",
-            "menu-item",
-            "messagebox-button"
-        ];
-        
-        return (clickables.indexOf(type) >= 0);
-    }
-    
-    function handleFocus (event) {
-        
-        var type;
-        
-        if (!event.target || !event.target.getAttribute) {
-            resetHighlight();
-            return;
-        }
-        
-        type = event.target.getAttribute("data-type");
-        
-        if (isClickableType(type)) {
-            highlight(event.target);
-        }
-        else {
-            resetHighlight();
-        }
     }
     
     highlighter.addEventListener("click", function (event) {

@@ -286,8 +286,6 @@ function run (resources, _, opt) {
     
     ui.setAttribute("role", "navigation");
     
-    document.addEventListener("focus", handleFocus, true);
-    
     function hideGameElements () {
         resetHighlight();
         ui.style.display = "none";
@@ -298,38 +296,6 @@ function run (resources, _, opt) {
         resetHighlight();
         ui.style.display = "";
         text.style.display = "";
-    }
-    
-    function isClickableType (type) {
-        
-        var clickables = [
-            "action",
-            "option",
-            "link", "button",
-            "menu-item",
-            "messagebox-button"
-        ];
-        
-        return (clickables.indexOf(type) >= 0);
-    }
-    
-    function handleFocus (event) {
-        
-        var type;
-        
-        if (!event.target || !event.target.getAttribute) {
-            resetHighlight();
-            return;
-        }
-        
-        type = event.target.getAttribute("data-type");
-        
-        if (isClickableType(type)) {
-            highlight(event.target);
-        }
-        else {
-            resetHighlight();
-        }
     }
     
     highlighter.addEventListener("click", function (event) {
