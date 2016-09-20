@@ -21,3 +21,4 @@ And improves some things and fixes some bugs:
  * Disable zoom on mobile devices
  * Builder now puts out colored messages on console
  * Keyboard highlighter now works for scrolled content
+ * Replace move.js with transform.js to fix various glitches with CSS-based animations

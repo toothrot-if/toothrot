@@ -1,21 +1,17 @@
 /* global __line, setInterval, clearInterval */
+/* eslint no-console: off */
 
 var KEY_CODE_ENTER = 13;
 var KEY_CODE_ESCAPE = 27;
 var KEY_CODE_SPACE = 32;
-var KEY_CODE_LEFT = 37;
 var KEY_CODE_UP = 38;
 var KEY_CODE_RIGHT = 39;
 var KEY_CODE_DOWN = 40;
 
 var NODE_FADE_IN = 600;
 var NODE_FADE_OUT = 300;
-var SECTION_FADE_IN = 600;
-var SECTION_FADE_OUT = 300;
 var SCREEN_FADE_IN = 400;
 var SCREEN_FADE_OUT = 400;
-var UI_FADE_IN = 200;
-var UI_FADE_OUT = 200;
 
 // Wait how long before next() works again after a return?
 // This is to prevent popping more stuff from the stack than
@@ -33,7 +29,8 @@ var MAX_SLOTS = 20;
 
 var none = function () {};
 
-var move = require("move-js");
+var auto = require("enjoy-core/auto");
+var compose = require("enjoy-core/compose");
 var clone = require("clone");
 var merge = require("deepmerge");
 var format = require("vrep").format;
@@ -43,6 +40,11 @@ var transform = require("transform-js").transform;
 
 var objects = require("./objects.js");
 var createNotification = require("./notifications.js").create;
+
+var setStyle = auto(function (element, key, unit, start, end, value) {
+    element.style[key] = (start + (value * (end - start))) + unit;
+    return value;
+});
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
@@ -184,12 +186,15 @@ function run (resources, _, opt) {
             return insertObjectLink(label, actions);
         },
         dim: function (opacity, duration) {
-            return move(backgroundDimmer).
-                set("opacity", opacity).
-                duration(arguments.length > 1 ? duration : 800).
-                end(function () {
+            return transform(
+                backgroundDimmer.style.opacity,
+                opacity,
+                setOpacity(backgroundDimmer),
+                {duration: arguments.length > 1 ? duration : 800},
+                function () {
                     vars._dim = opacity;
-                });
+                }
+            );
         },
         o: function (name) {
             return objects.create(name, objects.find(name, vars._objects), insertObjectLink);
@@ -576,8 +581,6 @@ function run (resources, _, opt) {
         }));
     });
     
-    
-    
     function clearState () {
         stopAudio();
         currentNode = undefined;
@@ -639,8 +642,6 @@ function run (resources, _, opt) {
             
             emit("updateSetting." + name, value);
         });
-        
-        console.log("Updated settings:", settings);
         
         saveSettings(then);
     }
@@ -921,7 +922,6 @@ function run (resources, _, opt) {
         
         if (isEmpty) {
             save(id, function () {
-                console.log("Saved in slot:", id);
                 runScreen("save");
             });
         }
@@ -929,7 +929,6 @@ function run (resources, _, opt) {
             confirm("Overwrite slot?", function (yes) {
                 if (yes) {
                     save(id, function () {
-                        console.log("Saved in slot:", id);
                         runScreen("save");
                     });
                 }
@@ -1088,7 +1087,7 @@ function run (resources, _, opt) {
                 }
             });
             
-            content = content.replace(/\(\$((.|\n)*?)\$\)/g, function (match, p1, p2) {
+            content = content.replace(/\(\$((.|\n)*?)\$\)/g, function (match, p1) {
                 
                 var key = p1.trim();
                 
@@ -1333,7 +1332,7 @@ function run (resources, _, opt) {
         curtainVisible = true;
         
         setTimeout(function () {
-            move(curtain).set("opacity", 1).duration(SCREEN_FADE_IN).end(then);
+            transform(0, 1, setOpacity(curtain), {duration: SCREEN_FADE_IN}, then)
         }, 50);
         
     }
@@ -1346,7 +1345,7 @@ function run (resources, _, opt) {
         
         curtainVisible = false;
         
-        move(curtain).set("opacity", 0).duration(SCREEN_FADE_OUT).end(function () {
+        transform(1, 0, setOpacity(curtain), {duration: SCREEN_FADE_OUT}, function () {
             
             curtain.style.display = "none";
             
@@ -1388,11 +1387,11 @@ function run (resources, _, opt) {
     function animateActionsEntry (then) {
         actionsParent.style.opacity = "0";
         container.appendChild(actionsParent);
-        move(actionsParent).set("opacity", 1).duration(NODE_FADE_IN).end(then);
+        transform(0, 1, setOpacity(actionsParent), {duration: NODE_FADE_IN}, then);
     }
     
     function animateActionsExit (then) {
-        move(actionsParent).set("opacity", 0).duration(NODE_FADE_OUT).end(function () {
+        transform(1, 0, setOpacity(actionsParent), {duration: NODE_FADE_OUT}, function () {
             
             focusMode = FOCUS_MODE_NODE;
             container.removeChild(actionsParent);
@@ -1693,28 +1692,30 @@ function run (resources, _, opt) {
     
     function highlight (element) {
         
-        var left, top, width, height;
         var padding = 1;
+        var sourceRect = getAbsoluteRect(highlighter);
         var targetRect = getAbsoluteRect(element);
+        var setHighlighterStyle = setStyle(highlighter);
+        
+        var left = targetRect.left - padding;
+        var top = targetRect.top - padding;
+        var width = targetRect.width + (2 * padding);
+        var height = targetRect.height + (2 * padding);
+        var currentOpacity = +highlighter.style.opacity || 0;
+        
+        var setX = setHighlighterStyle("left", "px", sourceRect.left, left);
+        var setY = setHighlighterStyle("top", "px", sourceRect.top, top);
+        var setWidth = setHighlighterStyle("width", "px", sourceRect.width, width);
+        var setHeight = setHighlighterStyle("height", "px", sourceRect.height, height);
+        var setOpacity = setHighlighterStyle("opacity", "", currentOpacity, 1);
+        
+        var setValues = compose(setX, setY, setWidth, setHeight, setOpacity);
         
         highlightCurrent = highlight.bind(undefined, element);
         
-        left = targetRect.left - padding;
-        top = targetRect.top - padding;
-        width = targetRect.width + (2 * padding);
-        height = targetRect.height + (2 * padding);
-        
         emit("focusChange", element);
         
-        move(highlighter).
-            x(left).
-            y(top).
-            set("width", width + "px").
-            set("height", height + "px").
-            set("opacity", 1).
-            duration(200).
-            ease("out").
-            end();
+        transform(0, 1, setValues, {duration: 200, fps: 60});
         
         setTimeout(function () {
             scrollToElement(element);
@@ -1722,16 +1723,22 @@ function run (resources, _, opt) {
     }
     
     function resetHighlight () {
+        
+        var setHighlighterStyle = setStyle(highlighter);
+        var sourceRect = getAbsoluteRect(highlighter);
+        
+        var setValues = compose(
+            setHighlighterStyle("left", "px", sourceRect.left, 0),
+            setHighlighterStyle("top", "px", sourceRect.top, 0),
+            setHighlighterStyle("width", "px", sourceRect.width, 0),
+            setHighlighterStyle("height", "px", sourceRect.height, 0),
+            setHighlighterStyle("opacity", "", (+highlighter.style.opacity || 0), 0)
+        );
+        
         focusOffset = undefined;
         highlightCurrent = undefined;
-        move(highlighter).
-            set("opacity", 0).
-            set("width", "0").
-            set("height", "0").
-            x(0).
-            y(0).
-            duration(200).
-            end();
+        
+        transform(0, 1, setValues, {duration: 200, fps: 60});
     }
     
     function focusPrevious () {
@@ -2189,10 +2196,6 @@ function evalScript (__story, _, $, __body, __line) {
     window.__line = __line;
     
     return eval(__body);
-}
-
-function getStylePropertyValue (element, property) {
-    return window.getComputedStyle(element, null).getPropertyValue(property);
 }
 
 function getClickableParent (node) {
