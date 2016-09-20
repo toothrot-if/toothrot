@@ -1165,7 +1165,7 @@ function run (resources, _, opt) {
                 hideCharacters(text);
                 cancelCharAnimation = revealCharacters(
                     text,
-                    (settings.textSpeed / 100) * 60
+                    ((settings.textSpeed / 100) * 90) + 10
                 ).cancel;
             }
             

@@ -21,4 +21,5 @@ And improves some things and fixes some bugs:
  * Disable zoom on mobile devices
  * Builder now puts out colored messages on console
  * Keyboard highlighter now works for scrolled content
- * Replace move.js with transform.js to fix various glitches with CSS-based animations
+ * Replaces move.js with transform.js to fix various glitches with CSS-based animations
+ * Changes reveal effect to have a minimum speed of 10 chars / second and max 100 chars / second
