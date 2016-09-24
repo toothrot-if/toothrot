@@ -1,5 +1,7 @@
 # Toothrot Engine
 
+![Toothrot Engine Logo](resources/files/images/logo.png?raw=true)
+
 An engine for creating text-based games.
 
 
