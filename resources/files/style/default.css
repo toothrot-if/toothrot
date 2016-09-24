@@ -164,6 +164,10 @@ strong, b {
     margin-top: 0;
 }
 
+.Text img {
+    max-width: 100%;
+}
+
 .OptionsContainer {
     text-align: center;
     margin-top: 20px;
