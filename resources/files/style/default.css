@@ -639,8 +639,10 @@ strong, b {
 
 .Notification {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    top: 60px;
+    left: 50%;
+    transform: translate(-50%, 0%);
+    min-width: 300px;
     max-width: 500px;
     padding: 15px;
     background: black;
@@ -649,6 +651,7 @@ strong, b {
     border: 1px solid rgb(40, 40, 40);
     border-radius: 5px;
     font-weight: bold;
+    z-index: 10000;
 }
 
 
