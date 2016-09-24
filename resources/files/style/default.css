@@ -614,6 +614,11 @@ strong, b {
     padding: 5px;
 }
 
+.UIBar .left, .UIBar .right {
+    display: table; /* removes whitespace between buttons */
+    word-spacing: -1em;
+}
+
 .UIBar .right {
     float: right;
 }
@@ -621,7 +626,8 @@ strong, b {
 .UIButton {
     padding: 8px;
     display: inline-block;
-    margin-left: 3px;
+    margin-left: 5px;
+    word-spacing: 0;
 }
 
 .ImageButton {
