@@ -1938,6 +1938,9 @@ function run (resources, _, opt) {
             
             if (type === "messagebox-button") {
                 
+                event.stopPropagation();
+                event.preventDefault();
+                
                 focusMode = oldFocus;
                 boxContainer.parentNode.removeChild(boxContainer);
                 boxContainer.removeEventListener("click", onClick);
