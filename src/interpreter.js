@@ -2206,6 +2206,7 @@ function evalScript (__story, _, $, __body, __line) {
 function getClickableParent (node) {
     
     var ELEMENT = 1;
+    var first = node;
     
     while (node.parentNode) {
         
@@ -2215,6 +2216,8 @@ function getClickableParent (node) {
             return node;
         }
     }
+    
+    return first;
 }
 
 function exit () {
