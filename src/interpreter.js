@@ -12,6 +12,8 @@ var NODE_FADE_IN = 600;
 var NODE_FADE_OUT = 300;
 var SCREEN_FADE_IN = 400;
 var SCREEN_FADE_OUT = 400;
+var ACTIONS_FADE_IN = 100;
+var ACTIONS_FADE_OUT = 100;
 
 // Wait how long before next() works again after a return?
 // This is to prevent popping more stuff from the stack than
@@ -1387,11 +1389,11 @@ function run (resources, _, opt) {
     function animateActionsEntry (then) {
         actionsParent.style.opacity = "0";
         container.appendChild(actionsParent);
-        transform(0, 1, setOpacity(actionsParent), {duration: NODE_FADE_IN}, then);
+        transform(0, 1, setOpacity(actionsParent), {duration: ACTIONS_FADE_IN}, then);
     }
     
     function animateActionsExit (then) {
-        transform(1, 0, setOpacity(actionsParent), {duration: NODE_FADE_OUT}, function () {
+        transform(1, 0, setOpacity(actionsParent), {duration: ACTIONS_FADE_OUT}, function () {
             
             focusMode = FOCUS_MODE_NODE;
             container.removeChild(actionsParent);

@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.5.0)
-    Build time: Tue, 20 Sep 2016 20:34:37 GMT
+    Build time: Sat, 24 Sep 2016 11:59:43 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -4599,6 +4599,8 @@ var NODE_FADE_IN = 600;
 var NODE_FADE_OUT = 300;
 var SCREEN_FADE_IN = 400;
 var SCREEN_FADE_OUT = 400;
+var ACTIONS_FADE_IN = 100;
+var ACTIONS_FADE_OUT = 100;
 
 // Wait how long before next() works again after a return?
 // This is to prevent popping more stuff from the stack than
@@ -5974,11 +5976,11 @@ function run (resources, _, opt) {
     function animateActionsEntry (then) {
         actionsParent.style.opacity = "0";
         container.appendChild(actionsParent);
-        transform(0, 1, setOpacity(actionsParent), {duration: NODE_FADE_IN}, then);
+        transform(0, 1, setOpacity(actionsParent), {duration: ACTIONS_FADE_IN}, then);
     }
     
     function animateActionsExit (then) {
-        transform(1, 0, setOpacity(actionsParent), {duration: NODE_FADE_OUT}, function () {
+        transform(1, 0, setOpacity(actionsParent), {duration: ACTIONS_FADE_OUT}, function () {
             
             focusMode = FOCUS_MODE_NODE;
             container.removeChild(actionsParent);
