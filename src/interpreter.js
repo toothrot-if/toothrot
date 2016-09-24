@@ -411,7 +411,7 @@ function run (resources, _, opt) {
             
             parent = getClickableParent(event.target);
             
-            if (parent && typeof parent.click === "function") {
+            if (parent !== link && typeof parent.click === "function") {
                 return parent.click();
             }
             
