@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.5.0)
-    Build time: Sat, 24 Sep 2016 18:18:02 GMT
+    Build time: Thu, 29 Sep 2016 11:44:41 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -4975,11 +4975,10 @@ function run (resources, _, opt) {
             );
         }
         else if (link.getAttribute("data-type") === "action") {
-            animateActionsExit(function () {
-                vars._object = link.getAttribute("data-object-name");
-                vars._action = link.getAttribute("data-action-name");
-                runNode(nodes[link.getAttribute("data-target")]);
-            });
+            animateActionsExit(undefined, true);
+            vars._object = link.getAttribute("data-object-name");
+            vars._action = link.getAttribute("data-action-name");
+            runNode(nodes[link.getAttribute("data-target")]);
         }
         else if (link.getAttribute("data-type") === "option") {
             
@@ -5979,16 +5978,23 @@ function run (resources, _, opt) {
         transform(0, 1, setOpacity(actionsParent), {duration: ACTIONS_FADE_IN}, then);
     }
     
-    function animateActionsExit (then) {
+    function animateActionsExit (then, noNodeEntry) {
         transform(1, 0, setOpacity(actionsParent), {duration: ACTIONS_FADE_OUT}, function () {
             
             focusMode = FOCUS_MODE_NODE;
             container.removeChild(actionsParent);
             clearActions();
             
-            if (then) {
-                then();
+            if (noNodeEntry) {
+                
+                if (then) {
+                    then();
+                }
+                
+                return;
             }
+            
+            animateNodeEntry(then);
         });
     }
     
@@ -6055,6 +6061,7 @@ function run (resources, _, opt) {
             addAction(key, link.target[key], objectName);
         }
         
+        animateNodeExit();
         animateActionsEntry();
         
         emit("showActions");

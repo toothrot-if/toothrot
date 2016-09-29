@@ -388,11 +388,10 @@ function run (resources, _, opt) {
             );
         }
         else if (link.getAttribute("data-type") === "action") {
-            animateActionsExit(function () {
-                vars._object = link.getAttribute("data-object-name");
-                vars._action = link.getAttribute("data-action-name");
-                runNode(nodes[link.getAttribute("data-target")]);
-            });
+            animateActionsExit(undefined, true);
+            vars._object = link.getAttribute("data-object-name");
+            vars._action = link.getAttribute("data-action-name");
+            runNode(nodes[link.getAttribute("data-target")]);
         }
         else if (link.getAttribute("data-type") === "option") {
             
@@ -1392,16 +1391,23 @@ function run (resources, _, opt) {
         transform(0, 1, setOpacity(actionsParent), {duration: ACTIONS_FADE_IN}, then);
     }
     
-    function animateActionsExit (then) {
+    function animateActionsExit (then, noNodeEntry) {
         transform(1, 0, setOpacity(actionsParent), {duration: ACTIONS_FADE_OUT}, function () {
             
             focusMode = FOCUS_MODE_NODE;
             container.removeChild(actionsParent);
             clearActions();
             
-            if (then) {
-                then();
+            if (noNodeEntry) {
+                
+                if (then) {
+                    then();
+                }
+                
+                return;
             }
+            
+            animateNodeEntry(then);
         });
     }
     
@@ -1468,6 +1474,7 @@ function run (resources, _, opt) {
             addAction(key, link.target[key], objectName);
         }
         
+        animateNodeExit();
         animateActionsEntry();
         
         emit("showActions");
