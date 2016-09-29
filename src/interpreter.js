@@ -754,7 +754,7 @@ function run (resources, _, opt) {
             
             var content = format(screen, settings);
             
-            content = formatter("{$", "}")(screen, vars);
+            content = formatter("{$", "}")(content, vars);
             
             screenContainer.innerHTML = content;
             
