@@ -1,9 +1,8 @@
-/* global require, module, marked */
+/* global require, module */
 
 var enjoy = require("enjoy-js");
 var each = enjoy.each;
 var bind = enjoy.bind;
-var some = enjoy.some;
 var parseMarkdown = require("marked");
 
 function parseError (message) {
@@ -82,7 +81,21 @@ function parseNodeContent (ast, node) {
     var oldContent = node.content;
     
     node.content =
-        node.content.replace(/\(:((.|\n)*?):\)/g, function (match, p1, p2, offset) {
+        node.content.replace(/\(!((.|\n)*?)!\)/g, function (match, p1) {
+        
+        var line = countNewLines(oldContent.split(match)[0]) + node.line + 1;
+        
+        node.scripts.push({
+            type: "script",
+            line: line,
+            body: p1.trim()
+        });
+        
+        return "(%s" + (node.scripts.length - 1) + "%)";
+    });
+    
+    node.content =
+        node.content.replace(/\(:((.|\n)*?):\)/g, function (match, p1) {
         
         var parts = p1.split("=>");
         var label, target, line;
@@ -109,7 +122,7 @@ function parseNodeContent (ast, node) {
     
     
     node.content =
-        node.content.replace(/\(#((.|\n)*?)#\)/g, function (match, p1, p2, offset) {
+        node.content.replace(/\(#((.|\n)*?)#\)/g, function (match, p1) {
         
         var parts = p1.split("=>");
         var label, targets, line;
@@ -131,7 +144,7 @@ function parseNodeContent (ast, node) {
                 node.line + ") cannot be parsed: " + error.message);
         }
         
-        each(targets, function (target, verb) {
+        each(targets, function (target) {
             if (!ast.nodes[target]) {
                 throw parseError("Unknown node '" + target + "' referenced in link '" +
                     label + "' in node '" + node.id + "' (line " + node.line +"). @" +
@@ -142,20 +155,6 @@ function parseNodeContent (ast, node) {
         node.links.push(link("object_link", label, targets, line));
         
         return "(%l" + (node.links.length - 1) + "%)";
-    });
-    
-    node.content =
-        node.content.replace(/\(!((.|\n)*?)!\)/g, function (match, p1, p2, offset) {
-        
-        var line = countNewLines(oldContent.split(match)[0]) + node.line + 1;
-        
-        node.scripts.push({
-            type: "script",
-            line: line,
-            body: p1.trim()
-        });
-        
-        return "(%s" + (node.scripts.length - 1) + "%)";
     });
     
     node.content = node.content.split("\n").map(function (line) {
@@ -169,25 +168,6 @@ function parseNodeContent (ast, node) {
     }).join("\n");
     
     node.content = parseMarkdown(node.content);
-}
-
-function findLineForCharacter (text, offset) {
-    
-    var lines = text.split("\n"), line = 0, currentOffset = 0;
-    
-    some(lines, function (l, lineOffset) {
-        
-        currentOffset += l.length;
-        
-        if (offset <= currentOffset) {
-            line = lineOffset + 1;
-            return true;
-        }
-        
-        return false;
-    });
-    
-    return line;
 }
 
 function parseStructure (text) {
@@ -305,7 +285,7 @@ function parseStructure (text) {
         currentNode.next = next;
     }
     
-    function parseReturnToLast (line, lineOffset) {
+    function parseReturnToLast () {
         currentNode.returnToLast = true;
     }
     
@@ -365,24 +345,6 @@ function parseStructure (text) {
             }
         }
     }
-}
-
-// Inserts spaces at the end of a text
-function pad (text, count) {
-    
-    var spaces = "", i;
-    
-    for (i = 0; i < count; i += 1) {
-        spaces += " ";
-    }
-    
-    return text + spaces;
-}
-
-function newLinesFor (text) {
-    return text.split("\n").map(function () {
-        return "\n";
-    }).join("");
 }
 
 function countNewLines (text) {
