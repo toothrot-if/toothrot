@@ -452,9 +452,8 @@ function run (resources, _, opt) {
             }
             else if (target === "continue") {
                 clearState();
-                exitScreenMode(function () {
-                    loadCurrentSlot();
-                });
+                exitScreenMode();
+                loadCurrentSlot();
             }
             else if (target === "resume") {
                 resumeGame();
