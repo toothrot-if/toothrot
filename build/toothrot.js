@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.5.0)
-    Build time: Thu, 29 Sep 2016 13:00:25 GMT
+    Build time: Thu, 29 Sep 2016 17:43:27 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -4622,6 +4622,7 @@ var auto = require("enjoy-core/auto");
 var compose = require("enjoy-core/compose");
 var clone = require("clone");
 var merge = require("deepmerge");
+var formatter = require("vrep").create;
 var format = require("vrep").format;
 var Howl = require("howler").Howl;
 var classList = require("class-manipulator").list;
@@ -5337,7 +5338,11 @@ function run (resources, _, opt) {
         
         function replaceScreen () {
             
-            screenContainer.innerHTML = format(screen, settings);
+            var content = format(screen, settings);
+            
+            content = formatter("{$", "}")(screen, vars);
+            
+            screenContainer.innerHTML = content;
             
             emit("showScreen");
             then();

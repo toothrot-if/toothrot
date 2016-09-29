@@ -35,6 +35,7 @@ var auto = require("enjoy-core/auto");
 var compose = require("enjoy-core/compose");
 var clone = require("clone");
 var merge = require("deepmerge");
+var formatter = require("vrep").create;
 var format = require("vrep").format;
 var Howl = require("howler").Howl;
 var classList = require("class-manipulator").list;
@@ -750,7 +751,11 @@ function run (resources, _, opt) {
         
         function replaceScreen () {
             
-            screenContainer.innerHTML = format(screen, settings);
+            var content = format(screen, settings);
+            
+            content = formatter("{$", "}")(screen, vars);
+            
+            screenContainer.innerHTML = content;
             
             emit("showScreen");
             then();
