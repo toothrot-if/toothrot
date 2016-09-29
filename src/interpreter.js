@@ -445,9 +445,8 @@ function run (resources, _, opt) {
                 }
             }
             else if (target === "start") {
-                exitScreenMode(function () {
-                    runNode(nodes.start);
-                });
+                exitScreenMode();
+                runNode(nodes.start);
             }
             else if (target === "continue") {
                 clearState();
