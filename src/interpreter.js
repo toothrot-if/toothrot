@@ -33,6 +33,7 @@ var none = function () {};
 
 var auto = require("enjoy-core/auto");
 var compose = require("enjoy-core/compose");
+var each = require("enjoy-core/each");
 var clone = require("clone");
 var merge = require("deepmerge");
 var formatter = require("vrep").create;
@@ -756,6 +757,10 @@ function run (resources, _, opt) {
             content = formatter("{$", "}")(screen, vars);
             
             screenContainer.innerHTML = content;
+            
+            each(function (script) {
+                evalScript(story, env, vars, script.innerHTML, 0);
+            }, screenContainer.querySelectorAll("script"));
             
             emit("showScreen");
             then();

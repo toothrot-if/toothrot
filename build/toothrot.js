@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.5.0)
-    Build time: Thu, 29 Sep 2016 17:43:27 GMT
+    Build time: Thu, 29 Sep 2016 19:14:17 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -4620,6 +4620,7 @@ var none = function () {};
 
 var auto = require("enjoy-core/auto");
 var compose = require("enjoy-core/compose");
+var each = require("enjoy-core/each");
 var clone = require("clone");
 var merge = require("deepmerge");
 var formatter = require("vrep").create;
@@ -5343,6 +5344,10 @@ function run (resources, _, opt) {
             content = formatter("{$", "}")(screen, vars);
             
             screenContainer.innerHTML = content;
+            
+            each(function (script) {
+                evalScript(story, env, vars, script.innerHTML, 0);
+            }, screenContainer.querySelectorAll("script"));
             
             emit("showScreen");
             then();
@@ -6833,7 +6838,7 @@ module.exports = {
 };
 
 
-},{"./notifications.js":54,"./objects.js":55,"./storage.js":56,"class-manipulator":5,"clone":6,"deepmerge":7,"enjoy-core/auto":9,"enjoy-core/compose":10,"howler":17,"transform-js":18,"vrep":51}],54:[function(require,module,exports){
+},{"./notifications.js":54,"./objects.js":55,"./storage.js":56,"class-manipulator":5,"clone":6,"deepmerge":7,"enjoy-core/auto":9,"enjoy-core/compose":10,"enjoy-core/each":11,"howler":17,"transform-js":18,"vrep":51}],54:[function(require,module,exports){
 /* global require, module, setTimeout */
 
 var format = require("vrep").format;
