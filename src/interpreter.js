@@ -2245,7 +2245,12 @@ function exit () {
     }
 }
 
+function decodeResources (resources) {
+    return JSON.parse(decodeURIComponent(window.atob(resources)));
+}
+
 module.exports = {
-    run: run
+    run: run,
+    decode: decodeResources
 };
 

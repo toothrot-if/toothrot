@@ -95,7 +95,7 @@ function build (dir, outputDir, buildDesktop, then) {
                 }
                 
                 project.name = JSON.parse(rawResources).story.meta.title || project.name;
-                resources = new Buffer(rawResources).toString("base64");
+                resources = new Buffer(encodeURIComponent(rawResources)).toString("base64");
                 
                 indexContent = "(function () {" +
                         "window.toothrotResources = '" + resources + "';" +

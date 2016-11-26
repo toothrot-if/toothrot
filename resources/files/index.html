@@ -20,7 +20,7 @@
         <script src="toothrot.js"></script>
         <script src="resources.js"></script>
         <script>
-            TOOTHROT.run(JSON.parse(window.atob(window.toothrotResources)));
+            TOOTHROT.run(TOOTHROT.decode(window.toothrotResources));
         </script>
     </body>
 </html>
