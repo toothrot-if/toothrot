@@ -1,9 +1,37 @@
 # Toothrot Engine
 
+[![Join the chat at https://gitter.im/iiyo/toothrot](https://badges.gitter.im/iiyo/toothrot.svg)](https://gitter.im/iiyo/toothrot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ![Toothrot Engine Logo](resources/files/images/logo.png?raw=true)
 
 An engine for creating text-based games.
 
+Toothrot Engine allows you to create interactive fiction, parser-less text adventures or other
+text-based games. The games are written in an eye-friendly text-based format (similar to Markdown)
+and allow inclusion of JavaScript.
+
+## Features
+
+ * Markdown-like format for writing games
+ * Different modes of interaction:
+   * Regular links (like known from Twine)
+   * Objekt links (as an alternative to text parsers known from text adventures)
+   * Option menus (like in ChoiceScript or in visual novels)
+   * Going to the next node by clicking or pushing a button (like in visual novels)
+ * Customizable screen system written in regular HTML and CSS with default screens:
+   * Main screen
+   * Pause screen
+   * Savegame screen
+   * Settings screen
+ * Savegame system with slots, auto-save and quick save/load
+ * Simple object system with multiple inheritance
+ * Support for mobile devices (and "add to homescreen")
+ * Exports games for browsers (works without a web server) or as Windows/Mac/Linux desktop apps
+ * Audio support with separate channels for sounds, ambience and music
+ * Games playable using the keyboard
+ * Games playable with screen readers (experimental)
+ * Extensible JavaScript API
+ * Speed-adjustable reveal effect for text (like in visual novels)
 
 ## Installation
 
@@ -88,7 +116,8 @@ You can also build desktop applications from your project for Linux, Windows and
 
     $ toothrot build-desktop
 
-This will download a whole lot of stuff the first time you run it. If you have a slow connection, you can go grab a coffee now. ;)
+This will download a whole lot of stuff the first time you run it. If you have a slow connection,
+you can go grab a coffee now. ;)
 
 With the default settings this will built for the following platforms:
 
@@ -107,7 +136,9 @@ You can find the finished desktop builds in `my_project/build/desktop/`.
 
 ## The Story Format
 
-Toothrot Engine comes with its own story format. It looks similar to [markdown](https://de.wikipedia.org/wiki/Markdown) and has some special parts to structure your story.
+Toothrot Engine comes with its own story format. It looks similar to
+[markdown](https://de.wikipedia.org/wiki/Markdown) and has some special parts
+to structure your story.
 
 A basic story file looks like this:
 
@@ -189,6 +220,27 @@ You can link to other nodes in a node's text by using this notation:
 Everything between the `(:` and `:)` is translated to a link. The first part
 before the `=>` is the link text. The second part, after the `=>` is the
 name of the node that will be reached when the user clicks on the link.
+
+### Option menus
+
+Each text node can have an option menu. Options are displayed as buttons below the text of the node.
+If you want to write a quiz game or a choice game or have dialogs like in point and click
+adventures, options are probably the right thing to use.
+
+To add an option to a text node, just write it at the end of the node's text like this:
+
+    (@) Click me? => option_clicked
+
+This will display a button with the text "Click me?" and, when clicked, it will go to the node
+named "option_clicked".
+
+You can also specify a value for an option:
+
+    (@) Click me? => option_clicked | This is the value
+
+When a user clicks on an option with a value, the chosen value will be saved in the special
+variable `$._choice`. In the example above, if the user clicks the option, the `$._choice` variable
+will contain the string `"This is the value"`.
 
 ### Object links
 
@@ -351,6 +403,15 @@ For example, the following snippets produce the same output:
 
     Foo is: (! $.foo !)
 
+#### Special variable: $._choice
+
+The `$._choice` variable contains the value of the last clicked option.
+
+#### Special variable: $._objects
+
+This is the variable that contains all of the game object's current states. It's probably
+best not to mess with this one.
+
 ### The function container: _
 
 The next way to interact with the engine from a JavaScript snippet is the
@@ -385,6 +446,19 @@ Creates a direct link to another node:
 Creates an object link:
 
     There's a (! _.objectLink("bird", {"talk to": "talk_to_bird", examine: "examine_bird"}) !) here.
+
+
+#### _.addOption(label, target[, value])
+
+Adds an option to the node's option menu. The first parameter is the text that's displayed on
+the button. The second parameter, `target`, is the target node that will be executed if the user
+clicks on the option. The third parameter, `value`, is optional and can be used to specify the
+options string value (see section about special variable `$._choice`).
+
+#### _.node()
+
+Returns the current node. Unless you really know what you're doing, it's probably best to treat
+the value returned here as read-only (although it *can* be mutated).
 
 #### _.dim(amount)
 
@@ -434,6 +508,31 @@ this writing, the internal properties are: `id`, `line`, `options`, `links`, `ne
 and `returnToLast`. Never change these properties unless you really know what
 you're doing!
 
+### Property: timeout [number]
+
+You can specify a timeout for a node:
+
+    (#) timeout: 2000
+
+This means that after 2 seconds (2000 milliseconds), a choice will be made for the user:
+If the node contains options but no default option is specified, the first option will
+be chosen. If a default option has been specified for the node, this option will be chosen.
+Finally, if the node doesn't have options but has a next node or a node to return to, the game
+will go to this node instead.
+
+### Property: defaultOption [number]
+
+If this property is specified and the node has a timeout, the option specified here will be
+chosen after the timeout instead of the first option. This property's value is the zero-based
+index of the option.
+
+    (#) defaultOption: 2
+
+This will choose the third option.
+
+    (#) defaultOption: 0
+
+This will choose the first option.
 
 
 ## Audio
@@ -483,4 +582,79 @@ the same audio file. You can specify alternatives like this:
 
 The browser will choose the format it supports automatically, so it will either play
 `my_project/files/sounds/beep.ogg` or `my_project/files/sounds/beep.mp3`.
+
+
+## Customizing screens and the game UI
+
+You will need basic HTML skills to customize your screens. You can customize your game's screens
+by simply changing a screen's template. The screen templates can be found in the
+`resources/screens/` folder. Likewise, you can customize the UI by editing the templates found
+in `resources/templates/`.
+
+The following default templates are available:
+
+ * `resources/templates/confirm.html` for the confirm dialog
+ * `resources/templates/notification.html` for notifications
+ * `resources/templates/ui.html` for the in-game UI
+
+### Linking from one screen to another
+
+You can add a clickable element that will open another screen when clicked by specifying
+these two attributes:
+
+    data-type="menu-item"
+    data-target="my_screen"
+
+If the user clicks on a link or button that has these attributes, the screen defined in the
+file `resources/screens/my_screen.html` will be shown.
+
+### Making links or buttons work with keyboard navigation
+
+To make an element in a screen navigatable, you must add the following attribute:
+
+    data-focus-mode="screen"
+
+To make the element also reachable by using the `tab` button (important for screen readers!),
+you can add these attributes:
+
+    tabindex="0"
+    role="button"
+
+### Showing or hiding elements depending on the platform's features
+
+Some of the engine's features are only available if you export your game as a desktop application,
+like switching to fullscreen mode or exiting the application. To ensure that screen or UI parts
+referencing such features are only shown when the feature is available, you can use the
+`data-feature` attribute:
+
+    data-feature="exit"
+
+Currently these two platform-dependent features are available: "exit" and "fullscreen".
+
+Here's how to make a screen element quit the game when clicked:
+
+    data-type="menu-item"
+    data-target="exit"
+    data-feature="exit"
+
+And for toggling between fullscreen and window mode, you can use:
+
+    data-type="button"
+    data-action="toggleFullscreen"
+    data-feature="fullscreen"
+
+
+### The keyboard focus mode
+
+There are different focus modes for the keyboard navigation. These are:
+
+ * "screen" for elements in screens
+ * "node" when a node's text is displayed
+ * "action" when an object link's actions are displayed
+ * "messagebox" for elements when a messagebox (like a confirm dialog) is displayed
+
+For each clickable UI element in your screens or templates, you need to specify the keyboard focus
+mode for keyboard navigation to work correctly:
+
+    data-focus-mode="screen"
 
