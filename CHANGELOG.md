@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.5.0 (2016-09-29)
+## 1.5.0 (2016-12-09)
 
 Adds some new methods to the env ("_") object given to a node's JavaScript snippets:
 
@@ -17,6 +17,7 @@ Also introduces these new features:
 
 And improves some things and fixes some bugs:
 
+ * Fix unicode encoding issues
  * Using next or back on nodes with options now works, too
  * Fixed: Variables not cleared in clearState()
  * Show curtain when the section changes
