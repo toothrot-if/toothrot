@@ -1,4 +1,3 @@
-/* global using */
 
 //
 // Module for storing the game state in local storage.
@@ -45,7 +44,7 @@ if (!storageType) {
 }
 
 if (!storageType) {
-    storageType = "memory"
+    storageType = "memory";
 }
 
 if (storageType === "local") {

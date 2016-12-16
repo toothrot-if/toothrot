@@ -1341,7 +1341,7 @@ function run (resources, _, opt) {
         curtainVisible = true;
         
         setTimeout(function () {
-            transform(0, 1, setOpacity(curtain), {duration: SCREEN_FADE_IN}, then)
+            transform(0, 1, setOpacity(curtain), {duration: SCREEN_FADE_IN}, then);
         }, 50);
         
     }
@@ -2205,6 +2205,8 @@ function canExit () {
     return !!nw;
 }
 
+/* eslint-disable no-unused-vars, no-eval */
+
 function evalScript (__story, _, $, __body, __line) {
     
     var link = _.link;
@@ -2217,6 +2219,8 @@ function evalScript (__story, _, $, __body, __line) {
     
     return eval(__body);
 }
+
+/* eslint-enable no-unused-vars, no-eval */
 
 function getClickableParent (node) {
     

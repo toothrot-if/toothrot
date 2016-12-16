@@ -9,10 +9,10 @@ function create (template, fadeDuration) {
     
     return function (message, type, timeout) {
         
+        var currentTransform;
         var container = document.createElement("div");
         var hidden = false;
         var shown = false;
-        var currentTransform;
         
         container.setAttribute("class", "NotificationContainer");
         

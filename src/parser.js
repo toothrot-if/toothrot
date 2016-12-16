@@ -80,8 +80,7 @@ function parseNodeContent (ast, node) {
     
     var oldContent = node.content;
     
-    node.content =
-        node.content.replace(/\(!((.|\n)*?)!\)/g, function (match, p1) {
+    node.content = node.content.replace(/\(!((.|\n)*?)!\)/g, function (match, p1) {
         
         var line = countNewLines(oldContent.split(match)[0]) + node.line + 1;
         
@@ -94,8 +93,7 @@ function parseNodeContent (ast, node) {
         return "(%s" + (node.scripts.length - 1) + "%)";
     });
     
-    node.content =
-        node.content.replace(/\(:((.|\n)*?):\)/g, function (match, p1) {
+    node.content = node.content.replace(/\(:((.|\n)*?):\)/g, function (match, p1) {
         
         var parts = p1.split("=>");
         var label, target, line;
@@ -121,8 +119,7 @@ function parseNodeContent (ast, node) {
     });
     
     
-    node.content =
-        node.content.replace(/\(#((.|\n)*?)#\)/g, function (match, p1) {
+    node.content = node.content.replace(/\(#((.|\n)*?)#\)/g, function (match, p1) {
         
         var parts = p1.split("=>");
         var label, targets, line;
@@ -370,7 +367,7 @@ function option (label, target, value, lineOffset) {
         line: lineOffset + 1,
         label: label,
         target: target
-    }
+    };
 }
 
 function link (type, label, target, line) {

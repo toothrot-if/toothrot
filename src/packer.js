@@ -3,7 +3,6 @@
 var normalize = require("path").normalize;
 var parse = require("./parser").parse;
 var fs = require("fs");
-var normalize = require("path").normalize;
 
 function pack (dir) {
     
@@ -25,7 +24,7 @@ function pack (dir) {
         screens: {},
         story: story,
         objects: objects
-    }
+    };
     
     templateFiles.forEach(function (file) {
         

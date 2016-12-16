@@ -1,4 +1,5 @@
 /* global require, Buffer, process, __dirname */
+/* eslint-disable no-console */
 
 var fs = require("fs");
 var ncp = require("ncp").ncp;

@@ -1,4 +1,5 @@
 /* global require, __dirname */
+/* eslint-disable camelcase, no-console */
 
 var fs = require("fs");
 var path = require("path");
