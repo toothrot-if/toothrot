@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v1.5.0)
-    Build time: Sat, 26 Nov 2016 14:12:36 GMT
+    Build time: Fri, 16 Dec 2016 21:00:38 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5928,7 +5928,7 @@ function run (resources, _, opt) {
         curtainVisible = true;
         
         setTimeout(function () {
-            transform(0, 1, setOpacity(curtain), {duration: SCREEN_FADE_IN}, then)
+            transform(0, 1, setOpacity(curtain), {duration: SCREEN_FADE_IN}, then);
         }, 50);
         
     }
@@ -6792,6 +6792,8 @@ function canExit () {
     return !!nw;
 }
 
+/* eslint-disable no-unused-vars, no-eval */
+
 function evalScript (__story, _, $, __body, __line) {
     
     var link = _.link;
@@ -6804,6 +6806,8 @@ function evalScript (__story, _, $, __body, __line) {
     
     return eval(__body);
 }
+
+/* eslint-enable no-unused-vars, no-eval */
 
 function getClickableParent (node) {
     
@@ -6854,10 +6858,10 @@ function create (template, fadeDuration) {
     
     return function (message, type, timeout) {
         
+        var currentTransform;
         var container = document.createElement("div");
         var hidden = false;
         var shown = false;
-        var currentTransform;
         
         container.setAttribute("class", "NotificationContainer");
         
@@ -7061,7 +7065,6 @@ module.exports = {
 };
 
 },{"deepmerge":7,"vrep":51}],56:[function(require,module,exports){
-/* global using */
 
 //
 // Module for storing the game state in local storage.
@@ -7108,7 +7111,7 @@ if (!storageType) {
 }
 
 if (!storageType) {
-    storageType = "memory"
+    storageType = "memory";
 }
 
 if (storageType === "local") {

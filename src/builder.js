@@ -10,6 +10,7 @@ var os = require("os");
 var osenv = require("osenv");
 var recurse = require('recursive-readdir');
 var colors = require("colors");
+var merge = require("deepmerge");
 
 var engineFile = normalize(__dirname + "/../build/toothrot.js");
 
@@ -113,8 +114,9 @@ function build (dir, outputDir, buildDesktop, then) {
                 
                 if (
                     buildDesktop &&
-                    Array.isArray(project.platforms) &&
-                    project.platforms.length > 0
+                    project.electron &&
+                    Array.isArray(project.electron.platform) &&
+                    project.electron.platform.length > 0
                 ) {
                     
                     console.log("Building desktop apps...");
@@ -124,15 +126,21 @@ function build (dir, outputDir, buildDesktop, then) {
                         JSON.stringify(project, null, 4)
                     );
                     
-                    buildDesktopApps(buildDir, project.platforms, project.nwVersion).
-                    then(function () {
-                        then(null);
-                        console.log(colors.green("Desktop apps build in: " + desktopDir));
-                    }).
-                    catch(function (error) {
-                        then(error);
-                        console.error(colors.red("Cannot build desktop apps: " + error));
-                    });
+                    buildDesktopApps(
+                        buildDir,
+                        project.electron || {},
+                        function (error) {
+                            
+                            if (error) {
+                                then(error);
+                                console.error(colors.red("Cannot build desktop apps: " + error));
+                                return;
+                            }
+                            
+                            then(null);
+                            console.log(colors.green("Desktop apps build in: " + desktopDir));
+                        }
+                    );
                 }
                 else {
                     then(null);
@@ -142,14 +150,18 @@ function build (dir, outputDir, buildDesktop, then) {
     }
 }
 
-function buildDesktopApps (buildDir, platforms, version) {
+function buildDesktopApps (buildDir, config, then) {
     
-    var NwBuilder = require("nw-builder");
+    var options = merge({}, config);
+    var package = require("electron-packager");
     var browserDir = normalize(buildDir + "/browser/");
     var desktopDir = normalize(buildDir + "/desktop/");
     var cacheDir = normalize(osenv.home() + "/toothrot-cache/");
     
-    if (!Array.isArray(platforms) || platforms.length < 1) {
+    console.log(options);
+    
+    if (!Array.isArray(config.platform) || config.platform.length < 1) {
+        then("no electron platforms specified");
         return;
     }
     
@@ -157,15 +169,18 @@ function buildDesktopApps (buildDir, platforms, version) {
         fs.mkdirSync(cacheDir);
     }
     
-    var nw = new NwBuilder({
-        files: browserDir + "**",
-        buildDir: desktopDir,
-        platforms: platforms,
-        version: version,
-        cacheDir: cacheDir
+    options = merge(options, {
+        dir: browserDir,
+        out: desktopDir,
+        platform: config.platform,
+        version: config.version,
+        prune: "prune" in config ? config.prune : false,
+        download: {
+            cache: config.download && config.download.cache ? config.download.cache : cacheDir
+        }
     });
     
-    return nw.build();
+    return package(options, then);
     
 }
 

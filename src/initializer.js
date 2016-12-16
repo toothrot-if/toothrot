@@ -12,16 +12,9 @@ function init (dir, then) {
     var project = {
         name: "My Toothrot Engine Project",
         version: "0.1.0",
-        main: "index.html",
-        nwVersion: "0.12.2",
-        platforms: ["osx32", "osx64", "win32", "win64", "linux32", "linux64"],
-        window: {
-            title: "My Toothrot Engine Project",
-            toolbar: false,
-            frame: true,
-            min_width: 800,
-            min_height: 600,
-            position: "mouse"
+        electron: {
+            platform: ["darwin", "linux", "win32"],
+            version: "1.4.12"
         }
     };
     
