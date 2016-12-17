@@ -9,12 +9,21 @@ function pack (dir) {
     dir = dir || process.cwd();
     dir = normalize(dir + "/resources/");
     
+    var story;
     var templatePath = normalize(dir + "/templates/");
     var screenPath = normalize(dir + "/screens/");
     var templateFiles = fs.readdirSync(templatePath);
     var screenFiles = fs.readdirSync(screenPath);
-    var story = parse("" + fs.readFileSync(normalize(dir + "/story.md")));
     var objects = JSON.parse("" + fs.readFileSync(normalize(dir + "/objects.json")));
+    
+    parse("" + fs.readFileSync(normalize(dir + "/story.md")), function (errors, ast) {
+        
+        if (errors) {
+            throw errors;
+        }
+        
+        story = ast;
+    });
     
     var bundle = {
         meta: {

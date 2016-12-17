@@ -57,9 +57,11 @@ function build (dir, outputDir, buildDesktop, then) {
     
     function copyContents () {
         
-        fs.mkdirSync(browserDir);
+        if (!fs.existsSync(browserDir)) {
+            fs.mkdirSync(browserDir);
+        }
         
-        if (buildDesktop) {
+        if (buildDesktop && !fs.existsSync(desktopDir)) {
             fs.mkdirSync(desktopDir);
         }
         
@@ -93,6 +95,12 @@ function build (dir, outputDir, buildDesktop, then) {
                         return;
                     }
                     
+                    if (Array.isArray(error)) {
+                        reportErrors(error);
+                        then(error);
+                        return;
+                    }
+                    
                     throw error;
                 }
                 
@@ -112,12 +120,7 @@ function build (dir, outputDir, buildDesktop, then) {
                 
                 createAppCacheFile(browserDir);
                 
-                if (
-                    buildDesktop &&
-                    project.electron &&
-                    Array.isArray(project.electron.platform) &&
-                    project.electron.platform.length > 0
-                ) {
+                if (buildDesktop) {
                     
                     console.log("Building desktop apps...");
                     
@@ -213,6 +216,12 @@ function createAppCacheFile (dir) {
     function normalizePath (path) {
         return (path.split(dir)[1] || "").replace("\\", "/");
     }
+}
+
+function reportErrors (errors) {
+    errors.forEach(function (error) {
+        console.error(colors.red(error.toothrotMessage || error.message));
+    });
 }
 
 module.exports.build = build;
