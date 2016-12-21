@@ -178,6 +178,9 @@ function buildDesktopApps (buildDir, config, then) {
         platform: config.platform,
         version: config.version,
         prune: "prune" in config ? config.prune : false,
+        asar: "asar" in config ? config.asar : true,
+        overwrite: "overwrite" in config ? config.overwrite : true,
+        tmpdir: "tmpdir" in config ? config.tmpdir : false,
         download: {
             cache: config.download && config.download.cache ? config.download.cache : cacheDir
         }

@@ -25,7 +25,11 @@ function init (dir, then) {
         version: "0.1.0",
         electron: {
             platform: ["darwin", "linux", "win32"],
-            version: "1.4.12"
+            version: "1.4.12",
+            asar: true,
+            overwrite: true,
+            prune: false,
+            tmpdir: false
         }
     };
     
