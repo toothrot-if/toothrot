@@ -34,7 +34,7 @@ function parse (text, then) {
     text = removeComments(text);
     ast = parseStructure(text, handleError);
     
-    each(bind(parseNodeContent, ast, handleError), ast.nodes);
+    each(bind(parseNodeContent, handleError), ast.nodes);
     
     validateAst(ast);
     
@@ -62,7 +62,7 @@ function parse (text, then) {
     }
 }
 
-function parseNodeContent (ast, handleError, node) {
+function parseNodeContent (handleError, node) {
     
     var oldContent = node.content;
     
@@ -150,6 +150,7 @@ function parseNodeContent (ast, handleError, node) {
         
     }).join("\n");
     
+    node.raw = oldContent;
     node.content = parseMarkdown(node.content);
 }
 
@@ -423,5 +424,6 @@ function removeComments (text) {
 }
 
 module.exports = {
-    parse: parse
+    parse: parse,
+    parseNodeContent: parseNodeContent
 };
