@@ -12,18 +12,28 @@ function pack (dir) {
     var story;
     var templatePath = normalize(dir + "/templates/");
     var screenPath = normalize(dir + "/screens/");
+    var astFile = normalize(dir + "/ast.json");
     var templateFiles = fs.readdirSync(templatePath);
     var screenFiles = fs.readdirSync(screenPath);
     var objects = JSON.parse("" + fs.readFileSync(normalize(dir + "/objects.json")));
     
-    parse("" + fs.readFileSync(normalize(dir + "/story.md")), function (errors, ast) {
-        
-        if (errors) {
-            throw errors;
-        }
-        
-        story = ast;
-    });
+//
+// If there's an AST file in the resources folder (created by e.g. toothrot builder)
+// we use it instead of parsing the story file.
+//
+    if (fs.existsSync(astFile)) {
+        story = JSON.parse("" + fs.readFileSync(astFile));
+    }
+    else {
+        parse("" + fs.readFileSync(normalize(dir + "/story.md")), function (errors, ast) {
+            
+            if (errors) {
+                throw errors;
+            }
+            
+            story = ast;
+        });
+    }
     
     var bundle = {
         meta: {
