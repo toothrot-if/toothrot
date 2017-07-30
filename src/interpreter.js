@@ -31,6 +31,8 @@ var MAX_SLOTS = 20;
 
 var none = function () {};
 
+require('smoothscroll-polyfill').polyfill();
+
 var auto = require("enjoy-core/auto");
 var compose = require("enjoy-core/compose");
 var each = require("enjoy-core/each");
@@ -44,6 +46,7 @@ var transform = require("transform-js").transform;
 
 var objects = require("./objects.js");
 var createNotification = require("./notifications.js").create;
+var getClickableParent = require("./utils/getClickableParent");
 
 var setStyle = auto(function (element, key, unit, start, end, value) {
     element.style[key] = (start + (value * (end - start))) + unit;
@@ -57,16 +60,6 @@ if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
 }
 
 var defaultStorage = require("./storage.js");
-
-var nw = (function () {
-    try {
-        window.require("nw.gui");
-        return true;
-    }
-    catch (error) {
-        return false;
-    }
-}());
 
 var features = {
     fullscreen: hasFullscreen(),
@@ -295,6 +288,8 @@ function run (resources, _, opt) {
     
     ui.setAttribute("role", "navigation");
     
+    scrollToBottom();
+    
     function hideGameElements () {
         resetHighlight();
         ui.style.display = "none";
@@ -378,6 +373,7 @@ function run (resources, _, opt) {
         var link = event.target, parent;
         
         if (link.getAttribute("data-link-type") === "direct_link") {
+            link.classList.add("clicked");
             runNode(nodes[link.getAttribute("data-target")]);
         }
         else if (link.getAttribute("data-link-type") === "object_link") {
@@ -400,6 +396,7 @@ function run (resources, _, opt) {
             vars._choice = JSON.parse(window.atob(link.getAttribute("data-value")));
             
             if (link.getAttribute("data-target")) {
+                link.classList.add("clicked");
                 runNode(nodes[link.getAttribute("data-target")]);
             }
             else {
@@ -1050,7 +1047,7 @@ function run (resources, _, opt) {
         
         function animateNodeTransition () {
             animateNodeExit(function () {
-                window.scrollTo(0, 0);
+                //window.scrollTo(0, 0);
                 replaceContent();
                 setTimeout(function () {
                     animateNodeEntry();
@@ -1121,7 +1118,10 @@ function run (resources, _, opt) {
                 return mockParent.innerHTML;
             }());
             
-            text.innerHTML = content;
+            disarmOldTextItems();
+            
+            text.innerHTML += '<div class="separator"></div>';
+            text.innerHTML += '<div class="TextItem current">' + content + "</div>";
             
             setTimeout(function () {
                 
@@ -1133,6 +1133,9 @@ function run (resources, _, opt) {
                 else {
                     classList(text).remove(className).apply();
                 }
+                
+                scrollToBottom();
+                
             }, 50);
             
             if (copy.audio === false) {
@@ -1171,9 +1174,9 @@ function run (resources, _, opt) {
             }
             else {
                 insertSpecials();
-                hideCharacters(text);
+                hideCharacters(text.querySelector(".current"));
                 cancelCharAnimation = revealCharacters(
-                    text,
+                    text.querySelector(".current"),
                     ((settings.textSpeed / 100) * 90) + 10
                 ).cancel;
             }
@@ -1189,7 +1192,7 @@ function run (resources, _, opt) {
                 }
                 
                 if (copy.next || copy.returnToLast) {
-                    text.appendChild(indicator);
+                    //text.appendChild(indicator);
                 }
             }
             
@@ -1372,11 +1375,21 @@ function run (resources, _, opt) {
     }
     
     function animateSectionExit (then) {
-        showCurtain(then);
+        
+        if (then) {
+            then();
+        }
+        
+        //showCurtain(then);
     }
     
     function animateSectionEntry (then) {
-        hideCurtain(then);
+        
+        if (then) {
+            then();
+        }
+        
+        //hideCurtain(then);
     }
     
     function setOpacity (element) {
@@ -1386,11 +1399,17 @@ function run (resources, _, opt) {
     }
     
     function animateNodeExit (then) {
-        transform(1, 0, setOpacity(text), {duration: NODE_FADE_OUT}, then);
+        if (then) {
+            then();
+        }
+        //transform(1, 0, setOpacity(text), {duration: NODE_FADE_OUT}, then);
     }
     
     function animateNodeEntry (then) {
-        transform(0, 1, setOpacity(text), {duration: NODE_FADE_IN}, then);
+        if (then) {
+            then();
+        }
+        //transform(0, 1, setOpacity(text), {duration: NODE_FADE_IN}, then);
     }
     
     function animateActionsEntry (then) {
@@ -1446,7 +1465,25 @@ function run (resources, _, opt) {
             
             emit("screenExit");
             
+            scrollToBottom(true);
             hideCurtain(then);
+        });
+    }
+    
+    function disarmOldTextItems () {
+        
+        var items = Array.prototype.slice.call(text.querySelectorAll(".current"));
+        var clickables = Array.prototype.slice.call(text.querySelectorAll("[data-type]"));
+        
+        items.forEach(function (item) {
+            item.classList.remove("current");
+            item.classList.add("disarmed");
+        });
+        
+        clickables.forEach(function (clickable) {
+            clickable.removeAttribute("data-type");
+            clickable.setAttribute("tabindex", "-1");
+            clickable.classList.add("disarmed");
         });
     }
     
@@ -1663,6 +1700,19 @@ function run (resources, _, opt) {
         return (window.pageYOffset || document.scrollTop || 0) - (document.clientTop || 0);
     }
     
+    function scrollToBottom (instantly) {
+        if (instantly) {
+            text.scroll(0, text.scrollHeight);
+        }
+        else {
+            text.scroll({
+                top: text.scrollHeight,
+                left: 0,
+                behavior: "smooth"
+            });
+        }
+    }
+    
     function scrollToElement (element) {
         
         if (isElementInView(element)) {
@@ -1670,7 +1720,9 @@ function run (resources, _, opt) {
         }
         
         try {
-            element.scrollIntoView();
+            element.scrollIntoView({
+                behavior: "smooth"
+            });
         }
         catch (error) {
             console.error(error);
@@ -2221,23 +2273,6 @@ function evalScript (__story, _, $, __body, __line) {
 }
 
 /* eslint-enable no-unused-vars, no-eval */
-
-function getClickableParent (node) {
-    
-    var ELEMENT = 1;
-    var first = node;
-    
-    while (node.parentNode) {
-        
-        node = node.parentNode;
-        
-        if (node.nodeType === ELEMENT && node.getAttribute("data-type")) {
-            return node;
-        }
-    }
-    
-    return first;
-}
 
 function exit () {
     try {
