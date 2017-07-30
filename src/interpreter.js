@@ -66,7 +66,7 @@ var features = {
     exit: canExit()
 };
 
-function run (resources, _, opt) {
+function run(resources, _, opt) {
     
     var story = resources.story;
     var container = document.createElement("div");
@@ -290,13 +290,13 @@ function run (resources, _, opt) {
     
     scrollToBottom();
     
-    function hideGameElements () {
+    function hideGameElements() {
         resetHighlight();
         ui.style.display = "none";
         text.style.display = "none";
     }
     
-    function showGameElements () {
+    function showGameElements() {
         resetHighlight();
         ui.style.display = "";
         text.style.display = "";
@@ -482,7 +482,7 @@ function run (resources, _, opt) {
         }
     });
     
-    function exitScreenMode (inBetween, then) {
+    function exitScreenMode(inBetween, then) {
         
         currentScreen = undefined;
         focusMode = FOCUS_MODE_NODE;
@@ -538,7 +538,7 @@ function run (resources, _, opt) {
         }
     });
     
-    function executeHighlighter () {
+    function executeHighlighter() {
         
         if (typeof focusOffset === "number") {
             
@@ -579,7 +579,7 @@ function run (resources, _, opt) {
         }));
     });
     
-    function clearState () {
+    function clearState() {
         stopAudio();
         currentNode = undefined;
         text.innerHTML = "";
@@ -589,13 +589,13 @@ function run (resources, _, opt) {
         emit("clearState");
     }
     
-    function clearVars () {
+    function clearVars() {
         Object.keys(vars).forEach(function (key) {
             delete vars[key];
         });
     }
     
-    function loadSettings (then) {
+    function loadSettings(then) {
         
         then = then || none;
         
@@ -617,13 +617,13 @@ function run (resources, _, opt) {
         });
     }
     
-    function mergeSettings (other) {
+    function mergeSettings(other) {
         for (var key in other) {
             settings[key] = other[key];
         }
     }
     
-    function updateSettings (then) {
+    function updateSettings(then) {
         
         var settingWidgets = screenContainer.querySelectorAll("*[data-type=setting]");
         
@@ -644,7 +644,7 @@ function run (resources, _, opt) {
         saveSettings(then);
     }
     
-    function saveSettings (then) {
+    function saveSettings(then) {
         
         then = then || none;
         
@@ -653,7 +653,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function serialize () {
+    function serialize() {
         return JSON.stringify({
             vars: vars,
             stack: stack,
@@ -662,7 +662,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function resume (data) {
+    function resume(data) {
         
         data = JSON.parse(data);
         
@@ -688,13 +688,13 @@ function run (resources, _, opt) {
         runNode(nodes[data.node]);
     }
     
-    function reflowElements () {
+    function reflowElements() {
         if (highlightCurrent) {
             highlightCurrent();
         }
     }
     
-    function runScreen (name, then) {
+    function runScreen(name, then) {
         
         var screen = screens[name];
         var isSameScreen = currentScreen === name;
@@ -725,7 +725,7 @@ function run (resources, _, opt) {
             }
         }
         
-        function showSaveScreen (isSameScreen) {
+        function showSaveScreen(isSameScreen) {
             storage.all(function (error, all) {
                 
                 if (error) {
@@ -739,14 +739,14 @@ function run (resources, _, opt) {
                     animateScreenEntry(replace);
                 }
                 
-                function replace () {
+                function replace() {
                     replaceScreen();
                     populateSlots(all);
                 }
             });
         }
         
-        function replaceScreen () {
+        function replaceScreen() {
             
             var content = format(screen, settings);
             
@@ -762,7 +762,7 @@ function run (resources, _, opt) {
             then();
         }
         
-        function getDomNodeContent (dom) {
+        function getDomNodeContent(dom) {
             
             var mockParent = document.createElement("div");
             
@@ -771,7 +771,7 @@ function run (resources, _, opt) {
             return mockParent.innerHTML;
         }
         
-        function populateSlots (slots) {
+        function populateSlots(slots) {
             
             var slotContainer = screenContainer.querySelector("*[data-type=slots]");
             var template = screenContainer.querySelector("*[data-template-name=slot]");
@@ -802,7 +802,7 @@ function run (resources, _, opt) {
                 removeSaveButtons();
             }
             
-            function removeSaveButtons () {
+            function removeSaveButtons() {
                 
                 var buttons = document.querySelectorAll("*[data-type=slot-button]");
                 
@@ -816,7 +816,7 @@ function run (resources, _, opt) {
                 });
             }
             
-            function insertVars (tpl, slot, i) {
+            function insertVars(tpl, slot, i) {
                 
                 var data;
                 
@@ -838,23 +838,23 @@ function run (resources, _, opt) {
         }
     }
     
-    function trimText (text, length) {
+    function trimText(text, length) {
         return (text.length > length ? text.substring(0, length - 3) + "..." : text);
     }
     
-    function formatTime (time) {
+    function formatTime(time) {
         
         var date = new Date(time);
         
         return "" + date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate() +
             " " + pad(date.getHours()) + ":" + pad(date.getMinutes());
             
-        function pad (num) {
+        function pad(num) {
             return (num < 10 ? "0": "") + num;
         }
     }
     
-    function returnToLastScreen () {
+    function returnToLastScreen() {
         
         var lastScreen;
         
@@ -871,28 +871,28 @@ function run (resources, _, opt) {
         runScreen(lastScreen);
     }
     
-    function resumeGame () {
+    function resumeGame() {
         animateScreenExit();
         currentScreen = undefined;
         focusMode = FOCUS_MODE_NODE;
         return;
     }
     
-    function loadCurrentSlot () {
+    function loadCurrentSlot() {
         load("current");
     }
     
-    function hasCurrentSlot (then) {
+    function hasCurrentSlot(then) {
         return hasSlot("current", then);
     }
     
-    function hasSlot (name, then) {
+    function hasSlot(name, then) {
         storage.load(name, function (error, data) {
             then(error, !!data);
         });
     }
     
-    function load (name, then) {
+    function load(name, then) {
         
         then = then || none;
         
@@ -907,7 +907,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function save (name, then) {
+    function save(name, then) {
         
         then = then || none;
         
@@ -921,7 +921,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function saveSlot (element) {
+    function saveSlot(element) {
         
         var id = element.getAttribute("data-slot-id");
         var isEmpty = !!element.getAttribute("data-is-empty");
@@ -942,7 +942,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function loadSlot (element) {
+    function loadSlot(element) {
         
         var id = element.getAttribute("data-slot-id");
         
@@ -964,7 +964,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function deleteSlot (element) {
+    function deleteSlot(element) {
         
         var id = element.getAttribute("data-slot-id");
         
@@ -976,7 +976,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function runNode (node, nextType) {
+    function runNode(node, nextType) {
         
         var content = node.content;
         var copy = merge(clone(sections[node.section]), clone(node));
@@ -1045,7 +1045,7 @@ function run (resources, _, opt) {
             animateNodeTransition();
         }
         
-        function animateNodeTransition () {
+        function animateNodeTransition() {
             animateNodeExit(function () {
                 //window.scrollTo(0, 0);
                 replaceContent();
@@ -1055,7 +1055,7 @@ function run (resources, _, opt) {
             });
         }
         
-        function animateSectionTransition () {
+        function animateSectionTransition() {
             animateNodeExit(function () {
                 // window.scrollTo(0, 0);
                 animateSectionExit(function () {
@@ -1070,7 +1070,7 @@ function run (resources, _, opt) {
             });
         }
         
-        function replaceContent () {
+        function replaceContent() {
             
             currentNode = node;
             currentSection = node.section;
@@ -1181,7 +1181,7 @@ function run (resources, _, opt) {
                 ).cancel;
             }
             
-            function insertSpecials () {
+            function insertSpecials() {
                 
                 if (typeof copy.timeout === "number") {
                     addTimer(text, copy);
@@ -1204,7 +1204,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function revealCharacters (element, speed, then) {
+    function revealCharacters(element, speed, then) {
         
         var chars = element.querySelectorAll(".Char");
         var offset = 1000 / (speed || 40);
@@ -1241,7 +1241,7 @@ function run (resources, _, opt) {
             timeouts.push(id);
         });
         
-        function cancel () {
+        function cancel() {
             
             if (stop || left <= 0) {
                 return false;
@@ -1267,7 +1267,7 @@ function run (resources, _, opt) {
         };
     }
     
-    function hideCharacters (element) {
+    function hideCharacters(element) {
         
         var chars = element.querySelectorAll(".Char");
         
@@ -1276,7 +1276,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function markCharacters (element, offset) {
+    function markCharacters(element, offset) {
         
         var TEXT_NODE = 3;
         var ELEMENT = 1;
@@ -1312,7 +1312,7 @@ function run (resources, _, opt) {
     
     window.markCharacters = markCharacters;
     
-    function next () {
+    function next() {
         
         if (focusMode !== FOCUS_MODE_NODE || !currentNode) {
             return;
@@ -1329,11 +1329,11 @@ function run (resources, _, opt) {
         
     }
     
-    function nextClickWaitTimeReached () {
+    function nextClickWaitTimeReached() {
         return Date.now() - nextClickTime > NEXT_RETURN_WAIT;
     }
     
-    function showCurtain (then) {
+    function showCurtain(then) {
         
         if (curtainVisible) {
             return then();
@@ -1349,7 +1349,7 @@ function run (resources, _, opt) {
         
     }
     
-    function hideCurtain (then) {
+    function hideCurtain(then) {
         
         if (!curtainVisible) {
             return then();
@@ -1374,7 +1374,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function animateSectionExit (then) {
+    function animateSectionExit(then) {
         
         if (then) {
             then();
@@ -1383,7 +1383,7 @@ function run (resources, _, opt) {
         //showCurtain(then);
     }
     
-    function animateSectionEntry (then) {
+    function animateSectionEntry(then) {
         
         if (then) {
             then();
@@ -1392,33 +1392,33 @@ function run (resources, _, opt) {
         //hideCurtain(then);
     }
     
-    function setOpacity (element) {
+    function setOpacity(element) {
         return function (v) {
             element.style.opacity = v;
         };
     }
     
-    function animateNodeExit (then) {
+    function animateNodeExit(then) {
         if (then) {
             then();
         }
         //transform(1, 0, setOpacity(text), {duration: NODE_FADE_OUT}, then);
     }
     
-    function animateNodeEntry (then) {
+    function animateNodeEntry(then) {
         if (then) {
             then();
         }
         //transform(0, 1, setOpacity(text), {duration: NODE_FADE_IN}, then);
     }
     
-    function animateActionsEntry (then) {
+    function animateActionsEntry(then) {
         actionsParent.style.opacity = "0";
         container.appendChild(actionsParent);
         transform(0, 1, setOpacity(actionsParent), {duration: ACTIONS_FADE_IN}, then);
     }
     
-    function animateActionsExit (then, noNodeEntry) {
+    function animateActionsExit(then, noNodeEntry) {
         transform(1, 0, setOpacity(actionsParent), {duration: ACTIONS_FADE_OUT}, function () {
             
             focusMode = FOCUS_MODE_NODE;
@@ -1438,7 +1438,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function animateScreenEntry (inBetween, then) {
+    function animateScreenEntry(inBetween, then) {
         
         then = then || none;
         
@@ -1456,7 +1456,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function animateScreenExit (then) {
+    function animateScreenExit(then) {
         showCurtain(function () {
             
             focusMode = FOCUS_MODE_NODE;
@@ -1470,7 +1470,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function disarmOldTextItems () {
+    function disarmOldTextItems() {
         
         var items = Array.prototype.slice.call(text.querySelectorAll(".current"));
         var clickables = Array.prototype.slice.call(text.querySelectorAll("[data-type]"));
@@ -1487,7 +1487,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function showObjectActions (nodeId, linkId, actions, eventTarget, objectName) {
+    function showObjectActions(nodeId, linkId, actions, eventTarget, objectName) {
         
         var node, link, key;
         
@@ -1525,7 +1525,7 @@ function run (resources, _, opt) {
         emit("showActions");
     }
     
-    function addAction (label, target, objectName) {
+    function addAction(label, target, objectName) {
         
         var option = document.createElement("a");
         
@@ -1545,11 +1545,11 @@ function run (resources, _, opt) {
         actionsContainer.appendChild(option);
     }
     
-    function clearActions () {
+    function clearActions() {
         actionsContainer.innerHTML = "";
     }
     
-    function addOptions (container, node) {
+    function addOptions(container, node) {
         
         optionsContainer.innerHTML = "";
         
@@ -1560,7 +1560,7 @@ function run (resources, _, opt) {
         container.appendChild(optionsParent);
     }
     
-    function addOption (opt) {
+    function addOption(opt) {
         
         var option = document.createElement("span");
         
@@ -1576,7 +1576,7 @@ function run (resources, _, opt) {
         optionsContainer.appendChild(option);
     }
     
-    function addTimer (text, node) {
+    function addTimer(text, node) {
         
         var timeout = node.timeout;
         var start = Date.now();
@@ -1592,7 +1592,7 @@ function run (resources, _, opt) {
         
         text.appendChild(timeoutContainer);
         
-        function updateTimer (percentage) {
+        function updateTimer(percentage) {
             
             var remaining = 100 - percentage;
             var content = timerTemplate.replace(/{progress}/g, "" + percentage);
@@ -1645,7 +1645,7 @@ function run (resources, _, opt) {
         }, 50);
     }
     
-    function insertLink (label, target) {
+    function insertLink(label, target) {
         
         if (!nodes[target]) {
             throw new Error(
@@ -1658,7 +1658,7 @@ function run (resources, _, opt) {
             label + '</span>';
     }
     
-    function insertObjectLink (label, actions, nodeId, linkId, objectName) {
+    function insertObjectLink(label, actions, nodeId, linkId, objectName) {
         
         var key, html;
         
@@ -1692,15 +1692,15 @@ function run (resources, _, opt) {
         return html;
     }
     
-    function getScrollX () {
+    function getScrollX() {
         return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
     }
     
-    function getScrollY () {
+    function getScrollY() {
         return (window.pageYOffset || document.scrollTop || 0) - (document.clientTop || 0);
     }
     
-    function scrollToBottom (instantly) {
+    function scrollToBottom(instantly) {
         if (instantly) {
             text.scroll(0, text.scrollHeight);
         }
@@ -1713,7 +1713,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function scrollToElement (element) {
+    function scrollToElement(element) {
         
         if (isElementInView(element)) {
             return;
@@ -1729,7 +1729,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function isElementInView (element) {
+    function isElementInView(element) {
         
         var rect = getAbsoluteRect(element);
         var scrollX = getScrollX();
@@ -1740,14 +1740,14 @@ function run (resources, _, opt) {
         return (xInView && yInView);
     }
     
-    function fitsInWindow (element) {
+    function fitsInWindow(element) {
         
         var rect = element.getBoundingClientRect();
         
         return ((rect.width < window.innerWidth) && (rect.height < window.innerHeight));
     }
     
-    function getAbsoluteRect (element) {
+    function getAbsoluteRect(element) {
         
         var rect = element.getBoundingClientRect();
         
@@ -1759,7 +1759,7 @@ function run (resources, _, opt) {
         };
     }
     
-    function highlight (element) {
+    function highlight(element) {
         
         var padding = 1;
         var sourceRect = getAbsoluteRect(highlighter);
@@ -1791,7 +1791,7 @@ function run (resources, _, opt) {
         }, 10);
     }
     
-    function resetHighlight () {
+    function resetHighlight() {
         
         var setHighlighterStyle = setStyle(highlighter);
         var sourceRect = getAbsoluteRect(highlighter);
@@ -1810,7 +1810,7 @@ function run (resources, _, opt) {
         transform(0, 1, setValues, {duration: 200, fps: 60});
     }
     
-    function focusPrevious () {
+    function focusPrevious() {
         if (focusMode === FOCUS_MODE_NODE && countFocusableElements()) {
             focusPreviousDefault();
         }
@@ -1825,7 +1825,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function focusNext () {
+    function focusNext() {
         if (focusMode === FOCUS_MODE_NODE && countFocusableElements()) {
             focusNextDefault();
         }
@@ -1840,7 +1840,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function getFocusedElement () {
+    function getFocusedElement() {
         
         var options = document.querySelectorAll("[data-type=option]");
         var links = document.querySelectorAll("[data-type=link]");
@@ -1857,7 +1857,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function countFocusableElements () {
+    function countFocusableElements() {
         
         var options = document.querySelectorAll("[data-type=option]");
         var links = document.querySelectorAll("[data-type=link]");
@@ -1866,47 +1866,47 @@ function run (resources, _, opt) {
         return options.length + links.length + buttons.length;
     }
     
-    function getFocusedAction () {
+    function getFocusedAction() {
         return document.querySelectorAll("[data-type=action]")[focusOffset];
     }
     
-    function getFocusedScreenItem () {
+    function getFocusedScreenItem() {
         return screenContainer.querySelectorAll("[data-type=menu-item]")[focusOffset];
     }
     
-    function getFocusedBoxButton () {
+    function getFocusedBoxButton() {
         return container.querySelectorAll("[data-type=messagebox-button]")[focusOffset];
     }
     
-    function countFocusableScreenItems () {
+    function countFocusableScreenItems() {
         return screenContainer.querySelectorAll("[data-type=menu-item]").length;
     }
     
-    function countFocusableActions () {
+    function countFocusableActions() {
         return document.querySelectorAll("[data-type=action]").length;
     }
     
-    function countFocusableBoxButtons () {
+    function countFocusableBoxButtons() {
         return document.querySelectorAll("[data-type=messagebox-button]").length;
     }
     
-    function focusNextDefault () {
+    function focusNextDefault() {
         focusNextThing(getFocusedElement, countFocusableElements);
     }
     
-    function focusNextAction () {
+    function focusNextAction() {
         focusNextThing(getFocusedAction, countFocusableActions);
     }
     
-    function focusNextScreenItem () {
+    function focusNextScreenItem() {
         focusNextThing(getFocusedScreenItem, countFocusableScreenItems);
     }
     
-    function focusNextBoxButton () {
+    function focusNextBoxButton() {
         focusNextThing(getFocusedBoxButton, countFocusableBoxButtons);
     }
     
-    function focusNextThing (get, count) {
+    function focusNextThing(get, count) {
         
         var element;
         
@@ -1926,23 +1926,23 @@ function run (resources, _, opt) {
         highlight(element);
     }
     
-    function focusPreviousDefault () {
+    function focusPreviousDefault() {
         focusPreviousThing(getFocusedElement, countFocusableElements);
     }
     
-    function focusPreviousAction () {
+    function focusPreviousAction() {
         focusPreviousThing(getFocusedAction, countFocusableActions);
     }
     
-    function focusPreviousScreenItem () {
+    function focusPreviousScreenItem() {
         focusPreviousThing(getFocusedScreenItem, countFocusableScreenItems);
     }
     
-    function focusPreviousBoxButton () {
+    function focusPreviousBoxButton() {
         focusPreviousThing(getFocusedBoxButton, countFocusableBoxButtons);
     }
     
-    function focusPreviousThing (get, count) {
+    function focusPreviousThing(get, count) {
         
         var element;
         
@@ -1962,7 +1962,7 @@ function run (resources, _, opt) {
         highlight(element);
     }
     
-    function emit (channel, data) {
+    function emit(channel, data) {
         
         if (typeof listeners[channel] === "function") {
             listeners[channel]({
@@ -1981,7 +1981,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function confirm (text, then) {
+    function confirm(text, then) {
         
         var boxContainer = document.createElement("div");
         var oldFocus = focusMode;
@@ -1998,7 +1998,7 @@ function run (resources, _, opt) {
         
         boxContainer.focus();
         
-        function onClick (event) {
+        function onClick(event) {
             
             var type = event.target.getAttribute("data-type");
             var value = event.target.getAttribute("data-value");
@@ -2017,119 +2017,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function stopAudio () {
-        stopSound();
-        stopAmbience();
-        stopMusic();
-    }
-    
-    function stopSound () {
-        
-        if (currentSound) {
-            currentSound.unload();
-        }
-        
-        vars._currentSound = undefined;
-        currentSound = undefined;
-    }
-    
-    function stopAmbience () {
-        
-        if (currentAmbience) {
-            currentAmbience.unload();
-        }
-        
-        vars._currentAmbience = undefined;
-        currentAmbience = undefined;
-    }
-    
-    function stopMusic () {
-        
-        if (currentMusic) {
-            currentMusic.unload();
-        }
-        
-        vars._currentMusic = undefined;
-        currentMusic = undefined;
-    }
-    
-    function playSound (path) {
-        vars._currentSound = serializeAudioPath(path);
-        currentSound = playTrack(path, settings.soundVolume, false, currentSound);
-    }
-    
-    function playAmbience (path) {
-        
-        var serialized = serializeAudioPath(path);
-        
-        if (currentAmbience && vars._currentAmbience === serialized) {
-            return;
-        }
-        
-        vars._currentAmbience = serialized;
-        currentAmbience = playTrack(path, settings.ambienceVolume, true, currentAmbience);
-    }
-    
-    function playMusic (path) {
-        
-        var serialized = serializeAudioPath(path);
-        
-        if (currentMusic && vars._currentMusic === serialized) {
-            return;
-        }
-        
-        vars._currentMusic = serialized;
-        currentMusic = playTrack(path, settings.musicVolume, true, currentMusic);
-    }
-    
-    function playTrack (path, volume, loop, current) {
-        
-        var paths = getAudioPaths(path), audio;
-        
-        audio = new Howl({
-            urls: paths,
-            volume: volume / 100,
-            loop: loop === true ? true : false
-        });
-        
-        if (current) {
-            current.unload();
-        }
-        
-        audio.play();
-        
-        return audio;
-    }
-    
-    function getAudioPaths (path) {
-        
-        var paths = [], base;
-        
-        if (Array.isArray(path)) {
-            
-            path = path.slice();
-            base = path.shift();
-            
-            path.forEach(function (type) {
-                paths.push(base + "." + type);
-            });
-        }
-        else {
-            paths.push(path);
-        }
-        
-        return paths;
-    }
-    
-    function serializeAudioPath (path) {
-        return JSON.stringify(path);
-    }
-    
-    function unserializeAudioPath (path) {
-        return JSON.parse(path);
-    }
-    
-    function toggleFullscreen () {
+    function toggleFullscreen() {
         
         if (fullscreenEnabled() || (nw && fullscreenMode)) {
             exitFullscreen();
@@ -2142,14 +2030,14 @@ function run (resources, _, opt) {
         reflowElements();
     }
     
-    function fullscreenEnabled () {
+    function fullscreenEnabled() {
         return document.fullscreenElement ||
             document.mozFullScreenElement ||
             document.msFullscreenElement ||
             document.webkitFullscreenElement;
     }
     
-    function fullscreen () {
+    function fullscreen() {
         
         fullscreenMode = true;
         
@@ -2161,7 +2049,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function exitFullscreen () {
+    function exitFullscreen() {
         
         fullscreenMode = false;
         
@@ -2173,15 +2061,15 @@ function run (resources, _, opt) {
         }
     }
     
-    function nwEnterFullscreen () {
+    function nwEnterFullscreen() {
         window.require('nw.gui').Window.get().enterKioskMode();
     }
     
-    function nwExitFullscreen () {
+    function nwExitFullscreen() {
         window.require('nw.gui').Window.get().leaveKioskMode();
     }
     
-    function exitBrowserFullscreen () {
+    function exitBrowserFullscreen() {
         if (document.exitFullscreen) {
             document.exitFullscreen();
         }
@@ -2196,7 +2084,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function requestFullscreen (element) {
+    function requestFullscreen(element) {
         if (element.requestFullscreen) {
             element.requestFullscreen();
         }
@@ -2211,12 +2099,12 @@ function run (resources, _, opt) {
         }
     }
     
-    function removeInactiveScreenElements () {
+    function removeInactiveScreenElements() {
         removeFeatureElements();
         removeContinueButton();
     }
     
-    function removeFeatureElements () {
+    function removeFeatureElements() {
         for (var feature in features) {
             if (!features[feature]) {
                 removeElementsForFeature(feature);
@@ -2224,7 +2112,7 @@ function run (resources, _, opt) {
         }
     }
     
-    function removeContinueButton () {
+    function removeContinueButton() {
         
         var buttons;
         
@@ -2239,7 +2127,7 @@ function run (resources, _, opt) {
         });
     }
     
-    function removeElementsForFeature (feature) {
+    function removeElementsForFeature(feature) {
         
         var elements = document.querySelectorAll("*[data-feature=" + feature + "]") || [];
         
@@ -2249,17 +2137,17 @@ function run (resources, _, opt) {
     }
 }
 
-function hasFullscreen () {
+function hasFullscreen() {
     return !!nw;
 }
 
-function canExit () {
+function canExit() {
     return !!nw;
 }
 
 /* eslint-disable no-unused-vars, no-eval */
 
-function evalScript (__story, _, $, __body, __line) {
+function evalScript(__story, _, $, __body, __line) {
     
     var link = _.link;
     var dim = _.dim;
@@ -2274,7 +2162,7 @@ function evalScript (__story, _, $, __body, __line) {
 
 /* eslint-enable no-unused-vars, no-eval */
 
-function exit () {
+function exit() {
     try {
         var gui = window.require("nw.gui");
         gui.App.quit();
@@ -2284,7 +2172,7 @@ function exit () {
     }
 }
 
-function decodeResources (resources) {
+function decodeResources(resources) {
     return JSON.parse(decodeURIComponent(window.atob(resources)));
 }
 
