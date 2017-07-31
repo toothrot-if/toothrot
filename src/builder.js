@@ -14,7 +14,7 @@ var merge = require("deepmerge");
 
 var engineFile = normalize(__dirname + "/../build/toothrot.js");
 
-function build (dir, outputDir, buildDesktop, then) {
+function build(dir, outputDir, buildDesktop, then) {
     
     var rawResources, resources, indexContent;
     var base = normalize((dir || process.cwd()) + "/");
@@ -55,7 +55,7 @@ function build (dir, outputDir, buildDesktop, then) {
         copyContents();
     }
     
-    function copyContents () {
+    function copyContents() {
         
         if (!fs.existsSync(browserDir)) {
             fs.mkdirSync(browserDir);
@@ -153,7 +153,7 @@ function build (dir, outputDir, buildDesktop, then) {
     }
 }
 
-function buildDesktopApps (buildDir, config, then) {
+function buildDesktopApps(buildDir, config, then) {
     
     var options = merge({}, config);
     var package = require("electron-packager");
@@ -190,7 +190,7 @@ function buildDesktopApps (buildDir, config, then) {
     
 }
 
-function createAppCacheFile (dir) {
+function createAppCacheFile(dir) {
     
     var cacheFile = "" +
         "CACHE MANIFEST\n" +
@@ -216,12 +216,12 @@ function createAppCacheFile (dir) {
         console.log(colors.green("Created appcache file at: " + cacheFilePath));
     });
     
-    function normalizePath (path) {
+    function normalizePath(path) {
         return (path.split(dir)[1] || "").replace("\\", "/");
     }
 }
 
-function reportErrors (errors) {
+function reportErrors(errors) {
     errors.forEach(function (error) {
         console.error(colors.red(error.toothrotMessage || error.message));
     });

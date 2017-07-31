@@ -7,7 +7,7 @@ var ncp = require("ncp").ncp;
 
 var resourceDir = path.normalize(__dirname + "/../resources/");
 
-function getFolderName (dirPath) {
+function getFolderName(dirPath) {
     
     var parts = path.normalize(dirPath).split(path.sep);
     
@@ -16,7 +16,7 @@ function getFolderName (dirPath) {
     return parts.pop();
 }
 
-function init (dir, then) {
+function init(dir, then) {
     
     var name = getFolderName(dir) || "My Toothrot Engine Project";
     
@@ -54,7 +54,7 @@ function init (dir, then) {
         then(null);
     });
     
-    function setStoryName () {
+    function setStoryName() {
         
         var file = path.normalize(dir + "/resources/story.md");
         var story = "" + fs.readFileSync(file);

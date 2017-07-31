@@ -10,13 +10,13 @@ var validator = require("./src/validator");
 // and returned instead. If it *is* used, `unedfined` is
 // returned.
 //
-function validate (ast, onError) {
+function validate(ast, onError) {
     
     var errors = [];
     
     validator(onError || collect).validate(ast);
     
-    function collect (error) {
+    function collect(error) {
         errors.push(error);
     }
     
@@ -27,7 +27,7 @@ function validate (ast, onError) {
     return errors;
 }
 
-function parseNodeContent (originalNode, then) {
+function parseNodeContent(originalNode, then) {
     
     var errors = [];
     var node = clone(originalNode);
@@ -37,7 +37,7 @@ function parseNodeContent (originalNode, then) {
     
     parser.parseNodeContent(collect, node);
     
-    function collect (error) {
+    function collect(error) {
         errors.push(error);
     }
     

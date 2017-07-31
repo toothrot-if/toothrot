@@ -3,7 +3,7 @@
 
 require('smoothscroll-polyfill').polyfill();
 
-var ctx = require("./utils/context.js");
+var ctx = require("../utils/context.js");
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");

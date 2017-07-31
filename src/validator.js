@@ -2,11 +2,11 @@
 var each = require("enjoy-core/each");
 var createError = require("./utils/createError");
 
-function validator (handleError) {
+function validator(handleError) {
     
     var validateNodes = each(validateNode);
     
-    function validateAst (ast) {
+    function validateAst(ast) {
         
         if (!ast.meta.title) {
             handleError(createError({id: "NO_TITLE"}));
@@ -19,7 +19,7 @@ function validator (handleError) {
         validateNodes(ast.nodes);
     }
     
-    function validateNode (node, name, nodes) {
+    function validateNode(node, name, nodes) {
         
         if (node.next && !nodes[node.next]) {
             handleError(createError({
@@ -42,7 +42,7 @@ function validator (handleError) {
         validateLinks(node, nodes);
     }
     
-    function validateOptions (node, nodes) {
+    function validateOptions(node, nodes) {
         
         var validateEach = each(function (option) {
             validateOption(option, node, nodes);
@@ -53,7 +53,7 @@ function validator (handleError) {
         }
     }
     
-    function validateOption (option, node, nodes) {
+    function validateOption(option, node, nodes) {
         
         if (!option.target && !option.value) {
             handleError(createError({
@@ -76,7 +76,7 @@ function validator (handleError) {
         }
     }
     
-    function validateLinks (node, nodes) {
+    function validateLinks(node, nodes) {
         
         var validateEach = each(function (link) {
             validateLink(link, node, nodes);
@@ -85,7 +85,7 @@ function validator (handleError) {
         validateEach(node.links);
     }
     
-    function validateLink (link, node, nodes) {
+    function validateLink(link, node, nodes) {
         if (link.type === "direct_link") {
             validateDirectLink(link, node, nodes);
         }
@@ -94,7 +94,7 @@ function validator (handleError) {
         }
     }
     
-    function validateDirectLink (link, node, nodes) {
+    function validateDirectLink(link, node, nodes) {
         
         if (!link.target) {
             handleError(createError({
@@ -117,7 +117,7 @@ function validator (handleError) {
         }
     }
     
-    function validateObjectLink (link, node, nodes) {
+    function validateObjectLink(link, node, nodes) {
         
         if (!link.target || !Object.keys(link.target).length) {
             handleError(createError({

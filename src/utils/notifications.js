@@ -3,13 +3,12 @@
 var format = require("vrep").format;
 var transform = require("transform-js").transform;
 
-function create (template, fadeDuration) {
+function create(template, fadeDuration) {
     
     var duration = fadeDuration || 200;
     
     return function (message, type, timeout) {
         
-        var currentTransform;
         var container = document.createElement("div");
         var hidden = false;
         var shown = false;
@@ -27,13 +26,13 @@ function create (template, fadeDuration) {
         
         setTimeout(hide, timeout || 2000);
         
-        function show () {
+        function show() {
             
             if (shown) {
                 return;
             }
             
-            currentTransform = transform(
+            transform(
                 0,
                 1,
                 function (v) {
@@ -42,18 +41,17 @@ function create (template, fadeDuration) {
                 {duration: duration},
                 function () {
                     shown = true;
-                    currentTransform = undefined;
                 }
-           );
+            );
         }
         
-        function hide () {
+        function hide() {
             
             if (hidden) {
                 return;
             }
             
-            currentTransform = transform(
+            transform(
                 1,
                 0,
                 function (v) {
@@ -61,7 +59,6 @@ function create (template, fadeDuration) {
                 },
                 {duration: duration},
                 function () {
-                    currentTransform = undefined;
                     hidden = true;
                     container.parentNode.removeChild(container);
                 }

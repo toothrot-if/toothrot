@@ -1,3 +1,3 @@
 /* global require */
 
-window.TOOTHROT = require("./interpreter.js");
+window.TOOTHROT = require("./runtimes/browser.js");

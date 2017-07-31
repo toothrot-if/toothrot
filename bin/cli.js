@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+/* eslint-disable no-console */
 /* global require, process */
 
 var fs = require("fs");
@@ -47,13 +48,13 @@ else {
     console.log("Usage: parse [storyFile]");
 }
 
-function reportErrors (errors) {
+function reportErrors(errors) {
     errors.forEach(function (error) {
         console.error(colors.red(error.toothrotMessage || error.message));
     });
 }
 
-function validate (ast) {
+function validate(ast) {
     
     var errors = [];
     
@@ -66,7 +67,7 @@ function validate (ast) {
         console.log(colors.green("No errors found! :)"));
     }
     
-    function collect (error) {
+    function collect(error) {
         errors.push(error);
     }
 }

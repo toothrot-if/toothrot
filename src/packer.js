@@ -4,7 +4,7 @@ var normalize = require("path").normalize;
 var parse = require("./parser").parse;
 var fs = require("fs");
 
-function pack (dir) {
+function pack(dir) {
     
     dir = dir || process.cwd();
     dir = normalize(dir + "/resources/");

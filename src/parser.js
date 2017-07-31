@@ -23,7 +23,7 @@ var validator = require("./validator");
 //
 // If no `then` function is supplied, `parse` will throw when the first error is encountered.
 //
-function parse (text, then) {
+function parse(text, then) {
     
     var ast, handleError;
     var errors = [];
@@ -49,20 +49,20 @@ function parse (text, then) {
     
     return ast;
     
-    function validateAst (ast) {
+    function validateAst(ast) {
         return validator(handleError).validate(ast);
     }
     
-    function collectError (error) {
+    function collectError(error) {
         errors.push(error);
     }
     
-    function throwError (error) {
+    function throwError(error) {
         throw error;
     }
 }
 
-function parseNodeContent (handleError, node) {
+function parseNodeContent(handleError, node) {
     
     var oldContent = node.content;
     
@@ -154,7 +154,7 @@ function parseNodeContent (handleError, node) {
     node.content = parseMarkdown(node.content);
 }
 
-function parseStructure (text, handleError) {
+function parseStructure(text, handleError) {
     
     var lines = text.split("\n");
     var currentNode, parentNode, section, subNodeOffset = 0;
@@ -223,7 +223,7 @@ function parseStructure (text, handleError) {
     
     return ast;
     
-    function setSection (line) {
+    function setSection(line) {
         
         section = line.replace(/^##:/, "").trim();
         
@@ -233,14 +233,14 @@ function parseStructure (text, handleError) {
         
     }
     
-    function addNode (line, lineOffset) {
+    function addNode(line, lineOffset) {
         subNodeOffset = 0;
         currentNode = node(line, lineOffset, section);
         parentNode = currentNode;
         ast.nodes[currentNode.id] = currentNode;
     }
     
-    function addAnonymousNode (line, lineOffset) {
+    function addAnonymousNode(line, lineOffset) {
         
         subNodeOffset += 1;
         currentNode = node(parentNode.id + "_" + subNodeOffset, lineOffset, section);
@@ -257,7 +257,7 @@ function parseStructure (text, handleError) {
         }
     }
     
-    function parseNextCommand (line, lineOffset) {
+    function parseNextCommand(line, lineOffset) {
         
         var next = line.replace(/^\(>\)/, "").trim();
         
@@ -273,11 +273,11 @@ function parseStructure (text, handleError) {
         currentNode.next = next;
     }
     
-    function parseReturnToLast () {
+    function parseReturnToLast() {
         currentNode.returnToLast = true;
     }
     
-    function parseOption (line, lineOffset) {
+    function parseOption(line, lineOffset) {
         
         var label, value, parts, valueParts, target;
         
@@ -307,7 +307,7 @@ function parseStructure (text, handleError) {
         currentNode.options.push(option(label, target, value, lineOffset));
     }
     
-    function parseProperty (line, lineOffset, isSection) {
+    function parseProperty(line, lineOffset, isSection) {
         
         var rawKey = line.split(":")[0];
         var value = line.split(rawKey + ":")[1];
@@ -348,11 +348,11 @@ function parseStructure (text, handleError) {
     }
 }
 
-function countNewLines (text) {
+function countNewLines(text) {
     return text.split("\n").length - 1;
 }
 
-function node (line, lineOffset, section) {
+function node(line, lineOffset, section) {
     return {
         id: line.replace(/^###:/, "").trim(),
         content: "",
@@ -364,7 +364,7 @@ function node (line, lineOffset, section) {
     };
 }
 
-function option (label, target, value, lineOffset) {
+function option(label, target, value, lineOffset) {
     return {
         type: "option",
         value: value,
@@ -374,7 +374,7 @@ function option (label, target, value, lineOffset) {
     };
 }
 
-function link (type, label, target, line) {
+function link(type, label, target, line) {
     return {
         type: type,
         label: label,
@@ -383,43 +383,43 @@ function link (type, label, target, line) {
     };
 }
 
-function isSilentLine (line) {
+function isSilentLine(line) {
     return line.match(/^\(-\)/);
 }
 
-function isProperty (line) {
+function isProperty(line) {
     return line.match(/^\(#\)/);
 }
 
-function isOption (line) {
+function isOption(line) {
     return line.match(/^\(\@\)/);
 }
 
-function isNextCommand (line) {
+function isNextCommand(line) {
     return line.match(/^\(>\)/);
 }
 
-function isReturnToLast (line) {
+function isReturnToLast(line) {
     return line.match(/^\(<\)/);
 }
 
-function isNodeSeparator (line) {
+function isNodeSeparator(line) {
     return line.match(/^\(~~~\)/);
 }
 
-function isTitle (line) {
+function isTitle(line) {
     return line.match(/^#:/);
 }
 
-function isSectionTitle (line) {
+function isSectionTitle(line) {
     return line.match(/^##:/);
 }
 
-function isNodeTitle (line) {
+function isNodeTitle(line) {
     return line.match(/^###:/);
 }
 
-function removeComments (text) {
+function removeComments(text) {
     return text.replace(/\(--.*?--\)/g, "");
 }
 
