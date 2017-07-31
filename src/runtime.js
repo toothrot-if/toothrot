@@ -28,20 +28,14 @@ var components = {
 
 function run(resources, _) {
     
-    var env;
-    
     var context = ctx.create({
         components: components,
         resources: resources
     });
     
-    env = context.getComponent("env");
+    context.set("_", _ || {});
     
-    _ = _ || {};
-    
-    Object.keys(_).forEach(function (key) {
-        env.set(key, _[key]);
-    });
+    context.init();
     
 }
 

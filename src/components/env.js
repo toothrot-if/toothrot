@@ -4,13 +4,26 @@
 // The environment for scripts. It's available in scripts as: _
 //
 
-function create() {
+function create(context) {
     
     var env = {
         oneOf: function () {
             return arguments[Math.floor(Math.random() * arguments.length)];
         }
     };
+    
+    function init() {
+        
+        var _ = context.get("_");
+        
+        Object.keys(_).forEach(function (key) {
+            set(key, _[key]);
+        });
+    }
+    
+    function destroy() {
+        env = null;
+    }
     
     function set(key, value) {
         env[key] = value;
@@ -29,11 +42,13 @@ function create() {
     }
     
     return {
+        init: init,
+        destroy: destroy,
         set: set,
         get: get,
         getAll: getAll,
         has: has
-    }
+    };
 }
 
 module.exports = create;

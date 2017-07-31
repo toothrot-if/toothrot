@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 
 var EventEmitter = require("events");
 
@@ -23,6 +24,29 @@ function create(options) {
     Object.keys(options.components).forEach(function (key) {
         componentFactories[key] = options.components[key];
     });
+    
+    function init() {
+        Object.keys(componentFactories).forEach(function (key) {
+            getComponent(key);
+        });
+    }
+    
+    function destroy() {
+        
+        Object.keys(components).forEach(function (key) {
+            
+            var component = getComponent(key);
+            
+            if (component.destroy) {
+                component.destroy();
+            }
+        });
+        
+        bus = null;
+        vars = null;
+        components = null;
+        componentFactories = null;
+    }
     
     function set(name, value) {
         vars[name] = value;
@@ -62,6 +86,9 @@ function create(options) {
         }
         
         if (!components[name]) {
+            
+            console.log("Initializing component '" + name + "'...");
+            
             components[name] = componentFactories[name]();
             
             if (components[name].init) {
@@ -103,6 +130,8 @@ function create(options) {
     }
     
     privateContext = {
+        init: init,
+        destroy: destroy,
         bus: bus,
         emit: bus.emit.bind(bus),
         on: bus.on.bind(bus),
