@@ -11,9 +11,8 @@ function create(options) {
     
     var privateContext, resources;
     
-    var vars = Object.create(null);
-    var data = Object.create(null);
     var bus = new EventEmitter();
+    var vars = Object.create(null);
     var components = Object.create(null);
     var componentFactories = Object.create(null);
     
@@ -39,16 +38,6 @@ function create(options) {
     
     function keys() {
         return Object.keys(vars);
-    }
-    
-    function getData() {
-        return data;
-    }
-    
-    function setData(newData) {
-        bus.emit("before_set_data", data);
-        data = newData;
-        bus.emit("set_data", data);
     }
     
     function hasComponent(name) {
@@ -98,8 +87,6 @@ function create(options) {
             get: get,
             has: has,
             keys: keys,
-            getData: getData,
-            setData: setData,
             getComponent: getComponent,
             hasComponent: hasComponent,
             getResource: getResource,
@@ -116,8 +103,6 @@ function create(options) {
     }
     
     privateContext = {
-        getData: getData,
-        setData: setData,
         bus: bus,
         emit: bus.emit.bind(bus),
         on: bus.on.bind(bus),

@@ -4,16 +4,10 @@ function create(context) {
     var vars;
     
     function init() {
-        
-        vars = context.getData()._vars;
-        
-        context.on("set_data", onDataChange);
+        vars = {};
     }
     
     function destroy() {
-        
-        context.removeListener("set_data", onDataChange);
-        
         vars = null;
     }
     
@@ -39,10 +33,6 @@ function create(context) {
         Object.keys(vars).forEach(function (key) {
             delete vars[key];
         });
-    }
-    
-    function onDataChange(newData) {
-        vars = newData._vars;
     }
     
     return {
