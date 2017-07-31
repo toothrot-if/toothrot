@@ -12,18 +12,18 @@ if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
 }
 
 var components = {
-    audio: require("./components/audio.js"),
-    env: require("./components/env.js"),
-    focus: require("./components/focus.js"),
-    highlighter: require("./components/highlighter.js"),
-    interpreter: require("./components/interpreter.js"),
-    screens: require("./components/screens.js"),
-    settings: require("./components/settings.js"),
-    stage: require("./components/stage.js"),
-    storage: require("./components/storage.js"),
-    story: require("./components/story.js"),
-    system: require("./components/system.js"),
-    vars: require("./components/vars.js")
+    audio: require("../components/audio.js"),
+    env: require("../components/env.js"),
+    focus: require("../components/focus.js"),
+    highlighter: require("../components/highlighter.js"),
+    interpreter: require("../components/interpreter.js"),
+    screens: require("../components/screens.js"),
+    settings: require("../components/settings.js"),
+    stage: require("../components/stage.js"),
+    storage: require("../components/storage.js"),
+    story: require("../components/story.js"),
+    system: require("../components/system.js"),
+    vars: require("../components/vars.js")
 };
 
 function run(resources, _) {

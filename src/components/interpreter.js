@@ -1,7 +1,7 @@
 
 var clone = require("clone");
 var merge = require("deepmerge");
-var evalScript = require("./utils/evalScript");
+var evalScript = require("../utils/evalScript");
 
 // Wait how long before next() works again after a return?
 // This is to prevent popping more stuff from the stack than
