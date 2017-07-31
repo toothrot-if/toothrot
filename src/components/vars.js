@@ -22,14 +22,7 @@ function create(context) {
     }
     
     function getAll() {
-        
-        var all = Object.create(null);
-        
-        Object.keys(vars).forEach(function (key) {
-            all[key] = vars[key];
-        });
-        
-        return all;
+        return vars;
     }
     
     function set(key, value) {

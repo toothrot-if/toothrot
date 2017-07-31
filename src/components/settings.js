@@ -1,4 +1,6 @@
 
+var clone = require("clone");
+
 function none() {
     // does nothing
 }
@@ -25,6 +27,12 @@ function create(context) {
     
     function set(name, value) {
         settings[name] = value;
+        context.emit("update_setting", name);
+    }
+    
+    function remove(name) {
+        delete settings[name];
+        context.emit("remove_setting", name);
     }
     
     function get(name) {
@@ -32,7 +40,7 @@ function create(context) {
     }
     
     function getAll() {
-        
+        return clone(settings);
     }
     
     function has(name) {
@@ -67,27 +75,6 @@ function create(context) {
         }
     }
     
-    function update(then) {
-        
-        var settingWidgets = screenContainer.querySelectorAll("*[data-type=setting]");
-        
-        [].forEach.call(settingWidgets, function (widget) {
-            
-            var name = widget.getAttribute("data-name");
-            var value = widget.value;
-            
-            if (!name) {
-                return;
-            }
-            
-            set(name, value);
-            
-            context.emit("update_setting", name);
-        });
-        
-        save(then);
-    }
-    
     function save(then) {
         
         then = then || none;
@@ -102,7 +89,8 @@ function create(context) {
         destroy: destroy,
         load: load,
         save: save,
-        update: update,
+        update: mergeSettings,
+        remove: remove,
         set: set,
         has: has,
         get: get,

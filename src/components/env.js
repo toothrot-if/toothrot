@@ -6,35 +6,11 @@
 
 function create() {
     
-    var vars;
-    
     var env = {
-        link: function (label, target) {
-            return insertLink(label, target);
-        },
-        o: function (name) {
-            return objects.create(name, objects.find(name, vars._objects));
-        },
-        createObject: function (name, prototypes) {
-            
-            vars._objects[name] = {
-                prototypes: prototypes
-            };
-            
-            vars._objects[name] = objects.assemble(name, vars._objects);
-        },
         oneOf: function () {
             return arguments[Math.floor(Math.random() * arguments.length)];
         }
     };
-    
-    function init() {
-        
-    }
-    
-    function destroy() {
-        
-    }
     
     function set(key, value) {
         env[key] = value;
@@ -48,11 +24,14 @@ function create() {
         return (key in env);
     }
     
+    function getAll() {
+        return env;
+    }
+    
     return {
-        init: init,
-        destroy: destroy,
         set: set,
         get: get,
+        getAll: getAll,
         has: has
     }
 }

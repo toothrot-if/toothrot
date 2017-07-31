@@ -1,21 +1,23 @@
 
+var clone = require("clone");
+
 function create(context) {
     
-    var fullscreenMode;
+    var fullscreenMode, features;
     
     function init() {
-        
-    }
-    
-    function destroy() {
-        
-    }
-    
-    function getFeatures() {
-        return {
+        features = {
             fullscreen: hasFullscreen(),
             exit: canExit()
         };
+    }
+    
+    function destroy() {
+        features = null;
+    }
+    
+    function getFeatures() {
+        return clone(features);
     }
     
     function toggleFullscreen() {

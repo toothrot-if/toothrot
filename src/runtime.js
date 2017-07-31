@@ -4,7 +4,6 @@
 require('smoothscroll-polyfill').polyfill();
 
 var ctx = require("./utils/context.js");
-var objects = require("./objects.js");
 
 if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
     alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
@@ -29,17 +28,14 @@ var components = {
 
 function run(resources, _) {
     
-    var vars, env;
+    var env;
     
     var context = ctx.create({
         components: components,
         resources: resources
     });
     
-    vars = context.getComponent("vars");
     env = context.getComponent("env");
-    
-    vars.set("_objects", objects.assembleAll(resources.objects || {}));
     
     _ = _ || {};
     

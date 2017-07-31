@@ -84,7 +84,7 @@ function create(context) {
         return hasSlot("current", function (error, exists) {
             
             if (exists) {
-                settings.set("currentSlotExists", true);
+                settings.set("current_slot_exists", true);
             }
             
             if (then) {

@@ -13,6 +13,7 @@
 var each = require("enjoy-core/each");
 var formatter = require("vrep").create;
 var format = require("vrep").format;
+var transform = require("transform-js").transform;
 
 var evalScript = require("../utils/evalScript.js");
 
@@ -27,7 +28,7 @@ function none() {
 function create(context) {
     
     var storage, settings, system, interpreter, story, vars, env;
-    var screens, currentScreen, screenStack, screenContainer;
+    var screens, currentScreen, screenStack, curtain;
     var curtainVisible = false;
     
     function init() {
@@ -44,14 +45,21 @@ function create(context) {
         // A stack for remembering which screen to return to.
         screenStack = [];
         
-        screenContainer.addEventListener("click", onScreenClick);
+        // The curtain element is used to darken the screen when
+        // transitioning from one state to the next, e.g. when
+        // the section changes.
+        curtain = document.createElement("div");
         
+        curtain.setAttribute("class", "Curtain");
+        
+        context.on("screen_click", onScreenClick);
         context.on("show_screen", removeInactiveElements);
         context.on("change_focus_mode", onFocusModeChange);
     }
     
     function destroy() {
         
+        context.removeListener("screen_click", onScreenClick);
         context.removeListener("show_screen", removeInactiveElements);
         context.removeListener("change_focus_mode", onFocusModeChange);
         
@@ -112,7 +120,7 @@ function create(context) {
                 back();
             }
             else if (target === "saveSettings") {
-                settings.update(back);
+                update(back);
             }
         }
         else if (type === "slot-button") {
@@ -126,6 +134,30 @@ function create(context) {
                 deleteSlot(element);
             }
         }
+    }
+    
+    function update(then) {
+        
+        var container = context.get("screen_container");
+        var elements = Array.prototype.slice(container.querySelectorAll("*[data-type=setting]"));
+        
+        var values = {};
+        
+        elements.forEach(function (element) {
+            
+            var value = element.value;
+            var name = element.getAttribute("data-name");
+            
+            if (!name) {
+                return;
+            }
+            
+            values[name] = value;
+            
+        });
+        
+        settings.update(values);
+        settings.save(then);
     }
     
     function run(name, then) {
@@ -184,6 +216,7 @@ function create(context) {
         
         function replace() {
             
+            var screenContainer = context.get("screen_container");
             var content = format(screen, settings.getAll());
             
             content = formatter("{$", "}")(content, vars.getAll());
@@ -215,9 +248,10 @@ function create(context) {
         
         function populateSlots(slots) {
             
-            var slotContainer = screenContainer.querySelector("*[data-type=slots]");
-            var template = screenContainer.querySelector("*[data-template-name=slot]");
-            var empty = screenContainer.querySelector("*[data-template-name=empty-slot]");
+            var container = context.get("screen_container");
+            var slotContainer = container.querySelector("*[data-type=slots]");
+            var template = container.querySelector("*[data-template-name=slot]");
+            var empty = container.querySelector("*[data-template-name=empty-slot]");
             var i, currentSlot, tpl, emptyTpl;
             
             template.parentNode.removeChild(template);
@@ -315,6 +349,8 @@ function create(context) {
     
     function animateScreenEntry(inBetween, then) {
         
+        var screenContainer = context.get("screen_container");
+        
         then = then || none;
         
         showCurtain(function () {
@@ -332,6 +368,9 @@ function create(context) {
     }
     
     function animateScreenExit(then) {
+        
+        var screenContainer = context.get("screen_container");
+        
         showCurtain(function () {
             
             focus.setMode("node");
@@ -365,7 +404,7 @@ function create(context) {
         
         var buttons;
         
-        if (currentSlotExists) {
+        if (settings.get("current_slot_exists")) {
             return;
         }
         
@@ -391,7 +430,8 @@ function create(context) {
             return then();
         }
         
-        container.appendChild(curtain);
+        context.get("stage_container").appendChild(curtain);
+        
         curtain.style.display = "";
         curtainVisible = true;
         
@@ -414,7 +454,7 @@ function create(context) {
             curtain.style.display = "none";
             
             try {
-                container.removeChild(curtain);
+                context.get("stage_container").removeChild(curtain);
             }
             catch (error) {
                 console.error(error);
@@ -442,15 +482,15 @@ function create(context) {
         var isEmpty = !!element.getAttribute("data-is-empty");
         
         if (isEmpty) {
-            save(id, function () {
-                runScreen("save");
+            interpreter.save(id, function () {
+                run("save");
             });
         }
         else {
             confirm("Overwrite slot?", function (yes) {
                 if (yes) {
-                    save(id, function () {
-                        runScreen("save");
+                    interpreter.save(id, function () {
+                        run("save");
                     });
                 }
             });
@@ -461,20 +501,20 @@ function create(context) {
         
         var id = element.getAttribute("data-slot-id");
         
-        if (currentNode) {
+        if (interpreter.getCurrentNodeId()) {
             confirm("Load slot and discard current progress?", function (yes) {
                 if (yes) {
-                    clearState();
+                    interpreter.clearState();
                     exitScreenMode(function () {
-                        load(id);
+                        interpreter.load(id);
                     });
                 }
             });
         }
         else {
-            clearState();
+            interpreter.clearState();
             exitScreenMode(function () {
-                load(id);
+                interpreter.load(id);
             });
         }
     }
@@ -505,6 +545,12 @@ function create(context) {
                 inBetween();
             }
         }, then);
+    }
+    
+    function setOpacity(element) {
+        return function (v) {
+            element.style.opacity = v;
+        };
     }
     
     return {

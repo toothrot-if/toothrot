@@ -9,19 +9,37 @@ var EventEmitter = require("events");
 //
 function create(options) {
     
-    var privateContext;
+    var privateContext, resources;
     
-    var data = {};
+    var vars = Object.create(null);
+    var data = Object.create(null);
     var bus = new EventEmitter();
     var components = Object.create(null);
     var componentFactories = Object.create(null);
     
     options = options || {};
     options.components = options.components || {};
+    resources = options.resources || {};
     
     Object.keys(options.components).forEach(function (key) {
         componentFactories[key] = options.components[key];
     });
+    
+    function set(name, value) {
+        vars[name] = value;
+    }
+    
+    function get(name) {
+        return vars[name];
+    }
+    
+    function has(name) {
+        return (name in vars);
+    }
+    
+    function keys() {
+        return Object.keys(vars);
+    }
     
     function getData() {
         return data;
@@ -65,12 +83,27 @@ function create(options) {
         return components[name];
     }
     
+    function getResource(name) {
+        return resources[name];
+    }
+    
+    function hasResource(name) {
+        return (name in resources);
+    }
+    
     function createPublicContext() {
         
         var publicContext = {
+            set: set,
+            get: get,
+            has: has,
+            keys: keys,
             getData: getData,
             setData: setData,
             getComponent: getComponent,
+            hasComponent: hasComponent,
+            getResource: getResource,
+            hasResource: hasResource,
             emit: bus.emit.bind(bus),
             once: bus.once.bind(bus),
             on: bus.on.bind(bus),
@@ -89,7 +122,12 @@ function create(options) {
         emit: bus.emit.bind(bus),
         on: bus.on.bind(bus),
         once: bus.once.bind(bus),
+        removeListener: bus.removeListener.bind(bus),
         registerComponent: registerComponent,
+        getComponent: getComponent,
+        hasComponent: hasComponent,
+        getResource: getResource,
+        hasResource: hasResource,
         getPublicContext: createPublicContext
     };
     

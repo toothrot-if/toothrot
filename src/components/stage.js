@@ -18,13 +18,14 @@ var NOTIFICATION_DURATION = 3000;
 
 function create(context) {
     
-    var ui, text, indicator, background, curtain, optionsParent, backgroundDimmer, optionsContainer;
+    var ui, text, indicator, background, optionsParent, backgroundDimmer, optionsContainer;
     var container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
-    var system, settings;
+    var system, settings, env;
     
     function init() {
         
+        env = context.getComponent("env");
         vars = context.getComponent("vars");
         story = context.getComponent("story");
         system = context.getComponent("system");
@@ -44,11 +45,6 @@ function create(context) {
         text = document.createElement("div");
         indicator = document.createElement("div");
         background = document.createElement("div");
-        
-        // The curtain element is used to darken the screen when
-        // transitioning from one state to the next, e.g. when
-        // the section changes.
-        curtain = document.createElement("div");
         
         // Actions and options are put into a parent element
         // so that clicks can be intercepted and to allow
@@ -84,7 +80,6 @@ function create(context) {
         optionsParent.setAttribute("class", "OptionsCurtain");
         optionsContainer.setAttribute("class", "OptionsContainer");
         screenContainer.setAttribute("class", "ScreenContainer");
-        curtain.setAttribute("class", "Curtain");
         
         optionsParent.appendChild(optionsContainer);
         container.appendChild(background);
@@ -102,6 +97,7 @@ function create(context) {
         
         ui.addEventListener("click", onUiClick);
         container.addEventListener("click", onContainerClick);
+        screenContainer.addEventListener("click", context.emit.bind(context, "screen_click"));
         optionsParent.addEventListener("click", onOptionsParentClick);
         window.addEventListener("keyup", onKeyUp);
         
@@ -112,12 +108,17 @@ function create(context) {
         document.addEventListener("mozfullscreenchange", reflowElements);
         document.addEventListener("MSFullscreenChange", reflowElements);
         
+        context.set("stage_container", container);
+        context.set("screen_container", screenContainer);
+        
         context.on("fullscreen_change", reflowElements);
         context.on("screen_entry", hideGameElements);
         context.on("screen_exit", showGameElements);
         context.on("clear_state", onClearState);
         context.on("node_change", onNodeChange);
         context.on("start", onStart);
+        
+        env.set("link", insertLink);
     
         window.addEventListener("keydown", function (event) {
             if (event.keyCode === KEY_CODE_UP || event.keyCode === KEY_CODE_DOWN) {
