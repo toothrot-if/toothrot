@@ -89,7 +89,7 @@ function create(options) {
             
             console.log("Initializing component '" + name + "'...");
             
-            components[name] = componentFactories[name]();
+            components[name] = componentFactories[name](createPublicContext());
             
             if (components[name].init) {
                 components[name].init();
@@ -132,6 +132,10 @@ function create(options) {
     privateContext = {
         init: init,
         destroy: destroy,
+        set: set,
+        get: get,
+        has: has,
+        keys: keys,
         bus: bus,
         emit: bus.emit.bind(bus),
         on: bus.on.bind(bus),

@@ -88,8 +88,6 @@ function create(context) {
         
         var setValues = compose(setX, setY, setWidth, setHeight, setOpacity);
         
-        context.emit("focusChange", element);
-        
         transform(0, 1, setValues, {duration: 200, fps: 60});
         
         setTimeout(function () {

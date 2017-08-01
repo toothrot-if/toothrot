@@ -1,13 +1,9 @@
 
 var getAbsoluteRect = require("./getAbsoluteRect");
+var scrollPosition = require("./scrollPosition");
 
-function getScrollX() {
-    return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
-}
-
-function getScrollY() {
-    return (window.pageYOffset || document.scrollTop || 0) - (document.clientTop || 0);
-}
+var getScrollX = scrollPosition.getX;
+var getScrollY = scrollPosition.getY;
 
 function scrollToBottom(element, instantly) {
     if (instantly) {

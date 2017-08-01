@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v1.6.0)
-    Build time: Sat, 29 Jul 2017 22:00:43 GMT
+    Toothrot Engine (v2.0.0)
+    Build time: Mon, 31 Jul 2017 20:48:14 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -1770,6 +1770,306 @@ module.exports = Array.isArray || function (arr) {
 };
 
 },{}],5:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+function EventEmitter() {
+  this._events = this._events || {};
+  this._maxListeners = this._maxListeners || undefined;
+}
+module.exports = EventEmitter;
+
+// Backwards-compat with node 0.10.x
+EventEmitter.EventEmitter = EventEmitter;
+
+EventEmitter.prototype._events = undefined;
+EventEmitter.prototype._maxListeners = undefined;
+
+// By default EventEmitters will print a warning if more than 10 listeners are
+// added to it. This is a useful default which helps finding memory leaks.
+EventEmitter.defaultMaxListeners = 10;
+
+// Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+EventEmitter.prototype.setMaxListeners = function(n) {
+  if (!isNumber(n) || n < 0 || isNaN(n))
+    throw TypeError('n must be a positive number');
+  this._maxListeners = n;
+  return this;
+};
+
+EventEmitter.prototype.emit = function(type) {
+  var er, handler, len, args, i, listeners;
+
+  if (!this._events)
+    this._events = {};
+
+  // If there is no 'error' event listener then throw.
+  if (type === 'error') {
+    if (!this._events.error ||
+        (isObject(this._events.error) && !this._events.error.length)) {
+      er = arguments[1];
+      if (er instanceof Error) {
+        throw er; // Unhandled 'error' event
+      }
+      throw TypeError('Uncaught, unspecified "error" event.');
+    }
+  }
+
+  handler = this._events[type];
+
+  if (isUndefined(handler))
+    return false;
+
+  if (isFunction(handler)) {
+    switch (arguments.length) {
+      // fast cases
+      case 1:
+        handler.call(this);
+        break;
+      case 2:
+        handler.call(this, arguments[1]);
+        break;
+      case 3:
+        handler.call(this, arguments[1], arguments[2]);
+        break;
+      // slower
+      default:
+        args = Array.prototype.slice.call(arguments, 1);
+        handler.apply(this, args);
+    }
+  } else if (isObject(handler)) {
+    args = Array.prototype.slice.call(arguments, 1);
+    listeners = handler.slice();
+    len = listeners.length;
+    for (i = 0; i < len; i++)
+      listeners[i].apply(this, args);
+  }
+
+  return true;
+};
+
+EventEmitter.prototype.addListener = function(type, listener) {
+  var m;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events)
+    this._events = {};
+
+  // To avoid recursion in the case that type === "newListener"! Before
+  // adding it to the listeners, first emit "newListener".
+  if (this._events.newListener)
+    this.emit('newListener', type,
+              isFunction(listener.listener) ?
+              listener.listener : listener);
+
+  if (!this._events[type])
+    // Optimize the case of one listener. Don't need the extra array object.
+    this._events[type] = listener;
+  else if (isObject(this._events[type]))
+    // If we've already got an array, just append.
+    this._events[type].push(listener);
+  else
+    // Adding the second element, need to change to array.
+    this._events[type] = [this._events[type], listener];
+
+  // Check for listener leak
+  if (isObject(this._events[type]) && !this._events[type].warned) {
+    if (!isUndefined(this._maxListeners)) {
+      m = this._maxListeners;
+    } else {
+      m = EventEmitter.defaultMaxListeners;
+    }
+
+    if (m && m > 0 && this._events[type].length > m) {
+      this._events[type].warned = true;
+      console.error('(node) warning: possible EventEmitter memory ' +
+                    'leak detected. %d listeners added. ' +
+                    'Use emitter.setMaxListeners() to increase limit.',
+                    this._events[type].length);
+      if (typeof console.trace === 'function') {
+        // not supported in IE 10
+        console.trace();
+      }
+    }
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.once = function(type, listener) {
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  var fired = false;
+
+  function g() {
+    this.removeListener(type, g);
+
+    if (!fired) {
+      fired = true;
+      listener.apply(this, arguments);
+    }
+  }
+
+  g.listener = listener;
+  this.on(type, g);
+
+  return this;
+};
+
+// emits a 'removeListener' event iff the listener was removed
+EventEmitter.prototype.removeListener = function(type, listener) {
+  var list, position, length, i;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events || !this._events[type])
+    return this;
+
+  list = this._events[type];
+  length = list.length;
+  position = -1;
+
+  if (list === listener ||
+      (isFunction(list.listener) && list.listener === listener)) {
+    delete this._events[type];
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+
+  } else if (isObject(list)) {
+    for (i = length; i-- > 0;) {
+      if (list[i] === listener ||
+          (list[i].listener && list[i].listener === listener)) {
+        position = i;
+        break;
+      }
+    }
+
+    if (position < 0)
+      return this;
+
+    if (list.length === 1) {
+      list.length = 0;
+      delete this._events[type];
+    } else {
+      list.splice(position, 1);
+    }
+
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.removeAllListeners = function(type) {
+  var key, listeners;
+
+  if (!this._events)
+    return this;
+
+  // not listening for removeListener, no need to emit
+  if (!this._events.removeListener) {
+    if (arguments.length === 0)
+      this._events = {};
+    else if (this._events[type])
+      delete this._events[type];
+    return this;
+  }
+
+  // emit removeListener for all listeners on all events
+  if (arguments.length === 0) {
+    for (key in this._events) {
+      if (key === 'removeListener') continue;
+      this.removeAllListeners(key);
+    }
+    this.removeAllListeners('removeListener');
+    this._events = {};
+    return this;
+  }
+
+  listeners = this._events[type];
+
+  if (isFunction(listeners)) {
+    this.removeListener(type, listeners);
+  } else if (listeners) {
+    // LIFO order
+    while (listeners.length)
+      this.removeListener(type, listeners[listeners.length - 1]);
+  }
+  delete this._events[type];
+
+  return this;
+};
+
+EventEmitter.prototype.listeners = function(type) {
+  var ret;
+  if (!this._events || !this._events[type])
+    ret = [];
+  else if (isFunction(this._events[type]))
+    ret = [this._events[type]];
+  else
+    ret = this._events[type].slice();
+  return ret;
+};
+
+EventEmitter.prototype.listenerCount = function(type) {
+  if (this._events) {
+    var evlistener = this._events[type];
+
+    if (isFunction(evlistener))
+      return 1;
+    else if (evlistener)
+      return evlistener.length;
+  }
+  return 0;
+};
+
+EventEmitter.listenerCount = function(emitter, type) {
+  return emitter.listenerCount(type);
+};
+
+function isFunction(arg) {
+  return typeof arg === 'function';
+}
+
+function isNumber(arg) {
+  return typeof arg === 'number';
+}
+
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
+
+function isUndefined(arg) {
+  return arg === void 0;
+}
+
+},{}],6:[function(require,module,exports){
 //
 // # class-manipulator
 //
@@ -2207,7 +2507,7 @@ function dummy (classList) {
     };
 }
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function (Buffer){
 var clone = (function() {
 'use strict';
@@ -2371,7 +2671,7 @@ if (typeof module === 'object' && module.exports) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":1}],7:[function(require,module,exports){
+},{"buffer":1}],8:[function(require,module,exports){
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
         define(factory);
@@ -2425,7 +2725,7 @@ return function deepmerge(target, src) {
 
 }));
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 
 function apply (fn, args) {
     
@@ -2438,7 +2738,7 @@ function apply (fn, args) {
 
 module.exports = apply;
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 
 var slice = require("./slice");
 var apply = require("./apply");
@@ -2476,7 +2776,7 @@ function auto (fn, arity) {
 
 module.exports = auto;
 
-},{"./apply":8,"./slice":15}],10:[function(require,module,exports){
+},{"./apply":9,"./slice":16}],11:[function(require,module,exports){
 
 var apply = require("./apply");
 var pipe = require("./pipe");
@@ -2498,7 +2798,7 @@ function compose () {
 
 module.exports = compose;
 
-},{"./apply":8,"./pipe":14,"./toArray":16}],11:[function(require,module,exports){
+},{"./apply":9,"./pipe":15,"./toArray":17}],12:[function(require,module,exports){
 
 var types = require("enjoy-typechecks");
 var auto = require("./auto");
@@ -2521,7 +2821,7 @@ function each (fn, collection) {
 
 module.exports = auto(each);
 
-},{"./auto":9,"enjoy-typechecks":13}],12:[function(require,module,exports){
+},{"./auto":10,"enjoy-typechecks":14}],13:[function(require,module,exports){
 
 function free (method) {
     return Function.prototype.call.bind(method);
@@ -2529,7 +2829,7 @@ function free (method) {
 
 module.exports = free;
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /* eslint no-self-compare: off */
 
 function isNull (a) {
@@ -2685,7 +2985,7 @@ module.exports = {
     isUndefined: isUndefined
 };
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 
 var each = require("./each");
 var auto = require("./auto");
@@ -2703,13 +3003,13 @@ function pipe (value) {
 
 module.exports = auto(pipe, 2);
 
-},{"./auto":9,"./each":11}],15:[function(require,module,exports){
+},{"./auto":10,"./each":12}],16:[function(require,module,exports){
 
 var free = require("./free");
 
 module.exports = free(Array.prototype.slice);
 
-},{"./free":12}],16:[function(require,module,exports){
+},{"./free":13}],17:[function(require,module,exports){
 
 function toArray (thing) {
     return Array.prototype.slice.call(thing);
@@ -2717,7 +3017,7 @@ function toArray (thing) {
 
 module.exports = toArray;
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /*!
  *  howler.js v1.1.28
  *  howlerjs.com
@@ -4072,7 +4372,7 @@ module.exports = toArray;
 
 })();
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /*
  * smoothscroll polyfill - v0.3.5
  * https://iamdustan.github.io/smoothscroll
@@ -4394,7 +4694,7 @@ module.exports = toArray;
   }
 })(window, document);
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /* global requestAnimationFrame */
 
 var eases = require("eases");
@@ -4589,7 +4889,7 @@ module.exports = {
     transform: transform
 };
 
-},{"eases":38}],20:[function(require,module,exports){
+},{"eases":39}],21:[function(require,module,exports){
 function backInOut(t) {
   var s = 1.70158 * 1.525
   if ((t *= 2) < 1)
@@ -4598,21 +4898,21 @@ function backInOut(t) {
 }
 
 module.exports = backInOut
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 function backIn(t) {
   var s = 1.70158
   return t * t * ((s + 1) * t - s)
 }
 
 module.exports = backIn
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 function backOut(t) {
   var s = 1.70158
   return --t * t * ((s + 1) * t + s) + 1
 }
 
 module.exports = backOut
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 var bounceOut = require('./bounce-out')
 
 function bounceInOut(t) {
@@ -4622,7 +4922,7 @@ function bounceInOut(t) {
 }
 
 module.exports = bounceInOut
-},{"./bounce-out":25}],24:[function(require,module,exports){
+},{"./bounce-out":26}],25:[function(require,module,exports){
 var bounceOut = require('./bounce-out')
 
 function bounceIn(t) {
@@ -4630,7 +4930,7 @@ function bounceIn(t) {
 }
 
 module.exports = bounceIn
-},{"./bounce-out":25}],25:[function(require,module,exports){
+},{"./bounce-out":26}],26:[function(require,module,exports){
 function bounceOut(t) {
   var a = 4.0 / 11.0
   var b = 8.0 / 11.0
@@ -4652,26 +4952,26 @@ function bounceOut(t) {
 }
 
 module.exports = bounceOut
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 function circInOut(t) {
   if ((t *= 2) < 1) return -0.5 * (Math.sqrt(1 - t * t) - 1)
   return 0.5 * (Math.sqrt(1 - (t -= 2) * t) + 1)
 }
 
 module.exports = circInOut
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 function circIn(t) {
   return 1.0 - Math.sqrt(1.0 - t * t)
 }
 
 module.exports = circIn
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 function circOut(t) {
   return Math.sqrt(1 - ( --t * t ))
 }
 
 module.exports = circOut
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 function cubicInOut(t) {
   return t < 0.5
     ? 4.0 * t * t * t
@@ -4679,20 +4979,20 @@ function cubicInOut(t) {
 }
 
 module.exports = cubicInOut
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 function cubicIn(t) {
   return t * t * t
 }
 
 module.exports = cubicIn
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 function cubicOut(t) {
   var f = t - 1.0
   return f * f * f + 1.0
 }
 
 module.exports = cubicOut
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 function elasticInOut(t) {
   return t < 0.5
     ? 0.5 * Math.sin(+13.0 * Math.PI/2 * 2.0 * t) * Math.pow(2.0, 10.0 * (2.0 * t - 1.0))
@@ -4700,19 +5000,19 @@ function elasticInOut(t) {
 }
 
 module.exports = elasticInOut
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 function elasticIn(t) {
   return Math.sin(13.0 * t * Math.PI/2) * Math.pow(2.0, 10.0 * (t - 1.0))
 }
 
 module.exports = elasticIn
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 function elasticOut(t) {
   return Math.sin(-13.0 * (t + 1.0) * Math.PI/2) * Math.pow(2.0, -10.0 * t) + 1.0
 }
 
 module.exports = elasticOut
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 function expoInOut(t) {
   return (t === 0.0 || t === 1.0)
     ? t
@@ -4722,19 +5022,19 @@ function expoInOut(t) {
 }
 
 module.exports = expoInOut
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 function expoIn(t) {
   return t === 0.0 ? t : Math.pow(2.0, 10.0 * (t - 1.0))
 }
 
 module.exports = expoIn
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 function expoOut(t) {
   return t === 1.0 ? t : 1.0 - Math.pow(2.0, -10.0 * t)
 }
 
 module.exports = expoOut
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 module.exports = {
 	'backInOut': require('./back-in-out'),
 	'backIn': require('./back-in'),
@@ -4768,13 +5068,13 @@ module.exports = {
 	'sineIn': require('./sine-in'),
 	'sineOut': require('./sine-out')
 }
-},{"./back-in":21,"./back-in-out":20,"./back-out":22,"./bounce-in":24,"./bounce-in-out":23,"./bounce-out":25,"./circ-in":27,"./circ-in-out":26,"./circ-out":28,"./cubic-in":30,"./cubic-in-out":29,"./cubic-out":31,"./elastic-in":33,"./elastic-in-out":32,"./elastic-out":34,"./expo-in":36,"./expo-in-out":35,"./expo-out":37,"./linear":39,"./quad-in":41,"./quad-in-out":40,"./quad-out":42,"./quart-in":44,"./quart-in-out":43,"./quart-out":45,"./quint-in":47,"./quint-in-out":46,"./quint-out":48,"./sine-in":50,"./sine-in-out":49,"./sine-out":51}],39:[function(require,module,exports){
+},{"./back-in":22,"./back-in-out":21,"./back-out":23,"./bounce-in":25,"./bounce-in-out":24,"./bounce-out":26,"./circ-in":28,"./circ-in-out":27,"./circ-out":29,"./cubic-in":31,"./cubic-in-out":30,"./cubic-out":32,"./elastic-in":34,"./elastic-in-out":33,"./elastic-out":35,"./expo-in":37,"./expo-in-out":36,"./expo-out":38,"./linear":40,"./quad-in":42,"./quad-in-out":41,"./quad-out":43,"./quart-in":45,"./quart-in-out":44,"./quart-out":46,"./quint-in":48,"./quint-in-out":47,"./quint-out":49,"./sine-in":51,"./sine-in-out":50,"./sine-out":52}],40:[function(require,module,exports){
 function linear(t) {
   return t
 }
 
 module.exports = linear
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 function quadInOut(t) {
     t /= 0.5
     if (t < 1) return 0.5*t*t
@@ -4783,19 +5083,19 @@ function quadInOut(t) {
 }
 
 module.exports = quadInOut
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 function quadIn(t) {
   return t * t
 }
 
 module.exports = quadIn
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 function quadOut(t) {
   return -t * (t - 2.0)
 }
 
 module.exports = quadOut
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 function quarticInOut(t) {
   return t < 0.5
     ? +8.0 * Math.pow(t, 4.0)
@@ -4803,44 +5103,44 @@ function quarticInOut(t) {
 }
 
 module.exports = quarticInOut
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 function quarticIn(t) {
   return Math.pow(t, 4.0)
 }
 
 module.exports = quarticIn
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 function quarticOut(t) {
   return Math.pow(t - 1.0, 3.0) * (1.0 - t) + 1.0
 }
 
 module.exports = quarticOut
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 function qinticInOut(t) {
     if ( ( t *= 2 ) < 1 ) return 0.5 * t * t * t * t * t
     return 0.5 * ( ( t -= 2 ) * t * t * t * t + 2 )
 }
 
 module.exports = qinticInOut
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 function qinticIn(t) {
   return t * t * t * t * t
 }
 
 module.exports = qinticIn
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 function qinticOut(t) {
   return --t * t * t * t * t + 1
 }
 
 module.exports = qinticOut
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 function sineInOut(t) {
   return -0.5 * (Math.cos(Math.PI*t) - 1)
 }
 
 module.exports = sineInOut
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 function sineIn (t) {
   var v = Math.cos(t * Math.PI * 0.5)
   if (Math.abs(v) < 1e-14) return 1
@@ -4849,13 +5149,13 @@ function sineIn (t) {
 
 module.exports = sineIn
 
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 function sineOut(t) {
   return Math.sin(t * Math.PI/2)
 }
 
 module.exports = sineOut
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 /* global module */
 
 (function () {
@@ -4901,443 +5201,937 @@ module.exports = sineOut
     
 }());
 
-},{}],53:[function(require,module,exports){
-/* global require */
+},{}],54:[function(require,module,exports){
 
-window.TOOTHROT = require("./interpreter.js");
+var Howl = require("howler").Howl;
 
-},{"./interpreter.js":54}],54:[function(require,module,exports){
-/* global __line, setInterval, clearInterval */
-/* eslint no-console: off */
+function create(context) {
+    
+    var vars, settings, currentAmbience, currentMusic, currentSound;
+    
+    function init() {
+        
+        vars = context.getComponent("vars");
+        settings = context.getComponent("settings");
+        
+        context.on("run_node", onRunNode);
+        context.on("resume_game", onResume);
+        context.on("clear_state", stopAudio);
+        context.on("update_setting", onUpdateSetting);
+    }
+    
+    function destroy() {
+        
+        context.removeListener("run_node", onRunNode);
+        context.removeListener("resume_game", onResume);
+        context.removeListener("clear_state", stopAudio);
+        context.removeListener("update_setting", onUpdateSetting);
+        
+        vars = null;
+        settings = null;
+        currentAmbience = null;
+        currentMusic = null;
+        currentSound = null;
+    }
+    
+    function onUpdateSetting(name) {
+        if (name === "soundVolume" && currentSound) {
+            currentSound.volume(settings.get("soundVolume") / 100);
+        }
+        else if (name === "ambienceVolume" && currentAmbience) {
+            currentAmbience.volume(settings.get("ambienceVolume") / 100);
+        }
+        else if (name === "musicVolume" && currentMusic) {
+            currentMusic.volume(settings.get("musicVolume") / 100);
+        }
+    }
+    
+    function onRunNode(node) {
+        
+        if (node.audio === false) {
+            stopAudio();
+        }
+        
+        if (node.sound) {
+            playSound(node.sound);
+        }
+        else {
+            stopSound();
+        }
+        
+        if (node.ambience) {
+            playAmbience(node.ambience);
+        }
+        else if (node.ambience === false) {
+            stopAmbience();
+        }
+        
+        if (node.music) {
+            playMusic(node.music);
+        }
+        else if (node.music === false) {
+            stopMusic();
+        }
+    }
+    
+    function onResume(data) {
+        
+        var vars = data.vars;
+        
+        if (vars.get("_currentSound")) {
+            playSound(unserializeAudioPath(vars._currentSound));
+        }
+        
+        if (vars.get("_currentAmbience")) {
+            playAmbience(unserializeAudioPath(vars.get("_currentAmbience")));
+        }
+        
+        if (vars.get("_currentMusic")) {
+            playMusic(unserializeAudioPath(vars.get("_currentMusic")));
+        }
+    }
+    
+    function stopAudio() {
+        stopSound();
+        stopAmbience();
+        stopMusic();
+    }
+    
+    function stopSound() {
+        
+        if (currentSound) {
+            currentSound.unload();
+        }
+        
+        vars._currentSound = undefined;
+        currentSound = undefined;
+    }
+    
+    function stopAmbience() {
+        
+        if (currentAmbience) {
+            currentAmbience.unload();
+        }
+        
+        vars._currentAmbience = undefined;
+        currentAmbience = undefined;
+    }
+    
+    function stopMusic() {
+        
+        if (currentMusic) {
+            currentMusic.unload();
+        }
+        
+        vars._currentMusic = undefined;
+        currentMusic = undefined;
+    }
+    
+    function playSound(path) {
+        
+        vars.set("_currentSound", serializeAudioPath(path));
+        
+        currentSound = playTrack(path, settings.soundVolume, false, currentSound);
+    }
+    
+    function playAmbience(path) {
+        
+        var serialized = serializeAudioPath(path);
+        
+        if (currentAmbience && vars.get("_currentAmbience") === serialized) {
+            return;
+        }
+        
+        vars.set("_currentAmbience", serialized);
+        
+        currentAmbience = playTrack(path, settings.ambienceVolume, true, currentAmbience);
+    }
+    
+    function playMusic(path) {
+        
+        var serialized = serializeAudioPath(path);
+        
+        if (currentMusic && vars._currentMusic === serialized) {
+            return;
+        }
+        
+        vars._currentMusic = serialized;
+        currentMusic = playTrack(path, settings.musicVolume, true, currentMusic);
+    }
+    
+    function playTrack(path, volume, loop, current) {
+        
+        var paths = getAudioPaths(path), audio;
+        
+        audio = new Howl({
+            urls: paths,
+            volume: volume / 100,
+            loop: loop === true ? true : false
+        });
+        
+        if (current) {
+            current.unload();
+        }
+        
+        audio.play();
+        
+        return audio;
+    }
+    
+    function getAudioPaths(path) {
+        
+        var paths = [], base;
+        
+        if (Array.isArray(path)) {
+            
+            path = path.slice();
+            base = path.shift();
+            
+            path.forEach(function (type) {
+                paths.push(base + "." + type);
+            });
+        }
+        else {
+            paths.push(path);
+        }
+        
+        return paths;
+    }
+    
+    function serializeAudioPath(path) {
+        return JSON.stringify(path);
+    }
+    
+    function unserializeAudioPath(path) {
+        return JSON.parse(path);
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        serializeAudioPath: serializeAudioPath,
+        unserializeAudioPath: unserializeAudioPath,
+        getAudioPaths: getAudioPaths,
+        playTrack: playTrack,
+        playAmbience: playAmbience,
+        playMusic: playMusic,
+        playSound: playSound,
+        stopAudio: stopAudio,
+        stopAmbience: stopAmbience,
+        stopMusic: stopMusic,
+        stopSound: stopSound
+    };
+}
 
-var KEY_CODE_ENTER = 13;
-var KEY_CODE_ESCAPE = 27;
-var KEY_CODE_SPACE = 32;
-var KEY_CODE_UP = 38;
-var KEY_CODE_RIGHT = 39;
-var KEY_CODE_DOWN = 40;
+module.exports = create;
 
-var NODE_FADE_IN = 600;
-var NODE_FADE_OUT = 300;
-var SCREEN_FADE_IN = 400;
-var SCREEN_FADE_OUT = 400;
-var ACTIONS_FADE_IN = 100;
-var ACTIONS_FADE_OUT = 100;
+},{"howler":18}],55:[function(require,module,exports){
+//
+// # Script environment component
+//
+// The environment for scripts. It's available in scripts as: _
+//
+
+function create(context) {
+    
+    var env = {
+        oneOf: function () {
+            return arguments[Math.floor(Math.random() * arguments.length)];
+        }
+    };
+    
+    function init() {
+        
+        var _ = context.get("_");
+        
+        Object.keys(_).forEach(function (key) {
+            set(key, _[key]);
+        });
+    }
+    
+    function destroy() {
+        env = null;
+    }
+    
+    function set(key, value) {
+        env[key] = value;
+    }
+    
+    function get(key) {
+        return env[key];
+    }
+    
+    function has(key) {
+        return (key in env);
+    }
+    
+    function getAll() {
+        return env;
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        set: set,
+        get: get,
+        getAll: getAll,
+        has: has
+    };
+}
+
+module.exports = create;
+
+},{}],56:[function(require,module,exports){
+
+function create(context) {
+    
+    var mode, modes, focusOffset;
+    
+    function init() {
+        modes = {};
+    }
+    
+    function destroy() {
+        modes = null;
+    }
+    
+    function getElements() {
+        return document.querySelectorAll("[data-focus-mode='" + mode + "']");
+    }
+    
+    function setMode(newMode) {
+        context.emit("before_change_focus_mode", mode);
+        mode = newMode;
+        context.emit("change_focus_mode", mode);
+    }
+    
+    function getMode() {
+        return mode;
+    }
+    
+    function hasMode(name) {
+        return (name in modes);
+    }
+    
+    function previous() {
+        
+        var element;
+        
+        if (typeof focusOffset !== "number") {
+            focusOffset = 0;
+        }
+        
+        focusOffset -= 1;
+        
+        if (focusOffset < 0) {
+            focusOffset = count() - 1;
+        }
+        
+        element = getElementInFocus();
+        
+        context.emit("focus_previous", element);
+        context.emit("focus_change", element);
+    }
+    
+    function next() {
+        
+        var element;
+        
+        if (typeof focusOffset !== "number") {
+            focusOffset = -1;
+        }
+        
+        focusOffset += 1;
+        
+        if (focusOffset > count() - 1) {
+            focusOffset = 0;
+        }
+        
+        element = getElementInFocus();
+        
+        context.emit("focus_next", element);
+        context.emit("focus_change", element);
+    }
+    
+    function execute() {
+        
+        if (typeof focusOffset === "number") {
+            getElementInFocus().click();
+            reset();
+        }
+        else {
+            document.activeElement.click();
+        }
+    }
+    
+    function getElementInFocus() {
+        return getElements()[focusOffset];
+    }
+    
+    function count() {
+        return getElements().length;
+    }
+    
+    function reset() {
+        focusOffset = undefined;
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        getMode: getMode,
+        setMode: setMode,
+        hasMode: hasMode,
+        getElements: getElements,
+        getElementInFocus: getElementInFocus,
+        execute: execute,
+        next: next,
+        previous: previous
+    };
+}
+
+module.exports = create;
+
+},{}],57:[function(require,module,exports){
+//
+// # Highlighter Component
+//
+// The highlighter is an absolutely positioned element that can be moved over
+// clickable elements by using the arrow keys. Hitting the return key when an element
+// is highlighted will execute a click on the element.
+//
+
+var compose = require("enjoy-core/compose");
+var transform = require("transform-js").transform;
+var setStyle = require("../utils/setStyle");
+var scrolling = require("../utils/scrolling");
+var getAbsoluteRect = require("../utils/getAbsoluteRect");
+
+function create(context) {
+    
+    var highlighter, focus;
+    
+    function init() {
+        
+        focus = context.getComponent("focus");
+        highlighter = document.createElement("div");
+        
+        highlighter.setAttribute("class", "Highlighter");
+        highlighter.setAttribute("data-type", "highlighter");
+        
+        highlighter.addEventListener("click", onClick);
+        
+        document.body.appendChild(highlighter);
+        
+        context.on("timer_end", reset);
+        context.on("screen_exit", reset);
+        context.on("screen_entry", reset);
+        context.on("change_focus_mode", reset);
+        context.on("focus_change", highlight);
+        context.on("element_reflow", highlightCurrent);
+    }
+    
+    function destroy() {
+        
+        highlighter.removeEventListener("click", onClick);
+        highlighter.parentNode.removeChild(highlighter);
+        
+        context.removeListener("timer_end", reset);
+        context.removeListener("screen_exit", reset);
+        context.removeListener("screen_entry", reset);
+        context.removeListener("change_focus_mode", reset);
+        context.removeListener("focus_change", highlight);
+        context.removeListener("element_reflow", highlightCurrent);
+        
+        highlighter = null;
+        focus = null;
+    }
+    
+    function onClick(event) {
+        event.stopPropagation();
+        event.preventDefault();
+        focus.execute();
+    }
+    
+    function highlightCurrent() {
+        
+        var element = focus.getElementInFocus();
+        
+        if (element) {
+            highlight(element);
+        }
+    }
+    
+    function highlight(element) {
+        
+        var padding = 1;
+        var sourceRect = getAbsoluteRect(highlighter);
+        var targetRect = getAbsoluteRect(element);
+        var setHighlighterStyle = setStyle(highlighter);
+        
+        var left = targetRect.left - padding;
+        var top = targetRect.top - padding;
+        var width = targetRect.width + (2 * padding);
+        var height = targetRect.height + (2 * padding);
+        var currentOpacity = +highlighter.style.opacity || 0;
+        
+        var setX = setHighlighterStyle("left", "px", sourceRect.left, left);
+        var setY = setHighlighterStyle("top", "px", sourceRect.top, top);
+        var setWidth = setHighlighterStyle("width", "px", sourceRect.width, width);
+        var setHeight = setHighlighterStyle("height", "px", sourceRect.height, height);
+        var setOpacity = setHighlighterStyle("opacity", "", currentOpacity, 1);
+        
+        var setValues = compose(setX, setY, setWidth, setHeight, setOpacity);
+        
+        transform(0, 1, setValues, {duration: 200, fps: 60});
+        
+        setTimeout(function () {
+            scrolling.scrollToElement(element);
+        }, 10);
+    }
+
+    function reset() {
+        
+        var setHighlighterStyle = setStyle(highlighter);
+        var sourceRect = getAbsoluteRect(highlighter);
+        
+        var setValues = compose(
+            setHighlighterStyle("left", "px", sourceRect.left, 0),
+            setHighlighterStyle("top", "px", sourceRect.top, 0),
+            setHighlighterStyle("width", "px", sourceRect.width, 0),
+            setHighlighterStyle("height", "px", sourceRect.height, 0),
+            setHighlighterStyle("opacity", "", (+highlighter.style.opacity || 0), 0)
+        );
+        
+        transform(0, 1, setValues, {duration: 200, fps: 60});
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        reset: reset
+    };
+}
+
+module.exports = create;
+
+},{"../utils/getAbsoluteRect":70,"../utils/scrolling":75,"../utils/setStyle":76,"enjoy-core/compose":11,"transform-js":20}],58:[function(require,module,exports){
+
+var clone = require("clone");
+var merge = require("deepmerge");
+var evalScript = require("../utils/evalScript");
 
 // Wait how long before next() works again after a return?
 // This is to prevent popping more stuff from the stack than
 // is expected.
 var NEXT_RETURN_WAIT = 1000;
 
-var FOCUS_MODE_NODE = "node";
-var FOCUS_MODE_ACTIONS = "actions";
-var FOCUS_MODE_SCREEN = "screen";
-var FOCUS_MODE_MESSAGEBOX = "messagebox";
-
-var NOTIFICATION_DURATION = 3000;
-
-var MAX_SLOTS = 20;
-
 var none = function () {};
 
-require('smoothscroll-polyfill').polyfill();
-
-var auto = require("enjoy-core/auto");
-var compose = require("enjoy-core/compose");
-var each = require("enjoy-core/each");
-var clone = require("clone");
-var merge = require("deepmerge");
-var formatter = require("vrep").create;
-var format = require("vrep").format;
-var Howl = require("howler").Howl;
-var classList = require("class-manipulator").list;
-var transform = require("transform-js").transform;
-
-var objects = require("./objects.js");
-var createNotification = require("./notifications.js").create;
-
-var setStyle = auto(function (element, key, unit, start, end, value) {
-    element.style[key] = (start + (value * (end - start))) + unit;
-    return value;
-});
-
-if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
-    alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
-    throw new Error("Your browser isn't supported, because it doesn't have " +
-        "window.atob() and window.btoa().");
-}
-
-var defaultStorage = require("./storage.js");
-
-var nw = (function () {
-    try {
-        window.require("nw.gui");
-        return true;
-    }
-    catch (error) {
-        return false;
-    }
-}());
-
-var features = {
-    fullscreen: hasFullscreen(),
-    exit: canExit()
-};
-
-function run (resources, _, opt) {
+function create(context) {
     
-    var story = resources.story;
-    var container = document.createElement("div");
-    
-    var templates = resources.templates;
-    var defaultScreens = resources.screens;
-    var messageBoxTemplate = templates.confirm;
-    
-    var currentNode, currentSection, key, timeoutId, focusOffset, highlightCurrent;
-    var currentSound, currentAmbience, currentMusic;
-    var currentScreen, curtainVisible = false;
-    var nextClickTime = Date.now();
-    
-    // General story settings. Can be changed using screens.
-    var settings = {
-        textSpeed: 50,
-        soundVolume: 100,
-        ambienceVolume: 100,
-        musicVolume: 100
-    };
-    
-    // The story's variables. Available in scripts as: $
-    var vars = Object.create(null);
-    
-    vars._objects = objects.assembleAll(resources.objects || {});
+    var story, vars, env, storage, settings, focus, currentNode, nextClickTime, timeoutId;
     
     // A stack for remembering which node to return to.
     var stack = [];
     
-    // A stack for remembering which screen to return to.
-    var screenStack = [];
+    function init() {
+        
+        env = context.getComponent("env");
+        vars = context.getComponent("vars");
+        story = context.getComponent("story");
+        focus = context.getComponent("focus");
+        storage = context.getComponent("storage");
+        settings = context.getComponent("settings");
+        
+        nextClickTime = Date.now();
+        
+        focus.setMode("screen");
+    }
     
-    // The highlighter's current focus mode.
-    // Determines which elements can be highlighted.
-    var focusMode = FOCUS_MODE_NODE;
+    function destroy() {
+        env = null;
+        vars = null;
+        story = null;
+    }
     
-    var nodes = story.nodes;
-    var sections = story.sections;
+    function start() {
+        clearState();
+        runNode(story.getNode("start"));
+    }
     
-    // All the different DOM elements used by the interpreter:
+    function getStoryTitle() {
+        return (story.meta.title || "Toothrot Engine");
+    }
     
-    var ui = document.createElement("div");
-    var text = document.createElement("div");
-    var indicator = document.createElement("div");
-    var background = document.createElement("div");
+    function clearState() {
+        stack = [];
+        vars.clear();
+        context.emit("clear_state");
+    }
     
-    // The curtain element is used to darken the screen when
-    // transitioning from one state to the next, e.g. when
-    // the section changes.
-    var curtain = document.createElement("div");
+    function serialize() {
+        
+        var currentNodeId = currentNode ? currentNode.id : "start";
+        
+        return JSON.stringify({
+            vars: vars.getAll(),
+            stack: stack,
+            node: currentNodeId,
+            text: story.getNode(currentNodeId).content
+        });
+    }
     
-    // Actions and options are put into a parent element
-    // so that clicks can be intercepted and to allow
-    // more flexibility in styling the elements with CSS.
-    var actionsParent = document.createElement("div");
-    var optionsParent = document.createElement("div");
+    function resume(data) {
+        
+        vars.clear();
+        
+        data = JSON.parse(data);
+        stack = data.stack;
+        
+        Object.keys(data.vars).forEach(function (key) {
+            vars.set(key, data.vars[key]);
+        });
+        
+        context.emit("resume_game", data);
+        
+        runNode(story.getNode(data.node));
+    }
     
-    // The background can be dimmed using "dim(amount)" in scripts.
-    // This is the element used for this purpose:
-    var backgroundDimmer = document.createElement("div");
+    function loadCurrentSlot() {
+        load("current");
+    }
     
-    var actionsContainer = document.createElement("div");
-    var optionsContainer = document.createElement("div");
-    var screenContainer = document.createElement("div");
-    
-    // The highlighter is an absolutely positioned element
-    // that can be moved over clickable elements by using
-    // the arrow keys. Hitting the return key when an element
-    // is highlighted will execute a click on the element.
-    var highlighter = document.createElement("div");
-    
-    // When the "reveal" animation for text is started,
-    // a function to cancel it is put in here.
-    var cancelCharAnimation;
-    
-    opt = opt || {};
-    
-    // Determines how to display timers in the story.
-    var timerTemplate = opt.timerTemplate || 
-        '<div class="TimerBar" style="width: {remaining}%;"></div>';
-    
-    // Each story should have its own storage key so that
-    // one story doesn't overwrite another story's savegames
-    // and settings.
-    var storageKey = "TOOTHROT-" + story.meta.title;
-    
-    // Screens can be used to implement simple connected menus.
-    // Screens are written in pure HTML and can be styled with CSS.
-    // When an element is clicked, the event bubbles up to the
-    // screen container where it is decided whether the click means
-    // anything and executes any associated actions (e.g. a click
-    // on a button is supposed to update something or go to another
-    // screen).
-    var screens = opt.screens || defaultScreens;
-    
-    // External listeners can be hooked into the system
-    // to allow observing the interpreter's state.
-    var listeners = opt.on || {};
-    
-    // The storage to use. Default is the browser's localStorage.
-    // But this can be set using the options to anything with the
-    // same API, e.g. a server-side storage using AJAX can be
-    // used instead.
-    var storage = typeof opt.storage === "function" ?
-        opt.storage(storageKey) :
-        defaultStorage(storageKey);
-    
-    // The environment for scripts. It's available in scripts as: _
-    var env = {
-        link: function (label, target) {
-            return insertLink(label, target);
-        },
-        objectLink: function (label, actions) {
-            return insertObjectLink(label, actions);
-        },
-        dim: function (opacity, duration) {
-            return transform(
-                backgroundDimmer.style.opacity,
-                opacity,
-                setOpacity(backgroundDimmer),
-                {duration: arguments.length > 1 ? duration : 800},
-                function () {
-                    vars._dim = opacity;
-                }
-            );
-        },
-        o: function (name) {
-            return objects.create(name, objects.find(name, vars._objects), insertObjectLink);
-        },
-        createObject: function (name, prototypes) {
+    function hasCurrentSlot(then) {
+        return hasSlot("current", function (error, exists) {
             
-            vars._objects[name] = {
-                prototypes: prototypes
-            };
+            if (exists) {
+                settings.set("current_slot_exists", true);
+            }
             
-            vars._objects[name] = objects.assemble(name, vars._objects);
-        },
-        oneOf: function () {
-            return arguments[Math.floor(Math.random() * arguments.length)];
-        }
-    };
-    
-    // We have internal listeners so that external listeners don't interfere
-    // with core features.
-    var internalListeners = {
-        "updateSetting.soundVolume": function (env, volume) {
-            if (currentSound) {
-                currentSound.volume(volume / 100);
+            if (then) {
+                then(error, exists);
             }
-        },
-        "updateSetting.ambienceVolume": function (env, volume) {
-            if (currentAmbience) {
-                currentAmbience.volume(volume / 100);
-            }
-        },
-        "updateSetting.musicVolume": function (env, volume) {
-            if (currentMusic) {
-                currentMusic.volume(volume / 100);
-            }
-        },
-        "showScreen": removeInactiveScreenElements,
-        "screenEntry": hideGameElements,
-        "screenExit": showGameElements
-    };
-    
-    var fullscreenMode = false;
-    var currentSlotExists = false;
-    
-    var notify = createNotification(templates.notification);
-    
-    _ = _ || {};
-    
-    for (key in _) {
-        env[key] = _[key];
+        });
     }
     
-    // The container element always has the current section name
-    // in the "data-section" attribute so that everything can be
-    // styled completely differently for each section.
-    container.setAttribute("data-section", nodes.start.section);
-    
-    container.setAttribute("class", "Toothrot");
-    
-    text.setAttribute("class", "Text");
-    text.setAttribute("aria-live", "polite");
-    text.setAttribute("aria-atomic", "true");
-    text.setAttribute("aria-relevant", "text");
-    text.setAttribute("role", "main");
-    
-    indicator.setAttribute("class", "NextIndicator");
-    indicator.setAttribute("title", "Click or press space to continue");
-    indicator.setAttribute("tabindex", "1");
-    
-    
-    highlighter.setAttribute("class", "Highlighter");
-    highlighter.setAttribute("data-type", "highlighter");
-    background.setAttribute("class", "Background");
-    backgroundDimmer.setAttribute("class", "BackgroundDimmer");
-    actionsParent.setAttribute("class", "ActionsCurtain");
-    actionsContainer.setAttribute("class", "ActionsContainer");
-    optionsParent.setAttribute("class", "OptionsCurtain");
-    optionsContainer.setAttribute("class", "OptionsContainer");
-    screenContainer.setAttribute("class", "ScreenContainer");
-    curtain.setAttribute("class", "Curtain");
-    
-    actionsParent.appendChild(actionsContainer);
-    optionsParent.appendChild(optionsContainer);
-    container.appendChild(background);
-    container.appendChild(backgroundDimmer);
-    container.appendChild(text);
-    container.appendChild(screenContainer);
-    document.body.appendChild(highlighter);
-    document.body.appendChild(container);
-    document.body.appendChild(ui);
-    
-    ui.style.opacity = "0";
-    
-    ui.innerHTML = format(resources.templates.ui, vars);
-    
-    ui.setAttribute("role", "navigation");
-    
-    scrollToBottom();
-    
-    function hideGameElements () {
-        resetHighlight();
-        ui.style.display = "none";
-        text.style.display = "none";
+    function hasSlot(name, then) {
+        storage.load(name, function (error, data) {
+            then(error, !!data);
+        });
     }
     
-    function showGameElements () {
-        resetHighlight();
-        ui.style.display = "";
-        text.style.display = "";
+    function load(name, then) {
+        
+        then = then || none;
+        
+        storage.load(name, function (error, data) {
+            
+            if (error) {
+                return;
+            }
+            
+            resume(data.data);
+            then();
+        });
     }
     
-    highlighter.addEventListener("click", function (event) {
-        event.stopPropagation();
-        event.preventDefault();
-        executeHighlighter();
-    });
-    
-    actionsParent.addEventListener("click", function (event) {
-        if (event.target.getAttribute("data-type") !== "action") {
-            event.stopPropagation();
-            event.preventDefault();
-            animateActionsExit();
-        }
-    });
-    
-    optionsParent.addEventListener("click", function (event) {
-        if (event.target.getAttribute("data-type") !== "option") {
-            event.stopPropagation();
-            event.preventDefault();
-        }
-    });
-    
-    ui.addEventListener("click", function (event) {
+    function save(name, then) {
         
-        var target = event.target.getAttribute("data-action") ?
-            event.target :
-            getClickableParent(event.target);
+        then = then || none;
         
-        var action = target.getAttribute("data-action");
-        var screen = target.getAttribute("data-screen");
-        var qsSlot = target.getAttribute("data-slot-name");
+        storage.save(name, serialize(), function (error) {
+            
+            if (error) {
+                return;
+            }
+            
+            then();
+        });
+    }
+    
+    function hasQuickSlot(quickSlotId, then) {
+        return hasSlot("qs_" + quickSlotId, then);
+    }
+    
+    function loadQuick(quickSlotId, then) {
+        return load("qs_" + quickSlotId, then);
+    }
+    
+    function saveQuick(quickSlotId, then) {
+        return save("qs_" + quickSlotId, then);
+    }
+    
+    function runNodeById(node) {
+        runNode(story.getNode(node));
+    }
+    
+    function runNode(node, nextType) {
         
-        if (action === "openScreen") {
-            runScreen(screen);
+        var skipTo;
+        var copy = merge(clone(story.getSection(node.section)), clone(node));
+        
+        console.log("Running node '" + node.id + "'...");
+        
+        focus.setMode("node");
+        
+        if (timeoutId) {
+            clearInterval(timeoutId);
+            timeoutId = undefined;
+            context.emit("timer_end");
         }
-        else if (action === "toggleFullscreen") {
-            toggleFullscreen();
+        
+        env.set("skipTo", function (id) {
+            skipTo = id;
+        });
+        
+        env.set("node", function () {
+            return copy;
+        });
+        
+        env.set("addOption", function (label, target, value) {
+            copy.options.push({
+                type: "option",
+                value: value || "",
+                line: 0,
+                label: "" + label,
+                target: "" + (target || "")
+            });
+        });
+        
+        copy.scripts = copy.scripts.map(function (script) {
+            
+            var result = "";
+            
+            try {
+                result = evalScript(story, env.getAll(), vars, script.body, script.line);
+            }
+            catch (error) {
+                console.error("Cannot execute script at line " + script.line + ":", error);
+            }
+            
+            return result;
+        });
+        
+        if (skipTo) {
+            console.log("Skipping from node '" + node.id + "' to '" + skipTo + "'.");
+            return runNode(story.getNode(skipTo));
         }
-        else if (action === "quickSave") {
-            save("qs_" + qsSlot, function () {
-                notify("Game saved in quick save slot.", "success", NOTIFICATION_DURATION);
+        
+        if (currentNode && !node.parent && nextType !== "return") {
+            
+            if (stack.indexOf(currentNode.id) >= 0) {
+                stack.splice(0, stack.length);
+            }
+            
+            stack.push(currentNode.id);
+        }
+        
+        context.emit("run_node", copy);
+        
+        currentNode = node;
+        
+        storage.save("current", serialize());
+        
+        if (typeof node.timeout === "number") {
+            startTimer(node);
+        }
+    }
+    
+    function next() {
+        
+        if (focus.getMode() !== "node" || !currentNode) {
+            return;
+        }
+        
+        if (currentNode.next) {
+            console.log("Going to next node...");
+            runNode(story.getNode(currentNode.next), "next");
+            nextClickTime = Date.now();
+        }
+        else if (currentNode.returnToLast && nextClickWaitTimeReached()) {
+            console.log("Going to previous node...");
+            runNode(story.getNode(stack.pop()), "return");
+            nextClickTime = Date.now();
+        }
+        
+    }
+    
+    function nextClickWaitTimeReached() {
+        return Date.now() - nextClickTime > NEXT_RETURN_WAIT;
+    }
+    
+    function startTimer(node) {
+        
+        var timeout = node.timeout;
+        var start = Date.now();
+        
+        context.emit("timer_start", timeout);
+        
+        function updateTimer(percentage) {
+            
+            var remaining = 100 - percentage;
+            
+            context.emit("timer_update", {
+                percentage: percentage,
+                remaining: remaining
             });
         }
-        else if (action === "quickLoad") {
-            hasSlot("qs_" + qsSlot, function (error, exists) {
-                
-                if (!exists) {
-                    notify("Quick save slot is empty.", "error", NOTIFICATION_DURATION);
-                    return;
-                }
-                
-                confirm("Load quick save slot and discard progress?", function (yes) {
-                    if (yes) {
-                        clearState();
-                        load("qs_" + qsSlot, function () {
-                            notify(
-                                "Game loaded from quick save slot.",
-                                "success",
-                                NOTIFICATION_DURATION
-                            );
-                        });
-                    }
-                });
-            });
-        }
-    });
-    
-    container.addEventListener("click", function (event) {
         
-        var link = event.target, parent;
-        
-        if (link.getAttribute("data-link-type") === "direct_link") {
-            link.classList.add("clicked");
-            runNode(nodes[link.getAttribute("data-target")]);
-        }
-        else if (link.getAttribute("data-link-type") === "object_link") {
-            showObjectActions(
-                link.getAttribute("data-node"),
-                link.getAttribute("data-id"),
-                link.getAttribute("data-actions"),
-                link,
-                link.getAttribute("data-object-name")
-            );
-        }
-        else if (link.getAttribute("data-type") === "action") {
-            animateActionsExit(undefined, true);
-            vars._object = link.getAttribute("data-object-name");
-            vars._action = link.getAttribute("data-action-name");
-            runNode(nodes[link.getAttribute("data-target")]);
-        }
-        else if (link.getAttribute("data-type") === "option") {
+        timeoutId = setInterval(function () {
             
-            vars._choice = JSON.parse(window.atob(link.getAttribute("data-value")));
+            var time = Date.now() - start;
+            var percentage = Math.round(time / (timeout / 100));
+            var options = node.options;
             
-            if (link.getAttribute("data-target")) {
-                link.classList.add("clicked");
-                runNode(nodes[link.getAttribute("data-target")]);
+            if (percentage >= 100) {
+                percentage = 100;
+                updateTimer(percentage);
+                clearInterval(timeoutId);
+                timeoutId = undefined;
             }
             else {
-                if (!cancelCharAnimation || !cancelCharAnimation()) {
-                    next();
+                updateTimer(percentage);
+                return;
+            }
+            
+            context.emit("timer_end");
+            
+            if (options.length && typeof node.defaultOption === "number") {
+                
+                if (node.defaultOption < 0 || node.defaultOption >= options.length) {
+                    throw new Error("Unknown default option '" + node.defaultOption +
+                        "' in node '" + node.id + "' (line " + node.line + ").");
                 }
+                
+                vars._choice = options[node.defaultOption].value;
+                
+                runNode(story.getNode(options[node.defaultOption].target));
             }
-        }
-        else {
-            
-            parent = getClickableParent(event.target);
-            
-            if (parent !== link && typeof parent.click === "function") {
-                return parent.click();
+            else if (options.length) {
+                
+                vars._choice = options[0].value;
+                
+                runNode(story.getNode(options[0].target));
             }
-            
-            if (!cancelCharAnimation || !cancelCharAnimation()) {
+            else {
                 next();
             }
-        }
-    });
+        }, 50);
+    }
     
-    screenContainer.addEventListener("click", function (event) {
+    function getCurrentNodeId() {
+        if (currentNode) {
+            return currentNode.id;
+        }
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        start: start,
+        runNode: runNode,
+        runNodeById: runNodeById,
+        next: next,
+        save: save,
+        load: load,
+        hasSlot: hasSlot,
+        hasCurrentSlot: hasCurrentSlot,
+        loadCurrentSlot: loadCurrentSlot,
+        hasQuickSlot: hasQuickSlot,
+        loadQuick: loadQuick,
+        saveQuick: saveQuick,
+        getStoryTitle: getStoryTitle,
+        clearState: clearState,
+        getCurrentNodeId: getCurrentNodeId
+    };
+    
+}
+
+module.exports = create;
+
+},{"../utils/evalScript":69,"clone":7,"deepmerge":8}],59:[function(require,module,exports){
+//
+// # Screens component
+//
+// Screens can be used to implement simple connected menus.
+// Screens are written in pure HTML and can be styled with CSS.
+// When an element is clicked, the event bubbles up to the
+// screen container where it is decided whether the click means
+// anything and executes any associated actions (e.g. a click
+// on a button is supposed to update something or go to another
+// screen).
+//
+
+var each = require("enjoy-core/each");
+var formatter = require("vrep").create;
+var format = require("vrep").format;
+var transform = require("transform-js").transform;
+
+var evalScript = require("../utils/evalScript.js");
+
+var MAX_SLOTS = 20;
+var SCREEN_FADE_IN = 400;
+var SCREEN_FADE_OUT = 400;
+
+function none() {
+    // do nothing
+}
+
+function create(context) {
+    
+    var storage, settings, system, interpreter, story, vars, env, focus;
+    var screens, currentScreen, screenStack, curtain;
+    var curtainVisible = false;
+    
+    function init() {
+        
+        env = context.getComponent("env");
+        vars = context.getComponent("vars");
+        story = context.getComponent("story");
+        focus = context.getComponent("focus");
+        system = context.getComponent("system");
+        storage = context.getComponent("storage");
+        screens = context.getResource("screens");
+        settings = context.getComponent("settings");
+        interpreter = context.getComponent("interpreter");
+        
+        // A stack for remembering which screen to return to.
+        screenStack = [];
+        
+        // The curtain element is used to darken the screen when
+        // transitioning from one state to the next, e.g. when
+        // the section changes.
+        curtain = document.createElement("div");
+        
+        curtain.setAttribute("class", "Curtain");
+        
+        context.on("screen_click", onScreenClick);
+        context.on("show_screen", removeInactiveElements);
+        context.on("change_focus_mode", onFocusModeChange);
+        
+        setTimeout(function () {
+            run("main");
+        }, 20);
+    }
+    
+    function destroy() {
+        
+        context.removeListener("screen_click", onScreenClick);
+        context.removeListener("show_screen", removeInactiveElements);
+        context.removeListener("change_focus_mode", onFocusModeChange);
+        
+        storage = null;
+        settings = null;
+    }
+    
+    function onFocusModeChange(mode) {
+        if (mode === "screen" && !currentScreen) {
+            run("main");
+        }
+    }
+    
+    function onScreenClick(event) {
         
         var element = event.target;
         var type = element.getAttribute("data-type");
@@ -5352,23 +6146,23 @@ function run (resources, _, opt) {
                 if (element.getAttribute("data-confirm") === "returnToTitle") {
                     confirm("Quit to title and discard progress?", function (yes) {
                         if (yes) {
-                            clearState();
-                            runScreen(target);
+                            interpreter.clearState();
+                            run(target);
                         }
                     });
                 }
                 else {
-                    runScreen(target);
+                    run(target);
                 }
             }
             else if (target === "start") {
                 exitScreenMode();
-                runNode(nodes.start);
+                interpreter.start();
             }
             else if (target === "continue") {
-                clearState();
+                interpreter.clearState();
                 exitScreenMode();
-                loadCurrentSlot();
+                interpreter.loadCurrentSlot();
             }
             else if (target === "resume") {
                 resumeGame();
@@ -5376,15 +6170,15 @@ function run (resources, _, opt) {
             else if (target === "exit") {
                 confirm("Do you really want to quit?", function (yes) {
                     if (yes) {
-                        exit();
+                        system.exit();
                     }
                 });
             }
             else if (target === "back") {
-                returnToLastScreen();
+                back();
             }
             else if (target === "saveSettings") {
-                updateSettings(returnToLastScreen);
+                update(back);
             }
         }
         else if (type === "slot-button") {
@@ -5398,232 +6192,44 @@ function run (resources, _, opt) {
                 deleteSlot(element);
             }
         }
-    });
-    
-    function exitScreenMode (inBetween, then) {
-        
-        currentScreen = undefined;
-        focusMode = FOCUS_MODE_NODE;
-        resetHighlight();
-        
-        screenStack.splice(0, screenStack.length);
-        
-        animateScreenExit(function () {
-            
-            if (inBetween) {
-                inBetween();
-            }
-        }, then);
     }
     
-    window.addEventListener("keydown", function (event) {
-        if (event.keyCode === KEY_CODE_UP || event.keyCode === KEY_CODE_DOWN) {
-            event.preventDefault();
-        }
-    });
-    
-    window.addEventListener("keyup", function (event) {
-        if (event.keyCode === KEY_CODE_RIGHT || event.keyCode === KEY_CODE_SPACE) {
-            if (!cancelCharAnimation || !cancelCharAnimation()) {
-                next();
-            }
-        }
-        else if (event.keyCode === KEY_CODE_DOWN) {
-            focusNext();
-        }
-        else if (event.keyCode === KEY_CODE_UP) {
-            focusPrevious();
-        }
-        else if (event.keyCode === KEY_CODE_ESCAPE) {
-            
-            if (focusMode === FOCUS_MODE_ACTIONS) {
-                focusMode = FOCUS_MODE_NODE;
-                animateActionsExit();
-            }
-            else if (focusMode === FOCUS_MODE_NODE && typeof focusOffset !== "number") {
-                runScreen("pause");
-            }
-            else if (focusMode === FOCUS_MODE_SCREEN && currentScreen !== "main") {
-                returnToLastScreen();
-            }
-            
-            if (typeof focusOffset === "number") {
-                resetHighlight();
-            }
-        }
-        else if (event.keyCode === KEY_CODE_ENTER) {
-            executeHighlighter();
-        }
-    });
-    
-    function executeHighlighter () {
+    function update(then) {
         
-        if (typeof focusOffset === "number") {
-            
-            if (focusMode === FOCUS_MODE_NODE) {
-                getFocusedElement().click();
-            }
-            else if (focusMode === FOCUS_MODE_ACTIONS) {
-                getFocusedAction().click();
-            }
-            else if (focusMode === FOCUS_MODE_SCREEN) {
-                getFocusedScreenItem().click();
-            }
-            else if (focusMode === FOCUS_MODE_MESSAGEBOX) {
-                getFocusedBoxButton().click();
-            }
-            
-            resetHighlight();
-        }
-        else {
-            document.activeElement.click();
-        }
-    }
-    
-    window.addEventListener("resize", reflowElements);
-    window.addEventListener("orientationchange", reflowElements);
-    document.addEventListener("fullscreenchange", reflowElements);
-    document.addEventListener("webkitfullscreenchange", reflowElements);
-    document.addEventListener("mozfullscreenchange", reflowElements);
-    document.addEventListener("MSFullscreenChange", reflowElements);
-    
-    document.title = story.meta.title || "Toothrot Engine";
-    
-    hasCurrentSlot(function (error, exists) {
-        currentSlotExists = !error && exists;
-        removeInactiveScreenElements();
-        loadSettings(runScreen.bind(undefined, "main", function () {
-            ui.style.opacity = "1";
-        }));
-    });
-    
-    function clearState () {
-        stopAudio();
-        currentNode = undefined;
-        text.innerHTML = "";
-        stack = [];
-        container.setAttribute("data-section", nodes.start.section);
-        clearVars();
-        emit("clearState");
-    }
-    
-    function clearVars () {
-        Object.keys(vars).forEach(function (key) {
-            delete vars[key];
-        });
-    }
-    
-    function loadSettings (then) {
+        var container = context.get("screen_container");
+        var elements = Array.prototype.slice(container.querySelectorAll("*[data-type=setting]"));
         
-        then = then || none;
+        var values = {};
         
-        storage.load("settings", function (error, data) {
+        elements.forEach(function (element) {
             
-            if (error) {
-                return then(error);
-            }
-            
-            if (!data) {
-                storage.save("settings", settings, function () {
-                    then();
-                });
-            }
-            else {
-                mergeSettings(data.data);
-                then();
-            }
-        });
-    }
-    
-    function mergeSettings (other) {
-        for (var key in other) {
-            settings[key] = other[key];
-        }
-    }
-    
-    function updateSettings (then) {
-        
-        var settingWidgets = screenContainer.querySelectorAll("*[data-type=setting]");
-        
-        [].forEach.call(settingWidgets, function (widget) {
-            
-            var name = widget.getAttribute("data-name");
-            var value = widget.value;
+            var value = element.value;
+            var name = element.getAttribute("data-name");
             
             if (!name) {
                 return;
             }
             
-            settings[name] = value;
+            values[name] = value;
             
-            emit("updateSetting." + name, value);
         });
         
-        saveSettings(then);
+        settings.update(values);
+        settings.save(then);
     }
     
-    function saveSettings (then) {
-        
-        then = then || none;
-        
-        storage.save("settings", settings, function () {
-            then();
-        });
-    }
-    
-    function serialize () {
-        return JSON.stringify({
-            vars: vars,
-            stack: stack,
-            node: currentNode ? currentNode.id : "start",
-            text: text.textContent
-        });
-    }
-    
-    function resume (data) {
-        
-        data = JSON.parse(data);
-        
-        stack = data.stack;
-        vars = data.vars;
-        
-        if (typeof vars._dim === "number") {
-            env.dim(vars._dim, 0);
-        }
-        
-        if (vars._currentSound) {
-            playSound(unserializeAudioPath(vars._currentSound));
-        }
-        
-        if (vars._currentAmbience) {
-            playAmbience(unserializeAudioPath(vars._currentAmbience));
-        }
-        
-        if (vars._currentMusic) {
-            playMusic(unserializeAudioPath(vars._currentMusic));
-        }
-        
-        runNode(nodes[data.node]);
-    }
-    
-    function reflowElements () {
-        if (highlightCurrent) {
-            highlightCurrent();
-        }
-    }
-    
-    function runScreen (name, then) {
+    function run(name, then) {
         
         var screen = screens[name];
         var isSameScreen = currentScreen === name;
         
         then = then || none;
-        focusMode = FOCUS_MODE_SCREEN;
-        resetHighlight();
         
         if (!screen) {
             throw new Error("No such screen:" + name);
         }
+        
+        removeInactiveElements();
         
         if (currentScreen && !isSameScreen) {
             screenStack.push(currentScreen);
@@ -5631,19 +6237,21 @@ function run (resources, _, opt) {
         
         currentScreen = name;
         
+        focus.setMode("screen");
+        
         if (name === "save") {
             showSaveScreen(isSameScreen);
         }
         else {
             if (isSameScreen) {
-                replaceScreen();
+                replace();
             }
             else {
-                animateScreenEntry(replaceScreen);
+                animateScreenEntry(replace);
             }
         }
         
-        function showSaveScreen (isSameScreen) {
+        function showSaveScreen(isSameScreen) {
             storage.all(function (error, all) {
                 
                 if (error) {
@@ -5651,36 +6259,43 @@ function run (resources, _, opt) {
                 }
                 
                 if (isSameScreen) {
-                    replace();
+                    update();
                 }
                 else {
-                    animateScreenEntry(replace);
+                    animateScreenEntry(update);
                 }
                 
-                function replace () {
-                    replaceScreen();
+                function update() {
+                    replace();
                     populateSlots(all);
                 }
             });
         }
         
-        function replaceScreen () {
+        function replace() {
             
-            var content = format(screen, settings);
+            var screenContainer = context.get("screen_container");
+            var content = format(screen, settings.getAll());
             
-            content = formatter("{$", "}")(content, vars);
+            content = formatter("{$", "}")(content, vars.getAll());
             
             screenContainer.innerHTML = content;
             
             each(function (script) {
-                evalScript(story, env, vars, script.innerHTML, 0);
+                evalScript(
+                    context.getResource("story"),
+                    env.getAll(),
+                    vars.getAll(),
+                    script.innerHTML,
+                    0
+                );
             }, screenContainer.querySelectorAll("script"));
             
-            emit("showScreen");
+            context.emit("show_screen");
             then();
         }
         
-        function getDomNodeContent (dom) {
+        function getDomNodeContent(dom) {
             
             var mockParent = document.createElement("div");
             
@@ -5689,12 +6304,13 @@ function run (resources, _, opt) {
             return mockParent.innerHTML;
         }
         
-        function populateSlots (slots) {
+        function populateSlots(slots) {
             
-            var slotContainer = screenContainer.querySelector("*[data-type=slots]");
-            var template = screenContainer.querySelector("*[data-template-name=slot]");
-            var empty = screenContainer.querySelector("*[data-template-name=empty-slot]");
             var i, currentSlot, tpl, emptyTpl;
+            var container = context.get("screen_container");
+            var slotContainer = container.querySelector("*[data-type=slots]");
+            var template = container.querySelector("*[data-template-name=slot]");
+            var empty = container.querySelector("*[data-template-name=empty-slot]");
             
             template.parentNode.removeChild(template);
             empty.parentNode.removeChild(empty);
@@ -5703,6 +6319,8 @@ function run (resources, _, opt) {
             
             tpl = getDomNodeContent(template);
             emptyTpl = getDomNodeContent(empty);
+            
+            console.log("slots:", slots);
             
             for (i = 0; i < MAX_SLOTS; i += 1) {
                 
@@ -5716,11 +6334,11 @@ function run (resources, _, opt) {
                 }
             }
             
-            if (!currentNode) {
+            if (!interpreter.getCurrentNodeId()) {
                 removeSaveButtons();
             }
             
-            function removeSaveButtons () {
+            function removeSaveButtons() {
                 
                 var buttons = document.querySelectorAll("*[data-type=slot-button]");
                 
@@ -5734,7 +6352,7 @@ function run (resources, _, opt) {
                 });
             }
             
-            function insertVars (tpl, slot, i) {
+            function insertVars(tpl, slot, i) {
                 
                 var data;
                 
@@ -5756,23 +6374,23 @@ function run (resources, _, opt) {
         }
     }
     
-    function trimText (text, length) {
+    function trimText(text, length) {
         return (text.length > length ? text.substring(0, length - 3) + "..." : text);
     }
     
-    function formatTime (time) {
+    function formatTime(time) {
         
         var date = new Date(time);
         
         return "" + date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate() +
             " " + pad(date.getHours()) + ":" + pad(date.getMinutes());
             
-        function pad (num) {
+        function pad(num) {
             return (num < 10 ? "0": "") + num;
         }
     }
     
-    function returnToLastScreen () {
+    function back() {
         
         var lastScreen;
         
@@ -5786,172 +6404,520 @@ function run (resources, _, opt) {
             currentScreen = undefined;
         }
         
-        runScreen(lastScreen);
+        run(lastScreen);
     }
     
-    function resumeGame () {
+    function animateScreenEntry(inBetween, then) {
+        
+        var screenContainer = context.get("screen_container");
+        
+        then = then || none;
+        
+        showCurtain(function () {
+            
+            screenContainer.style.display = "";
+            
+            context.emit("screen_entry");
+            
+            inBetween();
+            hideCurtain(function () {
+                context.emit("show_screen");
+                then();
+            });
+        });
+    }
+    
+    function animateScreenExit(then) {
+        
+        var screenContainer = context.get("screen_container");
+        
+        showCurtain(function () {
+            
+            focus.setMode("node");
+            
+            screenContainer.style.display = "none";
+            screenContainer.innerHTML = "";
+            
+            context.emit("screen_exit");
+            
+            hideCurtain(then);
+        });
+    }
+    
+    function removeInactiveElements() {
+        removeFeatureElements();
+        removeContinueButton();
+    }
+    
+    function removeFeatureElements() {
+        
+        var features = system.getFeatures();
+        
+        for (var feature in features) {
+            if (!features[feature]) {
+                removeElementsForFeature(feature);
+            }
+        }
+    }
+    
+    function removeContinueButton() {
+        
+        var buttons;
+        
+        if (settings.get("current_slot_exists")) {
+            return;
+        }
+        
+        buttons = document.querySelectorAll("*[data-target=continue]");
+        
+        [].forEach.call(buttons || [], function (button) {
+            button.parentNode.removeChild(button);
+        });
+    }
+    
+    function removeElementsForFeature(feature) {
+        
+        var elements = document.querySelectorAll("*[data-feature=" + feature + "]") || [];
+        
+        [].forEach.call(elements, function (element) {
+            element.parentNode.removeChild(element);
+        });
+    }
+    
+    function showCurtain(then) {
+        
+        if (curtainVisible) {
+            return then();
+        }
+        
+        context.get("stage_container").appendChild(curtain);
+        
+        curtain.style.display = "";
+        curtainVisible = true;
+        
+        setTimeout(function () {
+            transform(0, 1, setOpacity(curtain), {duration: SCREEN_FADE_IN}, then);
+        }, 50);
+        
+    }
+    
+    function hideCurtain(then) {
+        
+        if (!curtainVisible) {
+            return then();
+        }
+        
+        curtainVisible = false;
+        
+        transform(1, 0, setOpacity(curtain), {duration: SCREEN_FADE_OUT}, function () {
+            
+            curtain.style.display = "none";
+            
+            try {
+                context.get("stage_container").removeChild(curtain);
+            }
+            catch (error) {
+                console.error(error);
+            }
+            
+            if (then) {
+                then();
+            }
+        });
+    }
+    
+    function resumeGame() {
+        
         animateScreenExit();
+        focus.setMode("node");
+        
         currentScreen = undefined;
-        focusMode = FOCUS_MODE_NODE;
+        
         return;
     }
     
-    function loadCurrentSlot () {
-        load("current");
-    }
-    
-    function hasCurrentSlot (then) {
-        return hasSlot("current", then);
-    }
-    
-    function hasSlot (name, then) {
-        storage.load(name, function (error, data) {
-            then(error, !!data);
-        });
-    }
-    
-    function load (name, then) {
-        
-        then = then || none;
-        
-        storage.load(name, function (error, data) {
-            
-            if (error) {
-                return;
-            }
-            
-            resume(data.data);
-            then();
-        });
-    }
-    
-    function save (name, then) {
-        
-        then = then || none;
-        
-        storage.save(name, serialize(), function (error) {
-            
-            if (error) {
-                return;
-            }
-            
-            then();
-        });
-    }
-    
-    function saveSlot (element) {
+    function saveSlot(element) {
         
         var id = element.getAttribute("data-slot-id");
         var isEmpty = !!element.getAttribute("data-is-empty");
         
         if (isEmpty) {
-            save(id, function () {
-                runScreen("save");
+            interpreter.save(id, function () {
+                run("save");
             });
         }
         else {
             confirm("Overwrite slot?", function (yes) {
                 if (yes) {
-                    save(id, function () {
-                        runScreen("save");
+                    interpreter.save(id, function () {
+                        run("save");
                     });
                 }
             });
         }
     }
     
-    function loadSlot (element) {
+    function loadSlot(element) {
         
         var id = element.getAttribute("data-slot-id");
         
-        if (currentNode) {
+        if (interpreter.getCurrentNodeId()) {
             confirm("Load slot and discard current progress?", function (yes) {
                 if (yes) {
-                    clearState();
+                    interpreter.clearState();
                     exitScreenMode(function () {
-                        load(id);
+                        interpreter.load(id);
                     });
                 }
             });
         }
         else {
-            clearState();
+            interpreter.clearState();
             exitScreenMode(function () {
-                load(id);
+                interpreter.load(id);
             });
         }
     }
     
-    function deleteSlot (element) {
+    function deleteSlot(element) {
         
         var id = element.getAttribute("data-slot-id");
         
         confirm("Really delete slot?", function (yes) {
             if (yes) {
                 storage.remove(id);
-                runScreen("save");
+                screens.run("save");
             }
         });
     }
     
-    function runNode (node, nextType) {
+    function exitScreenMode(inBetween, then) {
         
-        var content = node.content;
-        var copy = merge(clone(sections[node.section]), clone(node));
-        var skipTo;
+        currentScreen = undefined;
         
-        focusMode = FOCUS_MODE_NODE;
-        resetHighlight();
+        focus.setMode("node");
         
-        if (timeoutId) {
-            clearInterval(timeoutId);
-            timeoutId = undefined;
+        screenStack.splice(0, screenStack.length);
+        
+        animateScreenExit(function () {
+            
+            if (inBetween) {
+                inBetween();
+            }
+        }, then);
+    }
+    
+    function setOpacity(element) {
+        return function (v) {
+            element.style.opacity = v;
+        };
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        run: run,
+        back: back
+    };
+    
+}
+
+module.exports = create;
+
+},{"../utils/evalScript.js":69,"enjoy-core/each":12,"transform-js":20,"vrep":53}],60:[function(require,module,exports){
+
+var clone = require("clone");
+
+function none() {
+    // does nothing
+}
+
+function create(context) {
+    
+    var storage, settings;
+    
+    function init() {
+        
+        storage = context.getComponent("storage");
+        
+        settings = {
+            textSpeed: 50,
+            soundVolume: 100,
+            ambienceVolume: 100,
+            musicVolume: 100
+        };
+    }
+    
+    function destroy() {
+        storage = null;
+    }
+    
+    function set(name, value) {
+        settings[name] = value;
+        context.emit("update_setting", name);
+    }
+    
+    function remove(name) {
+        delete settings[name];
+        context.emit("remove_setting", name);
+    }
+    
+    function get(name) {
+        return settings[name];
+    }
+    
+    function getAll() {
+        return clone(settings);
+    }
+    
+    function has(name) {
+        return (name in settings);
+    }
+    
+    function load(then) {
+        
+        then = then || none;
+        
+        storage.load("settings", function (error, data) {
+            
+            if (error) {
+                return then(error);
+            }
+            
+            if (!data) {
+                storage.save("settings", settings.getAll(), function () {
+                    then();
+                });
+            }
+            else {
+                mergeSettings(data.data);
+                then();
+            }
+        });
+    }
+    
+    function mergeSettings(other) {
+        for (var key in other) {
+            set(key, other[key]);
         }
+    }
+    
+    function save(then) {
         
-        env.skipTo = function (id) {
-            skipTo = id;
-        };
+        then = then || none;
         
-        env.node = function () {
-            return copy;
-        };
+        storage.save("settings", getAll(), function () {
+            then();
+        });
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        load: load,
+        save: save,
+        update: mergeSettings,
+        remove: remove,
+        set: set,
+        has: has,
+        get: get,
+        getAll: getAll
+    };
+    
+}
+
+module.exports = create;
+
+},{"clone":7}],61:[function(require,module,exports){
+/* global __line */
+
+var format = require("vrep").format;
+var classList = require("class-manipulator").list;
+var scrolling = require("../utils/scrolling.js");
+var revealText = require("../utils/revealText.js");
+var getClickableParent = require("../utils/getClickableParent");
+var createNotification = require("../utils/notifications.js").create;
+
+var KEY_CODE_ENTER = 13;
+var KEY_CODE_ESCAPE = 27;
+var KEY_CODE_SPACE = 32;
+var KEY_CODE_UP = 38;
+var KEY_CODE_RIGHT = 39;
+var KEY_CODE_DOWN = 40;
+
+var NOTIFICATION_DURATION = 3000;
+
+function create(context) {
+    
+    var ui, text, indicator, background, optionsParent, backgroundDimmer, optionsContainer;
+    var container, screenContainer, templates, currentNode, currentSection;
+    var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
+    var system, settings, env, focus;
+    
+    function init() {
         
-        env.addOption = function (label, target, value) {
-            copy.options.push({
-                type: "option",
-                value: value || "",
-                line: 0,
-                label: "" + label,
-                target: "" + (target || "")
-            });
-        };
+        env = context.getComponent("env");
+        vars = context.getComponent("vars");
+        story = context.getComponent("story");
+        focus = context.getComponent("focus");
+        system = context.getComponent("system");
+        screens = context.getComponent("screens");
+        settings = context.getComponent("settings");
+        interpreter = context.getComponent("interpreter");
+        highlighter = context.getComponent("highlighter");
         
-        copy.scripts.forEach(function (script, i) {
-            
-            var result;
-            
-            try {
-                result = evalScript(story, env, vars, script.body, script.line);
+        templates = context.getResource("templates");
+        notify = createNotification(templates.notification);
+        
+        timerTemplate = '<div class="TimerBar" style="width: {remaining}%;"></div>';
+    
+        container = document.createElement("div");
+        
+        ui = document.createElement("div");
+        text = document.createElement("div");
+        indicator = document.createElement("div");
+        background = document.createElement("div");
+        
+        // Actions and options are put into a parent element
+        // so that clicks can be intercepted and to allow
+        // more flexibility in styling the elements with CSS.
+        optionsParent = document.createElement("div");
+        
+        // The background can be dimmed using "dim(amount)" in scripts.
+        // This is the element used for this purpose:
+        backgroundDimmer = document.createElement("div");
+        
+        optionsContainer = document.createElement("div");
+        screenContainer = document.createElement("div");
+        
+        // The container element always has the current section name
+        // in the "data-section" attribute so that everything can be
+        // styled completely differently for each section.
+        container.setAttribute("data-section", story.getNode("start").section);
+        
+        container.setAttribute("class", "Toothrot");
+        
+        text.setAttribute("class", "Text");
+        text.setAttribute("aria-live", "polite");
+        text.setAttribute("aria-atomic", "true");
+        text.setAttribute("aria-relevant", "text");
+        text.setAttribute("role", "main");
+        
+        indicator.setAttribute("class", "NextIndicator");
+        indicator.setAttribute("title", "Click or press space to continue");
+        indicator.setAttribute("tabindex", "1");
+        
+        background.setAttribute("class", "Background");
+        backgroundDimmer.setAttribute("class", "BackgroundDimmer");
+        optionsParent.setAttribute("class", "OptionsCurtain");
+        optionsContainer.setAttribute("class", "OptionsContainer");
+        screenContainer.setAttribute("class", "ScreenContainer");
+        
+        optionsParent.appendChild(optionsContainer);
+        container.appendChild(background);
+        container.appendChild(backgroundDimmer);
+        container.appendChild(text);
+        container.appendChild(screenContainer);
+        document.body.appendChild(container);
+        document.body.appendChild(ui);
+        
+        ui.style.opacity = "0";
+        
+        ui.innerHTML = format(templates.ui, vars.getAll());
+        
+        ui.setAttribute("role", "navigation");
+        
+        ui.addEventListener("click", onUiClick);
+        container.addEventListener("click", onContainerClick);
+        screenContainer.addEventListener("click", context.emit.bind(context, "screen_click"));
+        optionsParent.addEventListener("click", onOptionsParentClick);
+        window.addEventListener("keyup", onKeyUp);
+        
+        window.addEventListener("resize", reflowElements);
+        window.addEventListener("orientationchange", reflowElements);
+        document.addEventListener("fullscreenchange", reflowElements);
+        document.addEventListener("webkitfullscreenchange", reflowElements);
+        document.addEventListener("mozfullscreenchange", reflowElements);
+        document.addEventListener("MSFullscreenChange", reflowElements);
+        
+        context.set("stage_container", container);
+        context.set("screen_container", screenContainer);
+        
+        context.on("fullscreen_change", reflowElements);
+        context.on("screen_entry", hideGameElements);
+        context.on("screen_exit", showGameElements);
+        context.on("clear_state", onClearState);
+        context.on("run_node", onNodeChange);
+        context.on("start", onStart);
+        
+        env.set("link", insertLink);
+    
+        window.addEventListener("keydown", function (event) {
+            if (event.keyCode === KEY_CODE_UP || event.keyCode === KEY_CODE_DOWN) {
+                event.preventDefault();
             }
-            catch (error) {
-                console.error("Cannot execute script at line " + script.line + ":", error);
-            }
-            
-            content = content.replace("(%s" + i + "%)", result);
         });
         
-        if (skipTo) {
-            return runNode(nodes[skipTo]);
-        }
+        document.title = story.getTitle();
         
-        if (currentNode && !node.parent && nextType !== "return") {
+        scrolling.scrollToBottom(text);
+    }
+    
+    function destroy() {
+        
+    }
+    
+    function onStart() {
+        ui.style.opacity = "1";
+    }
+    
+    function onKeyUp(event) {
+        
+        var keyCode = event.keyCode;
+        
+        setTimeout(function () {
+            handleKeyCode(keyCode);
+        }, 10);
+    }
+    
+    function handleKeyCode(keyCode) {
+        
+        if (keyCode === KEY_CODE_RIGHT || keyCode === KEY_CODE_SPACE) {
+            if (!charAnimation || !charAnimation.cancel()) {
+                interpreter.next();
+            }
+        }
+        else if (keyCode === KEY_CODE_DOWN) {
+            focus.next();
+        }
+        else if (keyCode === KEY_CODE_UP) {
+            focus.previous();
+        }
+        else if (keyCode === KEY_CODE_ESCAPE) {
             
-            if (stack.indexOf(currentNode.id) >= 0) {
-                stack.splice(0, stack.length);
+            if (focus.getMode() === "node" && !focus.getElementInFocus()) {
+                screens.run("pause");
+            }
+            else if (focus.getMode() === "screen") {
+                screens.back();
             }
             
-            stack.push(currentNode.id);
+            if (focus.getElementInFocus()) {
+                highlighter.reset();
+            }
         }
+        else if (keyCode === KEY_CODE_ENTER) {
+            focus.execute();
+        }
+    }
+    
+    function onClearState() {
+        currentNode = undefined;
+        text.innerHTML = "";
+        container.setAttribute("data-section", story.getNode("start").section);
+    }
+    
+    function onNodeChange(node) {
         
         if (!currentNode) {
             replaceContent();
@@ -5963,9 +6929,8 @@ function run (resources, _, opt) {
             animateNodeTransition();
         }
         
-        function animateNodeTransition () {
+        function animateNodeTransition() {
             animateNodeExit(function () {
-                //window.scrollTo(0, 0);
                 replaceContent();
                 setTimeout(function () {
                     animateNodeEntry();
@@ -5973,11 +6938,10 @@ function run (resources, _, opt) {
             });
         }
         
-        function animateSectionTransition () {
+        function animateSectionTransition() {
             animateNodeExit(function () {
-                // window.scrollTo(0, 0);
                 animateSectionExit(function () {
-                    container.setAttribute("data-section", node.section);
+                    context.emit("section_change", node.section);
                     animateSectionEntry(function () {
                         replaceContent();
                         setTimeout(function () {
@@ -5988,7 +6952,9 @@ function run (resources, _, opt) {
             });
         }
         
-        function replaceContent () {
+        function replaceContent() {
+            
+            var content = node.content;
             
             currentNode = node;
             currentSection = node.section;
@@ -5996,17 +6962,15 @@ function run (resources, _, opt) {
             container.setAttribute("data-node-id", currentNode.id);
             container.setAttribute("data-section", currentNode.section);
             
-            copy.links.forEach(function (link, i) {
+            node.scripts.forEach(function (scriptResult, i) {
+                content = content.replace("(%s" + i + "%)", scriptResult);
+            });
+            
+            node.links.forEach(function (link, i) {
                 if (link.type === "direct_link") {
                     content = content.replace(
                         "(%l" + i + "%)",
                         insertLink(link.label, link.target)
-                    );
-                }
-                else if (link.type === "object_link") {
-                    content = content.replace(
-                        "(%l" + i + "%)",
-                        insertObjectLink(link.label, undefined, node.id, i)
                     );
                 }
             });
@@ -6031,8 +6995,6 @@ function run (resources, _, opt) {
                 
                 mockParent.innerHTML = content;
                 
-                markCharacters(mockParent);
-                
                 return mockParent.innerHTML;
             }());
             
@@ -6052,346 +7014,88 @@ function run (resources, _, opt) {
                     classList(text).remove(className).apply();
                 }
                 
-                scrollToBottom();
+                scrolling.scrollToBottom(text);
                 
             }, 50);
             
-            if (copy.audio === false) {
-                stopAudio();
-            }
-            
-            if (copy.sound) {
-                playSound(copy.sound);
-            }
-            else {
-                stopSound();
-            }
-            
-            if (copy.ambience) {
-                playAmbience(copy.ambience);
-            }
-            else if (copy.ambience === false) {
-                stopAmbience();
-            }
-            
-            if (copy.music) {
-                playMusic(copy.music);
-            }
-            else if (copy.music === false) {
-                stopMusic();
-            }
-            
             if (
-                copy.options.length ||
-                copy.timeout ||
-                copy.links.length ||
-                copy.reveal === false ||
-                settings.textSpeed >= 100
+                node.options.length ||
+                node.timeout ||
+                node.links.length ||
+                node.reveal === false ||
+                settings.get("textSpeed") >= 100
             ) {
                 insertSpecials();
             }
             else {
+                
                 insertSpecials();
-                hideCharacters(text.querySelector(".current"));
-                cancelCharAnimation = revealCharacters(
+                
+                charAnimation = revealText(
                     text.querySelector(".current"),
-                    ((settings.textSpeed / 100) * 90) + 10
-                ).cancel;
+                    ((settings.get("textSpeed") / 100) * 90) + 10
+                );
+                
+                charAnimation.start();
             }
             
-            function insertSpecials () {
+            function insertSpecials() {
                 
-                if (typeof copy.timeout === "number") {
-                    addTimer(text, copy);
+                if (typeof node.timeout === "number") {
+                    addTimer(text);
                 }
                 
-                if (copy.options.length) {
-                    addOptions(text, copy);
+                if (node.options.length) {
+                    addOptions(text, node);
                 }
                 
-                if (copy.next || copy.returnToLast) {
-                    //text.appendChild(indicator);
+                if (node.next || node.returnToLast) {
+                    // text.appendChild(indicator);
                 }
             }
-            
-            currentSlotExists = true;
-            storage.save("current", serialize());
             
             // text.focus();
             
         }
     }
     
-    function revealCharacters (element, speed, then) {
-        
-        var chars = element.querySelectorAll(".Char");
-        var offset = 1000 / (speed || 40);
-        var stop = false;
-        var timeouts = [];
-        var left = chars.length;
-        
-        then = then || function () {};
-        
-        [].forEach.call(chars, function (char, i) {
-            
-            var id = setTimeout(function () {
-                
-                if (stop) {
-                    return;
-                }
-                
-                transform(0, 1, setOpacity(char), {duration: 10 * offset}, function () {
-                    
-                    left -= 1;
-                    
-                    if (stop) {
-                        return;
-                    }
-                    
-                    if (left <= 0) {
-                        then();
-                    }
-                    
-                });
-                
-            }, i * offset);
-            
-            timeouts.push(id);
-        });
-        
-        function cancel () {
-            
-            if (stop || left <= 0) {
-                return false;
-            }
-            
-            stop = true;
-            
-            timeouts.forEach(function (id) {
-                clearTimeout(id);
-            });
-            
-            [].forEach.call(chars, function (char) {
-                char.style.opacity = "1";
-            });
-            
-            then();
-            
-            return true;
-        }
-        
-        return {
-            cancel: cancel
-        };
-    }
-    
-    function hideCharacters (element) {
-        
-        var chars = element.querySelectorAll(".Char");
-        
-        [].forEach.call(chars, function (char) {
-            char.style.opacity = 0;
-        });
-    }
-    
-    function markCharacters (element, offset) {
-        
-        var TEXT_NODE = 3;
-        var ELEMENT = 1;
-        
-        offset = offset || 0;
-        
-        [].forEach.call(element.childNodes, function (child) {
-            
-            var text = "", newNode;
-            
-            if (child.nodeType === TEXT_NODE) {
-                
-                [].forEach.call(child.textContent, function (char) {
-                    text += '<span class="Char" data-char="' + offset + '">' + char + '</span>';
-                    offset += 1;
-                });
-                
-                newNode = document.createElement("span");
-                
-                newNode.setAttribute("class", "CharContainer");
-                
-                newNode.innerHTML = text;
-                
-                child.parentNode.replaceChild(newNode, child);
-            }
-            else if (child.nodeType === ELEMENT) {
-                offset = markCharacters(child, offset);
-            }
-        });
-        
-        return offset;
-    }
-    
-    window.markCharacters = markCharacters;
-    
-    function next () {
-        
-        if (focusMode !== FOCUS_MODE_NODE || !currentNode) {
-            return;
-        }
-        
-        if (currentNode.next) {
-            runNode(nodes[currentNode.next], "next");
-            nextClickTime = Date.now();
-        }
-        else if (currentNode.returnToLast && nextClickWaitTimeReached()) {
-            runNode(nodes[stack.pop()], "return");
-            nextClickTime = Date.now();
-        }
-        
-    }
-    
-    function nextClickWaitTimeReached () {
-        return Date.now() - nextClickTime > NEXT_RETURN_WAIT;
-    }
-    
-    function showCurtain (then) {
-        
-        if (curtainVisible) {
-            return then();
-        }
-        
-        container.appendChild(curtain);
-        curtain.style.display = "";
-        curtainVisible = true;
-        
-        setTimeout(function () {
-            transform(0, 1, setOpacity(curtain), {duration: SCREEN_FADE_IN}, then);
-        }, 50);
-        
-    }
-    
-    function hideCurtain (then) {
-        
-        if (!curtainVisible) {
-            return then();
-        }
-        
-        curtainVisible = false;
-        
-        transform(1, 0, setOpacity(curtain), {duration: SCREEN_FADE_OUT}, function () {
-            
-            curtain.style.display = "none";
-            
-            try {
-                container.removeChild(curtain);
-            }
-            catch (error) {
-                console.error(error);
-            }
-            
-            if (then) {
-                then();
-            }
-        });
-    }
-    
-    function animateSectionExit (then) {
+    function animateSectionExit(then) {
         
         if (then) {
             then();
         }
         
-        //showCurtain(then);
+        // showCurtain(then);
     }
     
-    function animateSectionEntry (then) {
+    function animateSectionEntry(then) {
         
         if (then) {
             then();
         }
         
-        //hideCurtain(then);
+        // hideCurtain(then);
     }
     
-    function setOpacity (element) {
-        return function (v) {
-            element.style.opacity = v;
-        };
-    }
-    
-    function animateNodeExit (then) {
+    function animateNodeExit(then) {
         if (then) {
             then();
         }
-        //transform(1, 0, setOpacity(text), {duration: NODE_FADE_OUT}, then);
+        // transform(1, 0, setOpacity(text), {duration: NODE_FADE_OUT}, then);
     }
     
-    function animateNodeEntry (then) {
+    function animateNodeEntry(then) {
         if (then) {
             then();
         }
-        //transform(0, 1, setOpacity(text), {duration: NODE_FADE_IN}, then);
+        // transform(0, 1, setOpacity(text), {duration: NODE_FADE_IN}, then);
     }
     
-    function animateActionsEntry (then) {
-        actionsParent.style.opacity = "0";
-        container.appendChild(actionsParent);
-        transform(0, 1, setOpacity(actionsParent), {duration: ACTIONS_FADE_IN}, then);
-    }
-    
-    function animateActionsExit (then, noNodeEntry) {
-        transform(1, 0, setOpacity(actionsParent), {duration: ACTIONS_FADE_OUT}, function () {
-            
-            focusMode = FOCUS_MODE_NODE;
-            container.removeChild(actionsParent);
-            clearActions();
-            
-            if (noNodeEntry) {
-                
-                if (then) {
-                    then();
-                }
-                
-                return;
-            }
-            
-            animateNodeEntry(then);
-        });
-    }
-    
-    function animateScreenEntry (inBetween, then) {
-        
-        then = then || none;
-        
-        showCurtain(function () {
-            
-            screenContainer.style.display = "";
-            
-            emit("screenEntry");
-            
-            inBetween();
-            hideCurtain(function () {
-                emit("showScreen");
-                then();
-            });
-        });
-    }
-    
-    function animateScreenExit (then) {
-        showCurtain(function () {
-            
-            focusMode = FOCUS_MODE_NODE;
-            screenContainer.style.display = "none";
-            screenContainer.innerHTML = "";
-            
-            emit("screenExit");
-            
-            scrollToBottom(true);
-            hideCurtain(then);
-        });
-    }
-    
-    function disarmOldTextItems () {
+    function disarmOldTextItems() {
         
         var items = Array.prototype.slice.call(text.querySelectorAll(".current"));
         var clickables = Array.prototype.slice.call(text.querySelectorAll("[data-type]"));
+        var focusables = Array.prototype.slice.call(text.querySelectorAll("[data-focus-mode]"));
         
         items.forEach(function (item) {
             item.classList.remove("current");
@@ -6403,71 +7107,13 @@ function run (resources, _, opt) {
             clickable.setAttribute("tabindex", "-1");
             clickable.classList.add("disarmed");
         });
+        
+        focusables.forEach(function (focusable) {
+            focusable.removeAttribute("data-focus-mode");
+        });
     }
     
-    function showObjectActions (nodeId, linkId, actions, eventTarget, objectName) {
-        
-        var node, link, key;
-        
-        focusMode = FOCUS_MODE_ACTIONS;
-        resetHighlight();
-        
-        if (linkId) {
-            node = nodes[nodeId];
-            link = node.links[linkId];
-        }
-        else if (actions) {
-            
-            link = {};
-            
-            try {
-                link.target = JSON.parse(window.atob(actions));
-            }
-            catch (error) {
-                throw new Error(
-                    "Cannot parse object actions: " + error.message + "; actions: " + actions
-                );
-            }
-        }
-        else {
-            throw new Error("Object link has neither an ID nor actions.");
-        }
-        
-        for (key in link.target) {
-            addAction(key, link.target[key], objectName);
-        }
-        
-        animateNodeExit();
-        animateActionsEntry();
-        
-        emit("showActions");
-    }
-    
-    function addAction (label, target, objectName) {
-        
-        var option = document.createElement("a");
-        
-        option.setAttribute("class", "Action");
-        option.setAttribute("data-type", "action");
-        option.setAttribute("data-target", target);
-        option.setAttribute("tabindex", "1");
-        option.setAttribute("title", "Action");
-        option.setAttribute("data-action-name", label);
-        
-        if (objectName) {
-            option.setAttribute("data-object-name", objectName);
-        }
-        
-        option.innerHTML = label;
-        
-        actionsContainer.appendChild(option);
-    }
-    
-    function clearActions () {
-        actionsContainer.innerHTML = "";
-    }
-    
-    function addOptions (container, node) {
+    function addOptions(container, node) {
         
         optionsContainer.innerHTML = "";
         
@@ -6478,13 +7124,14 @@ function run (resources, _, opt) {
         container.appendChild(optionsParent);
     }
     
-    function addOption (opt) {
+    function addOption(opt) {
         
         var option = document.createElement("span");
         
         option.setAttribute("class", "Option");
         option.setAttribute("data-type", "option");
         option.setAttribute("data-target", opt.target);
+        option.setAttribute("data-focus-mode", "node");
         option.setAttribute("tabindex", "1");
         option.setAttribute("title", "Option");
         option.setAttribute("data-value", window.btoa(JSON.stringify(opt.value)));
@@ -6494,10 +7141,8 @@ function run (resources, _, opt) {
         optionsContainer.appendChild(option);
     }
     
-    function addTimer (text, node) {
+    function addTimer(text) {
         
-        var timeout = node.timeout;
-        var start = Date.now();
         var timeoutContainer = document.createElement("div");
         
         timeoutContainer.setAttribute("class", "TimeoutContainer");
@@ -6506,1036 +7151,246 @@ function run (resources, _, opt) {
         timeoutContainer.setAttribute("data-progress", "0");
         
         updateTimer(100);
-        emit("timerStart", timeout);
-        
         text.appendChild(timeoutContainer);
+        context.on("timer_update", updateTimer);
         
-        function updateTimer (percentage) {
+        function updateTimer(state) {
             
-            var remaining = 100 - percentage;
-            var content = timerTemplate.replace(/{progress}/g, "" + percentage);
+            var content = timerTemplate.replace(/{progress}/g, "" + state.percentage);
             
-            content = content.replace(/{remaining}/g, "" + remaining);
+            content = content.replace(/{remaining}/g, "" + state.remaining);
             
             timeoutContainer.innerHTML = content;
         }
-        
-        timeoutId = setInterval(function () {
-            
-            var time = Date.now() - start;
-            var percentage = Math.round(time / (timeout / 100));
-            var options = node.options;
-            
-            if (percentage >= 100) {
-                percentage = 100;
-                updateTimer(percentage);
-                clearInterval(timeoutId);
-                timeoutId = undefined;
-            }
-            else {
-                updateTimer(percentage);
-                return;
-            }
-            
-            emit("timerEnd");
-            resetHighlight();
-            
-            if (options.length && typeof node.defaultOption === "number") {
-                
-                if (node.defaultOption < 0 || node.defaultOption >= options.length) {
-                    throw new Error("Unknown default option '" + node.defaultOption +
-                        "' in node '" + node.id + "' (line " + node.line + ").");
-                }
-                
-                vars._choice = options[node.defaultOption].value;
-                
-                runNode(nodes[options[node.defaultOption].target]);
-            }
-            else if (options.length) {
-                
-                vars._choice = options[0].value;
-                
-                runNode(nodes[options[0].target]);
-            }
-            else {
-                next();
-            }
-        }, 50);
     }
     
-    function insertLink (label, target) {
+    function insertLink(label, target) {
         
-        if (!nodes[target]) {
+        if (!story.hasNode(target)) {
             throw new Error(
-                "Unknown node referenced in link '" + label + "': " + target + " @" + __line
+                "Unknown node referenced in link '" + label + "': " + target + " @" + 
+                (typeof __line !== "undefined" ? __line : "unknown")
             );
         }
         
         return '<span class="link direct_link" tabindex="1" data-target="' + target +
-            '" data-type="link" title="Link" data-link-type="direct_link">' +
+            '" data-type="link" title="Link" data-focus-mode="node" data-link-type="direct_link">' +
             label + '</span>';
     }
     
-    function insertObjectLink (label, actions, nodeId, linkId, objectName) {
-        
-        var key, html;
-        
-        html = '<span class="link object_link" tabindex="1" data-type="link" ' + 
-            'data-link-type="object_link" title="Object"';
-        
-        if (typeof nodeId !== "undefined" && typeof linkId !== "undefined") {
-            html += ' data-node="' + nodeId + '" data-id="' + linkId + '"';
+    function reflowElements() {
+        scrolling.scrollToBottom(text);
+    }
+    
+    function hideGameElements() {
+        ui.style.display = "none";
+        text.style.display = "none";
+    }
+    
+    function showGameElements() {
+        scrolling.scrollToBottom(text, true);
+        ui.style.display = "";
+        text.style.display = "";
+    }
+    
+    function onOptionsParentClick(event) {
+        if (event.target.getAttribute("data-type") !== "option") {
+            event.stopPropagation();
+            event.preventDefault();
         }
-        else if (actions) {
+    }
+    
+    function onUiClick(event) {
+        
+        var target = event.target.getAttribute("data-action") ?
+            event.target :
+            getClickableParent(event.target);
+        
+        var action = target.getAttribute("data-action");
+        var screen = target.getAttribute("data-screen");
+        var qsSlot = target.getAttribute("data-slot-name");
+        
+        if (action === "openScreen") {
+            screens.run(screen);
+        }
+        else if (action === "toggleFullscreen") {
+            system.toggleFullscreen();
+        }
+        else if (action === "quickSave") {
+            interpreter.saveQuick(qsSlot, function () {
+                notify("Game saved in quick save slot.", "success", NOTIFICATION_DURATION);
+            });
+        }
+        else if (action === "quickLoad") {
+            interpreter.hasQuickSlot(qsSlot, function (error, exists) {
+                
+                if (!exists) {
+                    notify("Quick save slot is empty.", "error", NOTIFICATION_DURATION);
+                    return;
+                }
+                
+                confirm("Load quick save slot and discard progress?", function (yes) {
+                    if (yes) {
+                        interpreter.clearState();
+                        interpreter.loadQuick(qsSlot, function () {
+                            notify(
+                                "Game loaded from quick save slot.",
+                                "success",
+                                NOTIFICATION_DURATION
+                            );
+                        });
+                    }
+                });
+            });
+        }
+    }
+    
+    function onContainerClick(event) {
+        
+        var link = event.target, parent;
+        
+        if (link.getAttribute("data-link-type") === "direct_link") {
+            link.classList.add("clicked");
+            interpreter.runNodeById(link.getAttribute("data-target"));
+        }
+        else if (link.getAttribute("data-type") === "option") {
             
-            for (key in actions) {
-                if (!nodes[actions[key]]) {
-                    throw new Error("Unknown node referenced in object link: " +
-                        actions[key] + " @" + __line);
+            vars._choice = JSON.parse(window.atob(link.getAttribute("data-value")));
+            
+            if (link.getAttribute("data-target")) {
+                link.classList.add("clicked");
+                interpreter.runNodeById(link.getAttribute("data-target"));
+            }
+            else {
+                if (!charAnimation || !charAnimation.cancel()) {
+                    interpreter.next();
                 }
             }
+        }
+        else {
             
-            html += ' data-actions="' + window.btoa(JSON.stringify(actions)) + '"';
-        }
-        else {
-            throw new Error("Object link without ID or actions.");
-        }
-        
-        if (objectName) {
-            html += ' data-object-name="' + objectName + '"';
-        }
-        
-        html += '>' + label + '</span>';
-        
-        return html;
-    }
-    
-    function getScrollX () {
-        return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
-    }
-    
-    function getScrollY () {
-        return (window.pageYOffset || document.scrollTop || 0) - (document.clientTop || 0);
-    }
-    
-    function scrollToBottom (instantly) {
-        if (instantly) {
-            text.scroll(0, text.scrollHeight);
-        }
-        else {
-            text.scroll({
-                top: text.scrollHeight,
-                left: 0,
-                behavior: "smooth"
-            });
+            parent = getClickableParent(event.target);
+            
+            if (parent !== link && typeof parent.click === "function") {
+                return parent.click();
+            }
+            
+            if (!charAnimation || !charAnimation.cancel()) {
+                interpreter.next();
+            }
         }
     }
     
-    function scrollToElement (element) {
-        
-        if (isElementInView(element)) {
-            return;
-        }
-        
-        try {
-            element.scrollIntoView({
-                behavior: "smooth"
-            });
-        }
-        catch (error) {
-            console.error(error);
-        }
-    }
     
-    function isElementInView (element) {
-        
-        var rect = getAbsoluteRect(element);
-        var scrollX = getScrollX();
-        var scrollY = getScrollY();
-        var xInView = (scrollX <= rect.left) && (rect.left <= (scrollX + window.innerWidth));
-        var yInView = (scrollY <= rect.top) && (rect.top <= (scrollY + window.innerHeight));
-        
-        return (xInView && yInView);
-    }
-    
-    function fitsInWindow (element) {
+    function fitsInWindow(element) {
         
         var rect = element.getBoundingClientRect();
         
         return ((rect.width < window.innerWidth) && (rect.height < window.innerHeight));
     }
     
-    function getAbsoluteRect (element) {
-        
-        var rect = element.getBoundingClientRect();
-        
-        return {
-            left: rect.left + getScrollX(),
-            top: rect.top + getScrollY(),
-            width: rect.width,
-            height: rect.height
-        };
-    }
-    
-    function highlight (element) {
-        
-        var padding = 1;
-        var sourceRect = getAbsoluteRect(highlighter);
-        var targetRect = getAbsoluteRect(element);
-        var setHighlighterStyle = setStyle(highlighter);
-        
-        var left = targetRect.left - padding;
-        var top = targetRect.top - padding;
-        var width = targetRect.width + (2 * padding);
-        var height = targetRect.height + (2 * padding);
-        var currentOpacity = +highlighter.style.opacity || 0;
-        
-        var setX = setHighlighterStyle("left", "px", sourceRect.left, left);
-        var setY = setHighlighterStyle("top", "px", sourceRect.top, top);
-        var setWidth = setHighlighterStyle("width", "px", sourceRect.width, width);
-        var setHeight = setHighlighterStyle("height", "px", sourceRect.height, height);
-        var setOpacity = setHighlighterStyle("opacity", "", currentOpacity, 1);
-        
-        var setValues = compose(setX, setY, setWidth, setHeight, setOpacity);
-        
-        highlightCurrent = highlight.bind(undefined, element);
-        
-        emit("focusChange", element);
-        
-        transform(0, 1, setValues, {duration: 200, fps: 60});
-        
-        setTimeout(function () {
-            scrollToElement(element);
-        }, 10);
-    }
-    
-    function resetHighlight () {
-        
-        var setHighlighterStyle = setStyle(highlighter);
-        var sourceRect = getAbsoluteRect(highlighter);
-        
-        var setValues = compose(
-            setHighlighterStyle("left", "px", sourceRect.left, 0),
-            setHighlighterStyle("top", "px", sourceRect.top, 0),
-            setHighlighterStyle("width", "px", sourceRect.width, 0),
-            setHighlighterStyle("height", "px", sourceRect.height, 0),
-            setHighlighterStyle("opacity", "", (+highlighter.style.opacity || 0), 0)
-        );
-        
-        focusOffset = undefined;
-        highlightCurrent = undefined;
-        
-        transform(0, 1, setValues, {duration: 200, fps: 60});
-    }
-    
-    function focusPrevious () {
-        if (focusMode === FOCUS_MODE_NODE && countFocusableElements()) {
-            focusPreviousDefault();
-        }
-        else if (focusMode === FOCUS_MODE_ACTIONS && countFocusableActions()) {
-            focusPreviousAction();
-        }
-        else if (focusMode === FOCUS_MODE_SCREEN && countFocusableScreenItems()) {
-            focusPreviousScreenItem();
-        }
-        else if (focusMode === FOCUS_MODE_MESSAGEBOX && countFocusableBoxButtons()) {
-            focusPreviousBoxButton();
-        }
-    }
-    
-    function focusNext () {
-        if (focusMode === FOCUS_MODE_NODE && countFocusableElements()) {
-            focusNextDefault();
-        }
-        else if (focusMode === FOCUS_MODE_ACTIONS && countFocusableActions()) {
-            focusNextAction();
-        }
-        else if (focusMode === FOCUS_MODE_SCREEN && countFocusableScreenItems()) {
-            focusNextScreenItem();
-        }
-        else if (focusMode === FOCUS_MODE_MESSAGEBOX && countFocusableBoxButtons()) {
-            focusNextBoxButton();
-        }
-    }
-    
-    function getFocusedElement () {
-        
-        var options = document.querySelectorAll("[data-type=option]");
-        var links = document.querySelectorAll("[data-type=link]");
-        var buttons = document.querySelectorAll("[data-type=button]");
-        
-        if (focusOffset < options.length) {
-            return options[focusOffset];
-        }
-        else if (focusOffset < options.length + links.length) {
-            return links[focusOffset - options.length];
-        }
-        else {
-            return buttons[focusOffset - options.length - links.length];
-        }
-    }
-    
-    function countFocusableElements () {
-        
-        var options = document.querySelectorAll("[data-type=option]");
-        var links = document.querySelectorAll("[data-type=link]");
-        var buttons = document.querySelectorAll("[data-type=button]");
-        
-        return options.length + links.length + buttons.length;
-    }
-    
-    function getFocusedAction () {
-        return document.querySelectorAll("[data-type=action]")[focusOffset];
-    }
-    
-    function getFocusedScreenItem () {
-        return screenContainer.querySelectorAll("[data-type=menu-item]")[focusOffset];
-    }
-    
-    function getFocusedBoxButton () {
-        return container.querySelectorAll("[data-type=messagebox-button]")[focusOffset];
-    }
-    
-    function countFocusableScreenItems () {
-        return screenContainer.querySelectorAll("[data-type=menu-item]").length;
-    }
-    
-    function countFocusableActions () {
-        return document.querySelectorAll("[data-type=action]").length;
-    }
-    
-    function countFocusableBoxButtons () {
-        return document.querySelectorAll("[data-type=messagebox-button]").length;
-    }
-    
-    function focusNextDefault () {
-        focusNextThing(getFocusedElement, countFocusableElements);
-    }
-    
-    function focusNextAction () {
-        focusNextThing(getFocusedAction, countFocusableActions);
-    }
-    
-    function focusNextScreenItem () {
-        focusNextThing(getFocusedScreenItem, countFocusableScreenItems);
-    }
-    
-    function focusNextBoxButton () {
-        focusNextThing(getFocusedBoxButton, countFocusableBoxButtons);
-    }
-    
-    function focusNextThing (get, count) {
-        
-        var element;
-        
-        if (typeof focusOffset !== "number") {
-            focusOffset = -1;
-        }
-        
-        focusOffset += 1;
-        
-        if (focusOffset > count() - 1) {
-            focusOffset = 0;
-        }
-        
-        element = get();
-        emit("focusNext", element);
-        
-        highlight(element);
-    }
-    
-    function focusPreviousDefault () {
-        focusPreviousThing(getFocusedElement, countFocusableElements);
-    }
-    
-    function focusPreviousAction () {
-        focusPreviousThing(getFocusedAction, countFocusableActions);
-    }
-    
-    function focusPreviousScreenItem () {
-        focusPreviousThing(getFocusedScreenItem, countFocusableScreenItems);
-    }
-    
-    function focusPreviousBoxButton () {
-        focusPreviousThing(getFocusedBoxButton, countFocusableBoxButtons);
-    }
-    
-    function focusPreviousThing (get, count) {
-        
-        var element;
-        
-        if (typeof focusOffset !== "number") {
-            focusOffset = 0;
-        }
-        
-        focusOffset -= 1;
-        
-        if (focusOffset < 0) {
-            focusOffset = count() - 1;
-        }
-        
-        element = get();
-        emit("focusPrevious", element);
-        
-        highlight(element);
-    }
-    
-    function emit (channel, data) {
-        
-        if (typeof listeners[channel] === "function") {
-            listeners[channel]({
-                env: env,
-                vars: vars,
-                stack: stack
-            }, data);
-        }
-        
-        if (typeof internalListeners[channel] === "function") {
-            internalListeners[channel]({
-                env: env,
-                vars: vars,
-                stack: stack
-            }, data);
-        }
-    }
-    
-    function confirm (text, then) {
-        
-        var boxContainer = document.createElement("div");
-        var oldFocus = focusMode;
-        
-        focusMode = FOCUS_MODE_MESSAGEBOX;
-        resetHighlight();
-        
-        boxContainer.setAttribute("class", "MessageBoxContainer");
-        
-        boxContainer.innerHTML = messageBoxTemplate.replace("{message}", text);
-        
-        boxContainer.addEventListener("click", onClick);
-        container.appendChild(boxContainer);
-        
-        boxContainer.focus();
-        
-        function onClick (event) {
-            
-            var type = event.target.getAttribute("data-type");
-            var value = event.target.getAttribute("data-value");
-            
-            if (type === "messagebox-button") {
-                
-                event.stopPropagation();
-                event.preventDefault();
-                
-                focusMode = oldFocus;
-                boxContainer.parentNode.removeChild(boxContainer);
-                boxContainer.removeEventListener("click", onClick);
-                
-                then(value === "yes" ? true : false);
-            }
-        }
-    }
-    
-    function stopAudio () {
-        stopSound();
-        stopAmbience();
-        stopMusic();
-    }
-    
-    function stopSound () {
-        
-        if (currentSound) {
-            currentSound.unload();
-        }
-        
-        vars._currentSound = undefined;
-        currentSound = undefined;
-    }
-    
-    function stopAmbience () {
-        
-        if (currentAmbience) {
-            currentAmbience.unload();
-        }
-        
-        vars._currentAmbience = undefined;
-        currentAmbience = undefined;
-    }
-    
-    function stopMusic () {
-        
-        if (currentMusic) {
-            currentMusic.unload();
-        }
-        
-        vars._currentMusic = undefined;
-        currentMusic = undefined;
-    }
-    
-    function playSound (path) {
-        vars._currentSound = serializeAudioPath(path);
-        currentSound = playTrack(path, settings.soundVolume, false, currentSound);
-    }
-    
-    function playAmbience (path) {
-        
-        var serialized = serializeAudioPath(path);
-        
-        if (currentAmbience && vars._currentAmbience === serialized) {
-            return;
-        }
-        
-        vars._currentAmbience = serialized;
-        currentAmbience = playTrack(path, settings.ambienceVolume, true, currentAmbience);
-    }
-    
-    function playMusic (path) {
-        
-        var serialized = serializeAudioPath(path);
-        
-        if (currentMusic && vars._currentMusic === serialized) {
-            return;
-        }
-        
-        vars._currentMusic = serialized;
-        currentMusic = playTrack(path, settings.musicVolume, true, currentMusic);
-    }
-    
-    function playTrack (path, volume, loop, current) {
-        
-        var paths = getAudioPaths(path), audio;
-        
-        audio = new Howl({
-            urls: paths,
-            volume: volume / 100,
-            loop: loop === true ? true : false
-        });
-        
-        if (current) {
-            current.unload();
-        }
-        
-        audio.play();
-        
-        return audio;
-    }
-    
-    function getAudioPaths (path) {
-        
-        var paths = [], base;
-        
-        if (Array.isArray(path)) {
-            
-            path = path.slice();
-            base = path.shift();
-            
-            path.forEach(function (type) {
-                paths.push(base + "." + type);
-            });
-        }
-        else {
-            paths.push(path);
-        }
-        
-        return paths;
-    }
-    
-    function serializeAudioPath (path) {
-        return JSON.stringify(path);
-    }
-    
-    function unserializeAudioPath (path) {
-        return JSON.parse(path);
-    }
-    
-    function toggleFullscreen () {
-        
-        if (fullscreenEnabled() || (nw && fullscreenMode)) {
-            exitFullscreen();
-        }
-        else {
-            fullscreen();
-        }
-        
-        resetHighlight();
-        reflowElements();
-    }
-    
-    function fullscreenEnabled () {
-        return document.fullscreenElement ||
-            document.mozFullScreenElement ||
-            document.msFullscreenElement ||
-            document.webkitFullscreenElement;
-    }
-    
-    function fullscreen () {
-        
-        fullscreenMode = true;
-        
-        if (nw) {
-            nwEnterFullscreen();
-        }
-        else {
-            requestFullscreen(document.body);
-        }
-    }
-    
-    function exitFullscreen () {
-        
-        fullscreenMode = false;
-        
-        if (nw) {
-            nwExitFullscreen();
-        }
-        else {
-            exitBrowserFullscreen();
-        }
-    }
-    
-    function nwEnterFullscreen () {
-        window.require('nw.gui').Window.get().enterKioskMode();
-    }
-    
-    function nwExitFullscreen () {
-        window.require('nw.gui').Window.get().leaveKioskMode();
-    }
-    
-    function exitBrowserFullscreen () {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-        else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
-        else if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
-        }
-        else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        }
-    }
-    
-    function requestFullscreen (element) {
-        if (element.requestFullscreen) {
-            element.requestFullscreen();
-        }
-        else if (element.msRequestFullscreen) {
-            element.msRequestFullscreen();
-        }
-        else if (element.mozRequestFullScreen) {
-            element.mozRequestFullScreen();
-        }
-        else if (element.webkitRequestFullscreen) {
-            element.webkitRequestFullscreen();
-        }
-    }
-    
-    function removeInactiveScreenElements () {
-        removeFeatureElements();
-        removeContinueButton();
-    }
-    
-    function removeFeatureElements () {
-        for (var feature in features) {
-            if (!features[feature]) {
-                removeElementsForFeature(feature);
-            }
-        }
-    }
-    
-    function removeContinueButton () {
-        
-        var buttons;
-        
-        if (currentSlotExists) {
-            return;
-        }
-        
-        buttons = document.querySelectorAll("*[data-target=continue]");
-        
-        [].forEach.call(buttons || [], function (button) {
-            button.parentNode.removeChild(button);
-        });
-    }
-    
-    function removeElementsForFeature (feature) {
-        
-        var elements = document.querySelectorAll("*[data-feature=" + feature + "]") || [];
-        
-        [].forEach.call(elements, function (element) {
-            element.parentNode.removeChild(element);
-        });
-    }
-}
-
-function hasFullscreen () {
-    return !!nw;
-}
-
-function canExit () {
-    return !!nw;
-}
-
-/* eslint-disable no-unused-vars, no-eval */
-
-function evalScript (__story, _, $, __body, __line) {
-    
-    var link = _.link;
-    var dim = _.dim;
-    var objectLink = _.objectLink;
-    var nodes = __story.nodes;
-    var title = __story.meta.title;
-    
-    window.__line = __line;
-    
-    return eval(__body);
-}
-
-/* eslint-enable no-unused-vars, no-eval */
-
-function getClickableParent (node) {
-    
-    var ELEMENT = 1;
-    var first = node;
-    
-    while (node.parentNode) {
-        
-        node = node.parentNode;
-        
-        if (node.nodeType === ELEMENT && node.getAttribute("data-type")) {
-            return node;
-        }
-    }
-    
-    return first;
-}
-
-function exit () {
-    try {
-        var gui = window.require("nw.gui");
-        gui.App.quit();
-    }
-    catch (error) {
-        console.error("Cannot exit: " + error);
-    }
-}
-
-function decodeResources (resources) {
-    return JSON.parse(decodeURIComponent(window.atob(resources)));
-}
-
-module.exports = {
-    run: run,
-    decode: decodeResources
-};
-
-
-},{"./notifications.js":55,"./objects.js":56,"./storage.js":57,"class-manipulator":5,"clone":6,"deepmerge":7,"enjoy-core/auto":9,"enjoy-core/compose":10,"enjoy-core/each":11,"howler":17,"smoothscroll-polyfill":18,"transform-js":19,"vrep":52}],55:[function(require,module,exports){
-/* global require, module, setTimeout */
-
-var format = require("vrep").format;
-var transform = require("transform-js").transform;
-
-function create (template, fadeDuration) {
-    
-    var duration = fadeDuration || 200;
-    
-    return function (message, type, timeout) {
-        
-        var currentTransform;
-        var container = document.createElement("div");
-        var hidden = false;
-        var shown = false;
-        
-        container.setAttribute("class", "NotificationContainer");
-        
-        type = type || "default";
-        
-        container.style.opacity = "0";
-        container.innerHTML = format(template, {message: message, type: type});
-        
-        document.body.appendChild(container);
-        
-        show();
-        
-        setTimeout(hide, timeout || 2000);
-        
-        function show () {
-            
-            if (shown) {
-                return;
-            }
-            
-            currentTransform = transform(
-                0,
-                1,
-                function (v) {
-                    container.style.opacity = "" + v;
-                },
-                {duration: duration},
-                function () {
-                    shown = true;
-                    currentTransform = undefined;
-                }
-           );
-        }
-        
-        function hide () {
-            
-            if (hidden) {
-                return;
-            }
-            
-            currentTransform = transform(
-                1,
-                0,
-                function (v) {
-                    container.style.opacity = "" + v;
-                },
-                {duration: duration},
-                function () {
-                    currentTransform = undefined;
-                    hidden = true;
-                    container.parentNode.removeChild(container);
-                }
-            );
-        }
-        
-        return {
-            hide: hide
-        };
+    return {
+        init: init,
+        destroy: destroy
     };
 }
 
-module.exports = {
-    create: create
-};
+module.exports = create;
 
-},{"transform-js":19,"vrep":52}],56:[function(require,module,exports){
-/* global require, module */
-
-var format = require("vrep").format;
-var merge = require("deepmerge");
-
-function assemble (name, objects) {
-    
-    var obj = {};
-    var prototypes = (objects[name].prototypes || []).slice();
-    
-    prototypes.forEach(function (p) {
-        obj = merge(obj, assemble(p, objects));
-    });
-    
-    obj.properties = {};
-    
-    return merge(obj, objects[name]);
-}
-
-function assembleAll (objects) {
-    
-    var key, all = {};
-    
-    for (key in objects) {
-        all[key] = assemble(key, objects);
-    }
-    
-    return all;
-}
-
-function create (name, obj, putLink) {
-    
-    var printLabel = obj.label || name;
-    
-    var out = {
-        add: add,
-        drop: drop,
-        is: is,
-        print: print,
-        put: put,
-        property: property,
-        label: label,
-        rewire: rewire
-    };
-    
-    obj.masks = obj.masks || Object.create(null);
-    
-    function label (newLabel) {
-        
-        if (newLabel) {
-            obj.label = newLabel;
-            printLabel = newLabel;
-        }
-        
-        return obj.label;
-    }
-    
-    function print (text) {
-        return putLink(text || printLabel, put(), undefined, undefined, name);
-    }
-    
-    function put () {
-        
-        var actions = {};
-        
-        obj.activeAspects.forEach(function (aspect) {
-            for (var key in obj.aspects[aspect]) {
-                actions[key] = (key in obj.masks ? obj.masks[key] : obj.aspects[aspect][key]);
-                actions[key] = format(actions[key], {name: name});
-            }
-        });
-        
-        return actions;
-    }
-    
-    function is (aspect) {
-        return obj.activeAspects.indexOf(aspect) >= 0;
-    }
-    
-    function add (aspect) {
-        
-        if (!(aspect in obj.aspects)) {
-            throw new Error("No such aspect in object '" + name + "': " + aspect);
-        }
-        
-        if (obj.activeAspects.indexOf(aspect) < 0) {
-            obj.activeAspects.push(aspect);
-        }
-        
-        return out;
-    }
-    
-    function drop (aspect) {
-        
-        var index = obj.activeAspects.indexOf(aspect);
-        
-        if (index >= 0) {
-            obj.activeAspects.splice(index, 1);
-        }
-        
-        return out;
-    }
-    
-    function property (key, value) {
-        
-        if (arguments.length > 1) {
-            obj.properties[key] = value;
-        }
-        
-        return obj.properties[key];
-    }
-    
-    function rewire (action, newTarget) {
-        obj.masks[action] = newTarget;
-        return out;
-    }
-    
-    return out;
-}
-
-function find (name, objects) {
-    
-    if (!objects[name]) {
-        throw new Error("Unknown object: " + name);
-    }
-    
-    return objects[name];
-}
-
-module.exports = {
-    assemble: assemble,
-    assembleAll: assembleAll,
-    create: create,
-    find: find
-};
-
-},{"deepmerge":7,"vrep":52}],57:[function(require,module,exports){
-
+},{"../utils/getClickableParent":71,"../utils/notifications.js":72,"../utils/revealText.js":73,"../utils/scrolling.js":75,"class-manipulator":6,"vrep":53}],62:[function(require,module,exports){
 //
 // Module for storing the game state in local storage.
 //
 // Savegames look like this:
 //
+//
+// {
+//     name: "fooBarBaz", // a name. will be given by the engine
+//     time: 012345678    // timestamp - this must be set by the storage
+//     data: {}           // this is what the engine gives the storage
+// }
 
-/*
-{
-    name: "fooBarBaz", // a name. will be given by the engine
-    time: 012345678    // timestamp - this must be set by the storage
-    data: {}           // this is what the engine gives the storage
-}
-*/
+var none = function () {};
 
-var storageType, getItem, setItem, memoryStorage = Object.create(null);
-var testStorageKey = "TOOTHROT-storage-test";
-
-try {
+function create(context) {
     
-    localStorage.setItem(testStorageKey, "works");
-    
-    if (localStorage.getItem(testStorageKey) === "works") {
-        storageType = "local";
-    }
-}
-catch (error) {
-    // ...
-}
-
-if (!storageType) {
+    var storageType, storageKey, getItem, setItem;
+    var memoryStorage = Object.create(null);
+    var testStorageKey = "TOOTHROT-storage-test";
     
     try {
         
-        sessionStorage.setItem(testStorageKey, "works");
+        localStorage.setItem(testStorageKey, "works");
         
-        if (sessionStorage.getItem(testStorageKey) === "works") {
-            storageType = "session";
+        if (localStorage.getItem(testStorageKey) === "works") {
+            storageType = "local";
         }
     }
     catch (error) {
         // ...
     }
-}
-
-if (!storageType) {
-    storageType = "memory";
-}
-
-if (storageType === "local") {
     
-    getItem = function (name) {
-        return JSON.parse(localStorage.getItem(name) || "{}");
-    };
+    if (!storageType) {
+        
+        try {
+            
+            sessionStorage.setItem(testStorageKey, "works");
+            
+            if (sessionStorage.getItem(testStorageKey) === "works") {
+                storageType = "session";
+            }
+        }
+        catch (error) {
+            // ...
+        }
+    }
     
-    setItem = function (name, value) {
-        return localStorage.setItem(name, JSON.stringify(value));
-    };
-}
-else if (storageType === "session") {
+    if (!storageType) {
+        storageType = "memory";
+    }
     
-    getItem = function (name) {
-        return JSON.parse(sessionStorage.getItem(name) || "{}");
-    };
+    if (storageType === "local") {
+        
+        getItem = function (name) {
+            return JSON.parse(localStorage.getItem(name) || "{}");
+        };
+        
+        setItem = function (name, value) {
+            return localStorage.setItem(name, JSON.stringify(value));
+        };
+    }
+    else if (storageType === "session") {
+        
+        getItem = function (name) {
+            return JSON.parse(sessionStorage.getItem(name) || "{}");
+        };
+        
+        setItem = function (name, value) {
+            return sessionStorage.setItem(name, JSON.stringify(value));
+        };
+    }
+    else {
+        
+        getItem = function (name) {
+            return JSON.parse(memoryStorage[name] || "{}");
+        };
+        
+        setItem = function (name, value) {
+            return memoryStorage[name] = JSON.stringify(value);
+        };
+    }
     
-    setItem = function (name, value) {
-        return sessionStorage.setItem(name, JSON.stringify(value));
-    };
-}
-else {
+    function init() {
+        
+        var story = context.getComponent("story");
+        
+        // Each story should have its own storage key so that
+        // one story doesn't overwrite another story's savegames
+        // and settings.
+        storageKey = "TOOTHROT-" + story.getTitle();
+    }
     
-    getItem = function (name) {
-        return JSON.parse(memoryStorage[name] || "{}");
-    };
-    
-    setItem = function (name, value) {
-        return memoryStorage[name] = JSON.stringify(value);
-    };
-}
-
-
-function storage (storageKey) {
-    
-    var none = function () {};
-    
-    storageKey = storageKey || "txe-savegames";
-    
-    function save (name, data, then) {
+    function save(name, data, then) {
         
         var store, error;
         
@@ -7566,7 +7421,7 @@ function storage (storageKey) {
         then(null, true);
     }
     
-    function load (name, then) {
+    function load(name, then) {
         
         var value, error;
         
@@ -7587,7 +7442,7 @@ function storage (storageKey) {
         then(null, value);
     }
     
-    function all (then) {
+    function all(then) {
         
         var value, error;
         
@@ -7608,7 +7463,7 @@ function storage (storageKey) {
         then(null, value);
     }
     
-    function remove (name, then) {
+    function remove(name, then) {
         
         var value, error;
         
@@ -7634,6 +7489,7 @@ function storage (storageKey) {
     }
     
     return {
+        init: init,
         save: save,
         load: load,
         all: all,
@@ -7641,6 +7497,810 @@ function storage (storageKey) {
     };
 }
 
-module.exports = storage;
+module.exports = create;
 
-},{}]},{},[53]);
+},{}],63:[function(require,module,exports){
+
+function create(context) {
+    
+    var story;
+    
+    function init() {
+        story = context.getResource("story");
+    }
+    
+    function destroy() {
+        story = null;
+    }
+    
+    function getNode(name) {
+        return story.nodes[name];
+    }
+    
+    function hasNode(name) {
+        return (name in story.nodes);
+    }
+    
+    function getSection(name) {
+        return story.sections[name];
+    }
+    
+    function hasSection(name) {
+        return (name in story.sections);
+    }
+    
+    function getMeta(name) {
+        return story.meta[name];
+    }
+    
+    function hasMeta(name) {
+        return (name in story.meta);
+    }
+    
+    function getTitle() {
+        return getMeta("title");
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        getNode: getNode,
+        hasNode: hasNode,
+        getSection: getSection,
+        hasSection: hasSection,
+        getMeta: getMeta,
+        hasMeta: hasMeta,
+        getTitle: getTitle
+    };
+}
+
+module.exports = create;
+
+},{}],64:[function(require,module,exports){
+
+var clone = require("clone");
+
+function create(context) {
+    
+    var fullscreenMode, features;
+    
+    function init() {
+        features = {
+            fullscreen: hasFullscreen(),
+            exit: canExit()
+        };
+    }
+    
+    function destroy() {
+        features = null;
+    }
+    
+    function getFeatures() {
+        return clone(features);
+    }
+    
+    function toggleFullscreen() {
+        
+        var fullscreenOn = fullscreenEnabled() || (typeof nw !== "undefined" && fullscreenMode);
+        
+        if (fullscreenOn) {
+            exitFullscreen();
+        }
+        else {
+            fullscreen();
+        }
+        
+        context.emit("fullscreen_change", !fullscreenOn);
+    }
+    
+    function fullscreenEnabled() {
+        return document.fullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement ||
+            document.webkitFullscreenElement;
+    }
+    
+    function fullscreen() {
+        
+        fullscreenMode = true;
+        
+        if (typeof nw !== "undefined") {
+            nwEnterFullscreen();
+        }
+        else {
+            requestFullscreen(document.body);
+        }
+    }
+    
+    function exitFullscreen() {
+        
+        fullscreenMode = false;
+        
+        if (typeof nw !== "undefined") {
+            nwExitFullscreen();
+        }
+        else {
+            exitBrowserFullscreen();
+        }
+    }
+    
+    function nwEnterFullscreen() {
+        window.require('nw.gui').Window.get().enterKioskMode();
+    }
+    
+    function nwExitFullscreen() {
+        window.require('nw.gui').Window.get().leaveKioskMode();
+    }
+    
+    function exitBrowserFullscreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+        else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+        else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        }
+        else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+    
+    function requestFullscreen(element) {
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        }
+        else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
+        else if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+        }
+        else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+        }
+    }
+    
+    function hasFullscreen() {
+        return typeof nw !== undefined;
+    }
+    
+    function canExit() {
+        return typeof nw !== undefined;
+    }
+    
+    function exit() {
+        try {
+            var gui = window.require("nw.gui");
+            gui.App.quit();
+        }
+        catch (error) {
+            console.error("Cannot exit: " + error);
+        }
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        exit: exit,
+        canExit: canExit,
+        getFeatures: getFeatures,
+        hasFullscreen: hasFullscreen,
+        toggleFullscreen: toggleFullscreen,
+        enterFullscreen: fullscreen,
+        exitFullscreen: exitFullscreen
+    };
+}
+
+module.exports = create;
+
+},{"clone":7}],65:[function(require,module,exports){
+
+function create(context) {
+    
+    var vars;
+    
+    function init() {
+        vars = {};
+    }
+    
+    function destroy() {
+        vars = null;
+    }
+    
+    function get(key) {
+        return vars[key];
+    }
+    
+    function getAll() {
+        return vars;
+    }
+    
+    function set(key, value) {
+        context.emit("before_set_var", key);
+        vars[key] = value;
+        context.emit("set_var", key);
+    }
+    
+    function has(key) {
+        return (key in vars);
+    }
+    
+    function clear() {
+        Object.keys(vars).forEach(function (key) {
+            delete vars[key];
+        });
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        get: get,
+        getAll: getAll,
+        set: set,
+        has: has,
+        clear: clear
+    };
+}
+
+module.exports = create;
+
+},{}],66:[function(require,module,exports){
+/* global require */
+
+window.TOOTHROT = require("./runtimes/browser.js");
+
+},{"./runtimes/browser.js":67}],67:[function(require,module,exports){
+/* global setInterval, clearInterval */
+/* eslint no-console: off */
+
+require('smoothscroll-polyfill').polyfill();
+
+var ctx = require("../utils/context.js");
+
+if (typeof window.btoa !== "function" || typeof window.atob !== "function") {
+    alert("Sorry, but your browser is too old to run this site! It will not work as expected.");
+    throw new Error("Your browser isn't supported, because it doesn't have " +
+        "window.atob() and window.btoa().");
+}
+
+var components = {
+    audio: require("../components/audio.js"),
+    env: require("../components/env.js"),
+    focus: require("../components/focus.js"),
+    highlighter: require("../components/highlighter.js"),
+    interpreter: require("../components/interpreter.js"),
+    screens: require("../components/screens.js"),
+    settings: require("../components/settings.js"),
+    stage: require("../components/stage.js"),
+    storage: require("../components/storage.js"),
+    story: require("../components/story.js"),
+    system: require("../components/system.js"),
+    vars: require("../components/vars.js")
+};
+
+function run(resources, _) {
+    
+    var context = ctx.create({
+        components: components,
+        resources: resources
+    });
+    
+    context.set("_", _ || {});
+    
+    context.init();
+    
+}
+
+function decodeResources(resources) {
+    return JSON.parse(decodeURIComponent(window.atob(resources)));
+}
+
+module.exports = {
+    run: run,
+    decode: decodeResources
+};
+
+},{"../components/audio.js":54,"../components/env.js":55,"../components/focus.js":56,"../components/highlighter.js":57,"../components/interpreter.js":58,"../components/screens.js":59,"../components/settings.js":60,"../components/stage.js":61,"../components/storage.js":62,"../components/story.js":63,"../components/system.js":64,"../components/vars.js":65,"../utils/context.js":68,"smoothscroll-polyfill":19}],68:[function(require,module,exports){
+/* eslint-disable no-console */
+
+var EventEmitter = require("events");
+
+//
+// # Context
+//
+// The context is an object that is given to components which they can use to interact
+// with the rest of the engine.
+//
+function create(options) {
+    
+    var privateContext, resources;
+    
+    var bus = new EventEmitter();
+    var vars = Object.create(null);
+    var components = Object.create(null);
+    var componentFactories = Object.create(null);
+    
+    options = options || {};
+    options.components = options.components || {};
+    resources = options.resources || {};
+    
+    Object.keys(options.components).forEach(function (key) {
+        componentFactories[key] = options.components[key];
+    });
+    
+    function init() {
+        Object.keys(componentFactories).forEach(function (key) {
+            getComponent(key);
+        });
+    }
+    
+    function destroy() {
+        
+        Object.keys(components).forEach(function (key) {
+            
+            var component = getComponent(key);
+            
+            if (component.destroy) {
+                component.destroy();
+            }
+        });
+        
+        bus = null;
+        vars = null;
+        components = null;
+        componentFactories = null;
+    }
+    
+    function set(name, value) {
+        vars[name] = value;
+    }
+    
+    function get(name) {
+        return vars[name];
+    }
+    
+    function has(name) {
+        return (name in vars);
+    }
+    
+    function keys() {
+        return Object.keys(vars);
+    }
+    
+    function hasComponent(name) {
+        return !!componentFactories[name];
+    }
+    
+    function registerComponent(name, component) {
+        
+        if (hasComponent(name)) {
+            throw new Error("Component '" + name + "' is already registered.");
+        }
+        
+        componentFactories[name] = component;
+        
+        bus.emit("register_component", name);
+    }
+    
+    function getComponent(name) {
+        
+        if (!componentFactories[name]) {
+            throw new Error("No such component: " + name);
+        }
+        
+        if (!components[name]) {
+            
+            console.log("Initializing component '" + name + "'...");
+            
+            components[name] = componentFactories[name](createPublicContext());
+            
+            if (components[name].init) {
+                components[name].init();
+            }
+        }
+        
+        return components[name];
+    }
+    
+    function getResource(name) {
+        return resources[name];
+    }
+    
+    function hasResource(name) {
+        return (name in resources);
+    }
+    
+    function createPublicContext() {
+        
+        var publicContext = {
+            set: set,
+            get: get,
+            has: has,
+            keys: keys,
+            getComponent: getComponent,
+            hasComponent: hasComponent,
+            getResource: getResource,
+            hasResource: hasResource,
+            emit: bus.emit.bind(bus),
+            once: bus.once.bind(bus),
+            on: bus.on.bind(bus),
+            removeListener: bus.removeListener.bind(bus)
+        };
+        
+        bus.emit("create_public_context", publicContext);
+        
+        return publicContext;
+    }
+    
+    privateContext = {
+        init: init,
+        destroy: destroy,
+        set: set,
+        get: get,
+        has: has,
+        keys: keys,
+        bus: bus,
+        emit: bus.emit.bind(bus),
+        on: bus.on.bind(bus),
+        once: bus.once.bind(bus),
+        removeListener: bus.removeListener.bind(bus),
+        registerComponent: registerComponent,
+        getComponent: getComponent,
+        hasComponent: hasComponent,
+        getResource: getResource,
+        hasResource: hasResource,
+        getPublicContext: createPublicContext
+    };
+    
+    return privateContext;
+}
+
+module.exports = {
+    create: create
+};
+
+},{"events":5}],69:[function(require,module,exports){
+/* eslint-disable no-unused-vars, no-eval */
+
+function evalScript(__story, _, $, __body, __line) {
+    
+    var link = _.link;
+    var nodes = __story.nodes;
+    var title = __story.meta.title;
+    
+    window.__line = __line;
+    
+    return eval(__body);
+}
+
+module.exports = evalScript;
+
+},{}],70:[function(require,module,exports){
+
+var scrollPosition = require("./scrollPosition");
+
+function getAbsoluteRect(element) {
+    
+    var rect = element.getBoundingClientRect();
+    
+    return {
+        left: rect.left + scrollPosition.getX(),
+        top: rect.top + scrollPosition.getY(),
+        width: rect.width,
+        height: rect.height
+    };
+}
+
+module.exports = getAbsoluteRect;
+
+},{"./scrollPosition":74}],71:[function(require,module,exports){
+
+function getClickableParent (node) {
+    
+    var ELEMENT = 1;
+    var first = node;
+    
+    while (node.parentNode) {
+        
+        node = node.parentNode;
+        
+        if (node.nodeType === ELEMENT && node.getAttribute("data-type")) {
+            return node;
+        }
+    }
+    
+    return first;
+}
+
+module.exports = getClickableParent;
+
+},{}],72:[function(require,module,exports){
+/* global require, module, setTimeout */
+
+var format = require("vrep").format;
+var transform = require("transform-js").transform;
+
+function create(template, fadeDuration) {
+    
+    var duration = fadeDuration || 200;
+    
+    return function (message, type, timeout) {
+        
+        var container = document.createElement("div");
+        var hidden = false;
+        var shown = false;
+        
+        container.setAttribute("class", "NotificationContainer");
+        
+        type = type || "default";
+        
+        container.style.opacity = "0";
+        container.innerHTML = format(template, {message: message, type: type});
+        
+        document.body.appendChild(container);
+        
+        show();
+        
+        setTimeout(hide, timeout || 2000);
+        
+        function show() {
+            
+            if (shown) {
+                return;
+            }
+            
+            transform(
+                0,
+                1,
+                function (v) {
+                    container.style.opacity = "" + v;
+                },
+                {duration: duration},
+                function () {
+                    shown = true;
+                }
+            );
+        }
+        
+        function hide() {
+            
+            if (hidden) {
+                return;
+            }
+            
+            transform(
+                1,
+                0,
+                function (v) {
+                    container.style.opacity = "" + v;
+                },
+                {duration: duration},
+                function () {
+                    hidden = true;
+                    container.parentNode.removeChild(container);
+                }
+            );
+        }
+        
+        return {
+            hide: hide
+        };
+    };
+}
+
+module.exports = {
+    create: create
+};
+
+},{"transform-js":20,"vrep":53}],73:[function(require,module,exports){
+
+var transform = require("transform-js").transform;
+
+function create(element, speed, then) {
+    
+    var chars, left;
+    var offset = 1000 / (speed || 40);
+    var stop = false;
+    var timeouts = [];
+    
+    markCharacters(element);
+    hideCharacters(element);
+    
+    chars = element.querySelectorAll(".Char");
+    left = chars.length;
+    
+    then = then || function () {};
+    
+    function start() {
+        
+        [].forEach.call(chars, function (char, i) {
+            
+            var id = setTimeout(function () {
+                
+                if (stop) {
+                    return;
+                }
+                
+                transform(0, 1, setOpacity(char), {duration: 10 * offset}, function () {
+                    
+                    left -= 1;
+                    
+                    if (stop) {
+                        return;
+                    }
+                    
+                    if (left <= 0) {
+                        then();
+                    }
+                    
+                });
+                
+            }, i * offset);
+            
+            timeouts.push(id);
+        });
+    }
+    
+    function cancel() {
+        
+        if (stop || left <= 0) {
+            return false;
+        }
+        
+        stop = true;
+        
+        timeouts.forEach(function (id) {
+            clearTimeout(id);
+        });
+        
+        [].forEach.call(chars, function (char) {
+            char.style.opacity = "1";
+        });
+        
+        then();
+        
+        return true;
+    }
+    
+    return {
+        start: start,
+        cancel: cancel
+    };
+}
+
+function hideCharacters(element) {
+    
+    var chars = element.querySelectorAll(".Char");
+    
+    [].forEach.call(chars, function (char) {
+        char.style.opacity = 0;
+    });
+}
+
+function markCharacters(element, offset) {
+    
+    var TEXT_NODE = 3;
+    var ELEMENT = 1;
+    
+    offset = offset || 0;
+    
+    [].forEach.call(element.childNodes, function (child) {
+        
+        var text = "", newNode;
+        
+        if (child.nodeType === TEXT_NODE) {
+            
+            [].forEach.call(child.textContent, function (char) {
+                text += '<span class="Char" data-char="' + offset + '">' + char + '</span>';
+                offset += 1;
+            });
+            
+            newNode = document.createElement("span");
+            
+            newNode.setAttribute("class", "CharContainer");
+            
+            newNode.innerHTML = text;
+            
+            child.parentNode.replaceChild(newNode, child);
+        }
+        else if (child.nodeType === ELEMENT) {
+            offset = markCharacters(child, offset);
+        }
+    });
+    
+    return offset;
+}
+
+function setOpacity(element) {
+    return function (v) {
+        element.style.opacity = v;
+    };
+}
+
+module.exports = create;
+
+},{"transform-js":20}],74:[function(require,module,exports){
+
+function getScrollX() {
+    return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
+}
+
+function getScrollY() {
+    return (window.pageYOffset || document.scrollTop || 0) - (document.clientTop || 0);
+}
+
+module.exports = {
+    getX: getScrollX,
+    getY: getScrollY
+};
+
+},{}],75:[function(require,module,exports){
+
+var getAbsoluteRect = require("./getAbsoluteRect");
+var scrollPosition = require("./scrollPosition");
+
+var getScrollX = scrollPosition.getX;
+var getScrollY = scrollPosition.getY;
+
+function scrollToBottom(element, instantly) {
+    if (instantly) {
+        element.scroll(0, element.scrollHeight);
+    }
+    else {
+        element.scroll({
+            top: element.scrollHeight,
+            left: 0,
+            behavior: "smooth"
+        });
+    }
+}
+
+function scrollToElement(element) {
+    
+    if (isElementInView(element)) {
+        return;
+    }
+    
+    try {
+        element.scrollIntoView({
+            behavior: "smooth"
+        });
+    }
+    catch (error) {
+        console.error(error);
+    }
+}
+
+function isElementInView(element) {
+    
+    var rect = getAbsoluteRect(element);
+    var scrollX = getScrollX();
+    var scrollY = getScrollY();
+    var xInView = (scrollX <= rect.left) && (rect.left <= (scrollX + window.innerWidth));
+    var yInView = (scrollY <= rect.top) && (rect.top <= (scrollY + window.innerHeight));
+    
+    return (xInView && yInView);
+}
+
+module.exports = {
+    getX: getScrollX,
+    getY: getScrollY,
+    scrollToBottom: scrollToBottom,
+    scrollToElement: scrollToElement,
+    isElementInView: isElementInView
+};
+
+},{"./getAbsoluteRect":70,"./scrollPosition":74}],76:[function(require,module,exports){
+
+var auto = require("enjoy-core/auto");
+
+var setStyle = auto(function (element, key, unit, start, end, value) {
+    element.style[key] = (start + (value * (end - start))) + unit;
+    return value;
+});
+
+module.exports = setStyle;
+
+},{"enjoy-core/auto":10}]},{},[66]);

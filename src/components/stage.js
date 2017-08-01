@@ -21,21 +21,22 @@ function create(context) {
     var ui, text, indicator, background, optionsParent, backgroundDimmer, optionsContainer;
     var container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
-    var system, settings, env;
+    var system, settings, env, focus;
     
     function init() {
         
         env = context.getComponent("env");
         vars = context.getComponent("vars");
         story = context.getComponent("story");
+        focus = context.getComponent("focus");
         system = context.getComponent("system");
         screens = context.getComponent("screens");
         settings = context.getComponent("settings");
-        interpreter = container.getComponent("interpreter");
-        highlighter = container.getComponent("highlighter");
+        interpreter = context.getComponent("interpreter");
+        highlighter = context.getComponent("highlighter");
         
-        notify = createNotification(templates.notification);
         templates = context.getResource("templates");
+        notify = createNotification(templates.notification);
         
         timerTemplate = '<div class="TimerBar" style="width: {remaining}%;"></div>';
     
@@ -115,7 +116,7 @@ function create(context) {
         context.on("screen_entry", hideGameElements);
         context.on("screen_exit", showGameElements);
         context.on("clear_state", onClearState);
-        context.on("node_change", onNodeChange);
+        context.on("run_node", onNodeChange);
         context.on("start", onStart);
         
         env.set("link", insertLink);
@@ -128,7 +129,7 @@ function create(context) {
         
         document.title = story.getTitle();
         
-        scrolling.scrollToBottom();
+        scrolling.scrollToBottom(text);
     }
     
     function destroy() {
@@ -140,18 +141,28 @@ function create(context) {
     }
     
     function onKeyUp(event) {
-        if (event.keyCode === KEY_CODE_RIGHT || event.keyCode === KEY_CODE_SPACE) {
+        
+        var keyCode = event.keyCode;
+        
+        setTimeout(function () {
+            handleKeyCode(keyCode);
+        }, 10);
+    }
+    
+    function handleKeyCode(keyCode) {
+        
+        if (keyCode === KEY_CODE_RIGHT || keyCode === KEY_CODE_SPACE) {
             if (!charAnimation || !charAnimation.cancel()) {
                 interpreter.next();
             }
         }
-        else if (event.keyCode === KEY_CODE_DOWN) {
+        else if (keyCode === KEY_CODE_DOWN) {
             focus.next();
         }
-        else if (event.keyCode === KEY_CODE_UP) {
+        else if (keyCode === KEY_CODE_UP) {
             focus.previous();
         }
-        else if (event.keyCode === KEY_CODE_ESCAPE) {
+        else if (keyCode === KEY_CODE_ESCAPE) {
             
             if (focus.getMode() === "node" && !focus.getElementInFocus()) {
                 screens.run("pause");
@@ -164,7 +175,7 @@ function create(context) {
                 highlighter.reset();
             }
         }
-        else if (event.keyCode === KEY_CODE_ENTER) {
+        else if (keyCode === KEY_CODE_ENTER) {
             focus.execute();
         }
     }
@@ -286,11 +297,15 @@ function create(context) {
                 insertSpecials();
             }
             else {
+                
                 insertSpecials();
-                charAnimation = revealText.create(
+                
+                charAnimation = revealText(
                     text.querySelector(".current"),
                     ((settings.get("textSpeed") / 100) * 90) + 10
                 );
+                
+                charAnimation.start();
             }
             
             function insertSpecials() {
@@ -349,6 +364,7 @@ function create(context) {
         
         var items = Array.prototype.slice.call(text.querySelectorAll(".current"));
         var clickables = Array.prototype.slice.call(text.querySelectorAll("[data-type]"));
+        var focusables = Array.prototype.slice.call(text.querySelectorAll("[data-focus-mode]"));
         
         items.forEach(function (item) {
             item.classList.remove("current");
@@ -359,6 +375,10 @@ function create(context) {
             clickable.removeAttribute("data-type");
             clickable.setAttribute("tabindex", "-1");
             clickable.classList.add("disarmed");
+        });
+        
+        focusables.forEach(function (focusable) {
+            focusable.removeAttribute("data-focus-mode");
         });
     }
     
@@ -380,6 +400,7 @@ function create(context) {
         option.setAttribute("class", "Option");
         option.setAttribute("data-type", "option");
         option.setAttribute("data-target", opt.target);
+        option.setAttribute("data-focus-mode", "node");
         option.setAttribute("tabindex", "1");
         option.setAttribute("title", "Option");
         option.setAttribute("data-value", window.btoa(JSON.stringify(opt.value)));
@@ -414,7 +435,7 @@ function create(context) {
     
     function insertLink(label, target) {
         
-        if (!interpreter.hasNode(target)) {
+        if (!story.hasNode(target)) {
             throw new Error(
                 "Unknown node referenced in link '" + label + "': " + target + " @" + 
                 (typeof __line !== "undefined" ? __line : "unknown")
@@ -422,12 +443,12 @@ function create(context) {
         }
         
         return '<span class="link direct_link" tabindex="1" data-target="' + target +
-            '" data-type="link" title="Link" data-link-type="direct_link">' +
+            '" data-type="link" title="Link" data-focus-mode="node" data-link-type="direct_link">' +
             label + '</span>';
     }
     
     function reflowElements() {
-        context.emit("element_reflow");
+        scrolling.scrollToBottom(text);
     }
     
     function hideGameElements() {

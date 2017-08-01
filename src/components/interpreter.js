@@ -12,7 +12,7 @@ var none = function () {};
 
 function create(context) {
     
-    var story, vars, env, storage, settings, currentNode, nextClickTime, timeoutId;
+    var story, vars, env, storage, settings, focus, currentNode, nextClickTime, timeoutId;
     
     // A stack for remembering which node to return to.
     var stack = [];
@@ -22,10 +22,13 @@ function create(context) {
         env = context.getComponent("env");
         vars = context.getComponent("vars");
         story = context.getComponent("story");
+        focus = context.getComponent("focus");
         storage = context.getComponent("storage");
         settings = context.getComponent("settings");
         
         nextClickTime = Date.now();
+        
+        focus.setMode("screen");
     }
     
     function destroy() {
@@ -35,6 +38,7 @@ function create(context) {
     }
     
     function start() {
+        clearState();
         runNode(story.getNode("start"));
     }
     
@@ -149,6 +153,8 @@ function create(context) {
         var skipTo;
         var copy = merge(clone(story.getSection(node.section)), clone(node));
         
+        console.log("Running node '" + node.id + "'...");
+        
         focus.setMode("node");
         
         if (timeoutId) {
@@ -190,6 +196,7 @@ function create(context) {
         });
         
         if (skipTo) {
+            console.log("Skipping from node '" + node.id + "' to '" + skipTo + "'.");
             return runNode(story.getNode(skipTo));
         }
         
@@ -220,10 +227,12 @@ function create(context) {
         }
         
         if (currentNode.next) {
+            console.log("Going to next node...");
             runNode(story.getNode(currentNode.next), "next");
             nextClickTime = Date.now();
         }
         else if (currentNode.returnToLast && nextClickWaitTimeReached()) {
+            console.log("Going to previous node...");
             runNode(story.getNode(stack.pop()), "return");
             nextClickTime = Date.now();
         }
@@ -303,7 +312,9 @@ function create(context) {
         init: init,
         destroy: destroy,
         start: start,
+        runNode: runNode,
         runNodeById: runNodeById,
+        next: next,
         save: save,
         load: load,
         hasSlot: hasSlot,

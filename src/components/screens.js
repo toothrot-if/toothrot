@@ -27,7 +27,7 @@ function none() {
 
 function create(context) {
     
-    var storage, settings, system, interpreter, story, vars, env;
+    var storage, settings, system, interpreter, story, vars, env, focus;
     var screens, currentScreen, screenStack, curtain;
     var curtainVisible = false;
     
@@ -36,6 +36,7 @@ function create(context) {
         env = context.getComponent("env");
         vars = context.getComponent("vars");
         story = context.getComponent("story");
+        focus = context.getComponent("focus");
         system = context.getComponent("system");
         storage = context.getComponent("storage");
         screens = context.getResource("screens");
@@ -55,6 +56,10 @@ function create(context) {
         context.on("screen_click", onScreenClick);
         context.on("show_screen", removeInactiveElements);
         context.on("change_focus_mode", onFocusModeChange);
+        
+        setTimeout(function () {
+            run("main");
+        }, 20);
     }
     
     function destroy() {
@@ -99,7 +104,7 @@ function create(context) {
             }
             else if (target === "start") {
                 exitScreenMode();
-                interpreter.runNode(story.getNode("start"));
+                interpreter.start();
             }
             else if (target === "continue") {
                 interpreter.clearState();
@@ -167,8 +172,6 @@ function create(context) {
         
         then = then || none;
         
-        focus.setMode("screen");
-        
         if (!screen) {
             throw new Error("No such screen:" + name);
         }
@@ -180,6 +183,8 @@ function create(context) {
         }
         
         currentScreen = name;
+        
+        focus.setMode("screen");
         
         if (name === "save") {
             showSaveScreen(isSameScreen);
@@ -201,13 +206,13 @@ function create(context) {
                 }
                 
                 if (isSameScreen) {
-                    replace();
+                    update();
                 }
                 else {
-                    animateScreenEntry(replace);
+                    animateScreenEntry(update);
                 }
                 
-                function replace() {
+                function update() {
                     replace();
                     populateSlots(all);
                 }
@@ -248,11 +253,11 @@ function create(context) {
         
         function populateSlots(slots) {
             
+            var i, currentSlot, tpl, emptyTpl;
             var container = context.get("screen_container");
             var slotContainer = container.querySelector("*[data-type=slots]");
             var template = container.querySelector("*[data-template-name=slot]");
             var empty = container.querySelector("*[data-template-name=empty-slot]");
-            var i, currentSlot, tpl, emptyTpl;
             
             template.parentNode.removeChild(template);
             empty.parentNode.removeChild(empty);
@@ -261,6 +266,8 @@ function create(context) {
             
             tpl = getDomNodeContent(template);
             emptyTpl = getDomNodeContent(empty);
+            
+            console.log("slots:", slots);
             
             for (i = 0; i < MAX_SLOTS; i += 1) {
                 
@@ -555,7 +562,9 @@ function create(context) {
     
     return {
         init: init,
-        destroy: destroy
+        destroy: destroy,
+        run: run,
+        back: back
     };
     
 }
