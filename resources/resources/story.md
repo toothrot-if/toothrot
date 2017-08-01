@@ -5,9 +5,19 @@
 
 ###: start
 
-Welcome to (# Toothrot Engine => {"Name?": "explain_toothrot", "examine": "examine_engine"} #)!
+Welcome to (: Toothrot Engine => toothrot_engine :)!
 
 (: Visit another node. => another_node :)
+
+
+###: toothrot_engine
+
+An engine for developing text-based games, with a weird name.
+
+(@) Explain name => explain_toothrot
+(@) Examine engine => examine_engine
+
+(>) start
 
 
 ###: explain_toothrot
@@ -34,14 +44,14 @@ Right?
 
 Good answer. You may continue.
 
-(>) start
+(>) toothrot_engine
 
 
 ###: lie
 
 Yeah, right. I totally believe you.
 
-(>) start
+(>) toothrot_engine
 
 
 ###: examine_engine

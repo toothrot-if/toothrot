@@ -2,6 +2,21 @@
 html{color:#000;background:#FFF}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0}table{border-collapse:collapse;border-spacing:0}fieldset,img{border:0}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal}/*ol,ul{list-style:none}*/caption,th{text-align:left}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal}q:before,q:after{content:''}abbr,acronym{border:0;font-variant:normal}sup{vertical-align:text-top}sub{vertical-align:text-bottom}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit}input,textarea,select{*font-size:100%}legend{color:#000}#yui3-css-stamp.cssreset{display:none}
 
 
+@font-face {
+    font-family: "Open Sans Regular";
+    src: url("OpenSans-Regular.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Open Sans Light";
+    src: url("OpenSans-Light.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Open Sans Bold";
+    src: url("OpenSans-Bold.ttf") format("truetype");
+}
+
 
 * {
     box-sizing: border-box;
@@ -13,33 +28,57 @@ li {
 }
 
 html {
-    font-family: arial, Arial, Helvetica, sans-serif;
-    background: rgb(20, 20, 20);
+    font-family: "Open Sans Regular", sans-serif;
     color: white;
+    font-size: 1em;
+    background: black;
+}
+
+body {
+    overflow: hidden;
+}
+
+html, body, .Toothrot {
+    height: 100%;
+}
+
+.Toothrot {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 600px;
+    z-index: 100;
+    overflow: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-weight: bold;
+    font-family: "Open Sans Bold", sans-serif;
 }
 
 h1 {
-    font-size: 1.6em;
+    font-size: 2em;
     text-align: center;
 }
 
 h2 {
-    font-size: 1.3em;
+    font-size: 1.6em;
 }
 
 h3 {
-    font-size: 1.2em;
+    font-size: 1.4em;
 }
 
 em, i {
+    font-family: "Open Sans Regular", sans-serif;
     font-style: italic;
 }
 
 strong, b {
+    font-family: "Open Sans Bold", sans-serif;
     font-weight: bold;
 }
 
@@ -48,11 +87,8 @@ strong, b {
     left: 0;
     top: 0;
     right: 0;
-    background: rgba(50, 50, 50, 0.6);
-    border-bottom: 1px solid rgb(50, 50, 50);
     padding: 10px;
     font-weight: bold;
-    color: white;
 }
 
 .right {
@@ -62,11 +98,8 @@ strong, b {
 #content {
     padding: 10px;
     padding-top: 60px;
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
+    max-width: 600px;
+    margin: auto;
 }
 
 .Highlighter {
@@ -76,11 +109,10 @@ strong, b {
     box-shadow: 0 0 2px black;
     z-index: 1000000;
     cursor: pointer;
-    /*animation: pulse 1s infinite;*/
 }
 
 .BackgroundDimmer {
-    position: fixed;
+    position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
@@ -88,17 +120,8 @@ strong, b {
     background: black;
 }
 
-.Background {
-    background: rgb(20, 20, 20);
-    position: fixed;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-}
-
 .BackgroundDimmer {
-    opacity: 0;
+    opacity: 0.8;
 }
 
 @keyframes pulse {
@@ -116,6 +139,7 @@ strong, b {
     }
 }
 
+/*
 .NextIndicator {
     width: 16px;
     height: 16px;
@@ -125,13 +149,50 @@ strong, b {
     margin: 0;
     padding: 0;
     opacity: 0.8;
-    background: transparent url(indicator.gif) no-repeat center center;
-    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    background: transparent url(progress-dots.gif) no-repeat center center;
+}
+*/
+
+.NextIndicator {
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    border: 1px solid black;
+    border-radius: 100%;
+}
+
+@-webkit-keyframes sk-scaleout {
+    0% {
+        -webkit-transform: scale(0)
+    }
+    100% {
+        -webkit-transform: scale(1.0);
+        opacity: 0;
+    }
+}
+
+@keyframes sk-scaleout {
+    0% { 
+        -webkit-transform: scale(0);
+        transform: scale(0);
+    }
+    100% {
+        -webkit-transform: scale(1.0);
+        transform: scale(1.0);
+        opacity: 0;
+    }
 }
 
 .Text {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 20px;
-    font-size: 1.2em;
+    overflow: hidden;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -139,33 +200,23 @@ strong, b {
     -ms-user-select: none;
     user-select: none;
     cursor: default;
-    position: absolute;
-    top: 60px;
-    left: 50%;
-    -moz-transform: translate(-50%, 0%);
-    -webkit-transform: translate(-50%, 0%);
-    transform: translate(-50%, 0%);
     backface-visibility: hidden;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.Text.fitsInWindow {
-    top: 50%;
-    -moz-transform: translate(-50%, -50%);
-    -webkit-transform: translate(-50%, -50%);
-    transform: translate(-50%, -50%);
+    padding-top: 20px;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-bottom: 80px;
+    max-width: 500px;
+    margin: auto;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    min-height: 100%;
 }
 
 .Text p {
-    margin-top: 25px;
+    margin-top: 20px;
 }
 
 .Text p:first-child {
     margin-top: 0;
-}
-
-.Text img {
-    max-width: 100%;
 }
 
 .OptionsContainer {
@@ -174,9 +225,8 @@ strong, b {
 }
 
 .Option {
-    display: inline-block;
+    display: block;
     margin: 5px;
-    font-size: 0.8em;
     padding: 5px;
     padding-left: 10px;
     padding-right: 10px;
@@ -231,66 +281,29 @@ strong, b {
     margin: auto;
 }
 
-.Action {
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
-    padding: 20px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    display: inline-block;
-    margin-right: 5px;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    box-shadow: 2px 2px 3px black;
-}
-
-.Action:last-child {
-    margin-right: 0;
-}
-
-.ActionsCurtain {
-    position: fixed;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.8);
-}
-
-.ActionsContainer {
-    position: absolute;
-    z-index: 1000;
-    max-width: 700px;
-    margin: auto;
-    margin-top: -20px;
-    top: 50%;
-    left: 50%;
-    -moz-transform: translate(-50%, -50%);
-    -webkit-transform: translate(-50%, -50%);
-    transform: translate(-50%, -50%);
-    max-width: 700px;
-    padding: 0;
-}
-
 .link, .link:visited {
-    color: skyblue;
-    text-decoration: none;
+    display: inline-block;
+    padding: 2px;
+    padding-left: 8px;
+    padding-right: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: underline;
+    font-weight: bold;
     cursor: pointer;
+    transition-duration: 1s;
+    border-radius: 5px;
 }
 
 .link:hover {
-    color: white;
+    background: rgba(250, 250, 250, 0.2);
+    color: rgba(255, 255, 255, 1);
 }
 
+/*
 .direct_link {
     border-bottom: 1px dashed;
 }
+*/
 
 .object_link {
     display: inline-block;
@@ -299,7 +312,6 @@ strong, b {
     padding: 3px;
     padding-left: 10px;
     padding-right: 10px;
-    font-size: 0.8em;
 }
 
 
@@ -320,18 +332,10 @@ strong, b {
 }
 
 .Button, .Option, .Action, .object_link {
-    color: rgb(240, 240, 220);
-    text-shadow: 0 0 2px black;
-    background: #2d2929;
-    background: -moz-linear-gradient(top, #2d2929 0%, #1C1C1C 100%);
-    background: -webkit-linear-gradient(top, #2d2929 0%,#1C1C1C 100%);
-    background: linear-gradient(to bottom, #2d2929 0%,#1C1C1C 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2d2929', endColorstr='#1C1C1C',GradientType=0 );
-    box-shadow: 1px 1px 2px black;
-    border: 1px solid rgb(80, 80, 80);
-    border-bottom: 1px solid rgb(50, 50, 50);
-    border-right: 1px solid rgb(50, 50, 50);
-    border-radius: 3px;
+    color: white;
+    background: rgba(10, 10, 10, 0.6);
+    border-radius: 5px;
+    border: 1px solid rgba(20, 20, 20, 0.6);
     font-weight: bold;
     min-width: 20px;
     text-align: center;
@@ -343,6 +347,7 @@ strong, b {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    transition-duration: 0.5s;
 }
 
 .Button, .object_link {
@@ -351,7 +356,7 @@ strong, b {
 }
 
 .Button:hover, .Option:hover, .Action:hover, .object_link:hover {
-    background: rgba(50, 50, 50, 0.8);
+    opacity: 0.8;
 }
 
 .Button:active, .Option:active, .Action:active, .object_link:active {
@@ -365,6 +370,18 @@ strong, b {
     margin: 0;
     padding: 0;
     display: block;
+}
+
+.Menu .Button {
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    box-shadow: none;
+    transition-duration: 0.2s;
+    box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.6);
+}
+
+.Menu .Button:hover {
+    background: rgba(0, 0, 0, 0.5);
 }
 
 .Curtain {
@@ -403,12 +420,12 @@ strong, b {
     margin: 0;
 }
 
-.Screen .Menu[data-alignment=horizontal] {
-    position: fixed;
+.SaveScreen .Menu, .SettingsScreen .Menu {
+    position: absolute;
     left: 0;
-    top: 0;
+    top: auto;
     right: 0;
-    bottom: auto;
+    bottom: 0;
     transform: none;
     padding: 5px;
     z-index: 10000;
@@ -422,29 +439,10 @@ strong, b {
     margin-bottom: 10px;
 }
 
-.Screen .Menu[data-alignment=horizontal] *[data-type=menu-item] {
+.SaveScreen .Menu *[data-type=menu-item], .SettingsScreen .Menu *[data-type=menu-item] {
     display: inline-block;
     margin-bottom: 0;
     min-width: 100px;
-}
-
-.Screen .content {
-    max-width: 800px;
-    margin: auto;
-    margin-top: 60px;
-    padding: 20px;
-}
-
-.Screen .content h2, .Screen .content h3 {
-    margin-bottom: 20px;
-}
-
-.Screen .content table {
-    width: 100%;
-}
-
-.Screen .content table td {
-    padding: 10px;
 }
 
 .SaveScreen {
@@ -510,7 +508,6 @@ strong, b {
 }
 
 .SaveScreen li[data-type=slot-button] {
-    font-size: 0.8em;
     font-weight: bold;
     padding: 5px;
     margin: 5px;
@@ -625,17 +622,21 @@ strong, b {
 
 
 .UIBar {
+    display: none;
     position: fixed;
     left: 0;
     right: 0;
     top: 0;
     z-index: 1000;
-    padding: 5px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.6);
 }
 
-.UIBar .left, .UIBar .right {
-    display: table; /* removes whitespace between buttons */
-    word-spacing: -1em;
+.UIBar a {
+    display: inline-block;
+    padding-left: 10px;
+    padding-right: 10px;
+    cursor: pointer;
 }
 
 .UIBar .right {
@@ -645,8 +646,7 @@ strong, b {
 .UIButton {
     padding: 8px;
     display: inline-block;
-    margin-left: 5px;
-    word-spacing: 0;
+    margin-left: 3px;
 }
 
 .ImageButton {
@@ -664,10 +664,8 @@ strong, b {
 
 .Notification {
     position: fixed;
-    top: 60px;
-    left: 50%;
-    transform: translate(-50%, 0%);
-    min-width: 300px;
+    top: 20px;
+    right: 20px;
     max-width: 500px;
     padding: 15px;
     background: black;
@@ -676,7 +674,6 @@ strong, b {
     border: 1px solid rgb(40, 40, 40);
     border-radius: 5px;
     font-weight: bold;
-    z-index: 10000;
 }
 
 
@@ -697,53 +694,10 @@ strong, b {
 
 .Text {
     margin-bottom: 10px;
-    padding-top: 50px;
     width: 95%;
     font-size: 1.2em;
-    top: 20px;
-    transform: translate(-50%, 0);
-}
-
-.Text.fitsInWindow {
-    top: 20px;
-    -moz-transform: translate(-50%, 0%);
-    -webkit-transform: translate(-50%, 0%);
-    transform: translate(-50%, 0%);
-}
-
-.OptionsContainer {
-    text-align: left;
-}
-
-.Option {
-    text-align: left;
-    margin: 0;
-    margin-bottom: 10px;
-    font-size: 0.8em;
-    display: block;
-}
-
-.UIBar {
-    box-shadow: -2px -2px 8px rgba(0, 0, 0, 0.4);
-    background: #2d2929;
-    background: -moz-linear-gradient(top, #2d2929 0%, #111111 100%);
-    background: -webkit-linear-gradient(top, #2d2929 0%,#111111 100%);
-    background: linear-gradient(to bottom, #2d2929 0%,#111111 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2d2929', endColorstr='#111111',GradientType=0 );
-}
-
-.NextIndicator {
-    right: 0;
-}
-
-.ActionsContainer {
-    width: 90%;
-}
-
-.Action {
-    display: block;
-    width: 100%;
-    margin-bottom: 10px;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .MessageBox {
@@ -768,6 +722,26 @@ strong, b {
     display: block;
 }
 
+.OptionsContainer {
+    text-align: left;
+}
+
+.Option {
+    text-align: left;
+    margin: 0;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.UIBar {
+    box-shadow: -2px -2px 8px rgba(0, 0, 0, 0.4);
+    background: #2d2929;
+    background: -moz-linear-gradient(top, #2d2929 0%, #111111 100%);
+    background: -webkit-linear-gradient(top, #2d2929 0%,#111111 100%);
+    background: linear-gradient(to bottom, #2d2929 0%,#111111 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2d2929', endColorstr='#111111',GradientType=0 );
+}
+
 }
 
 @media (max-width: 800px) {
@@ -776,6 +750,10 @@ strong, b {
     margin-bottom: 10px;
     max-width: 90%;
     font-size: 1.3em;
+}
+
+.Toothrot {
+    padding-bottom: 80px;
 }
 
 .SaveScreen .Slots {
@@ -819,4 +797,46 @@ strong, b {
 
 }
 
+.Background, .BackgroundDimmer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
 
+.separator {
+    height: 2px;
+    margin: auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    background: white;
+    opacity: 0.2;
+    width: 95%;
+    border-radius: 100%;
+}
+
+.separator:first-child {
+    opacity: 0;
+    margin-top: 100%;
+    transform: translate(0, -100%);
+}
+
+.TextItem {
+    transition-duration: 0.5s;
+    opacity: 1;
+}
+
+.disarmed {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: default;
+}
+
+.disarmed.clicked {
+    opacity: 0.8;
+}
+
+.link.clicked {
+    color: white;
+}
