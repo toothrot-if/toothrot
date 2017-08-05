@@ -2,6 +2,7 @@
 var clone = require("clone");
 var merge = require("deepmerge");
 var evalScript = require("../utils/evalScript");
+var createNodeApi = require("../utils/node.js");
 
 // Wait how long before next() works again after a return?
 // This is to prevent popping more stuff from the stack than
@@ -40,10 +41,6 @@ function create(context) {
     function start() {
         clearState();
         runNode(story.getNode("start"));
-    }
-    
-    function getStoryTitle() {
-        return (story.meta.title || "Toothrot Engine");
     }
     
     function clearState() {
@@ -150,8 +147,10 @@ function create(context) {
     
     function runNode(node, nextType) {
         
-        var skipTo;
+        var skipTo, lastNodes;
         var copy = merge(clone(story.getSection(node.section)), clone(node));
+        
+        copy.items = [];
         
         console.log("Running node '" + node.id + "'...");
         
@@ -163,13 +162,32 @@ function create(context) {
             context.emit("timer_end");
         }
         
+        lastNodes = vars.get("_lastNodes") || {};
+        
+        copy.tags.forEach(function (tag) {
+            lastNodes[tag] = copy.id;
+        });
+        
+        vars.set("_lastNodes", lastNodes);
+        
+        env.set("last", function (tag) {
+            return lastNodes[tag];
+        });
+        
         env.set("skipTo", function (id) {
             skipTo = id;
         });
         
-        env.set("node", function () {
-            return copy;
+        env.set("node", function (id) {
+            
+            if (id) {
+                return createNodeApi(story.getAll().nodes[id], story);
+            }
+            
+            return createNodeApi(copy, story);
         });
+        
+        env.set("self", getSelf);
         
         env.set("addOption", function (label, target, value) {
             copy.options.push({
@@ -181,18 +199,68 @@ function create(context) {
             });
         });
         
-        copy.scripts = copy.scripts.map(function (script) {
+        if (node.scripts.entry) {
+            runScript(node.scripts.entry);
+        }
+        
+        copy.content = copy.content.replace(/\(@\s*([a-zA-Z0-9_]+)\s*@\)/g, function (match, slot) {
             
+            var script;
             var result = "";
             
-            try {
-                result = evalScript(story, env.getAll(), vars, script.body, script.line);
-            }
-            catch (error) {
-                console.error("Cannot execute script at line " + script.line + ":", error);
+            if (!(slot in node.scripts)) {
+                console.warn("No script for slot '" + slot + "' at node '" + node.id + "'.");
+                return "";
             }
             
-            return result;
+            script = node.scripts[slot];
+            
+            result = runScript(script);
+            
+            return result || "";
+        });
+        
+        if (createNodeApi(node, story).isntSneaky()) {
+            
+            copy.contains.forEach(function (id) {
+                
+                var scriptResult;
+                var item = story.getNode(id);
+                
+                if (!item || !item.scripts.brief) {
+                    return;
+                }
+                
+                if (item.wasIn.indexOf(node.id) < 0) {
+                    item.wasIn.push(node.id);
+                }
+                
+                env.set("self", function () {
+                    return createNodeApi(item, story);
+                });
+                
+                scriptResult = runScript(item.scripts.brief);
+                
+                copy.items.push({
+                    id: item.id,
+                    text: scriptResult
+                });
+                
+                env.set("self", getSelf);
+            });
+        }
+        
+        copy.options = copy.options.filter(function (option) {
+            
+            var hasFlag;
+            
+            if (!option.condition) {
+                return true;
+            }
+            
+            hasFlag = createNodeApi(node).is(option.condition.flag);
+            
+            return (option.condition.not ? !hasFlag : hasFlag);
         });
         
         if (skipTo) {
@@ -218,9 +286,29 @@ function create(context) {
         if (typeof node.timeout === "number") {
             startTimer(node);
         }
+        
+        function runScript(script) {
+            
+            var result;
+            
+            try {
+                result = evalScript(story.getAll(), env.getAll(), vars, script.body, script.line);
+            }
+            catch (error) {
+                console.error("Cannot execute script at line " + script.line + ":", error);
+            }
+            
+            return result;
+        }
+        
+        function getSelf() {
+            return createNodeApi(node, story);
+        }
     }
     
     function next() {
+        
+        var lastNodes, tag;
         
         if (focus.getMode() !== "node" || !currentNode) {
             return;
@@ -232,8 +320,19 @@ function create(context) {
             nextClickTime = Date.now();
         }
         else if (currentNode.returnToLast && nextClickWaitTimeReached()) {
-            console.log("Going to previous node...");
-            runNode(story.getNode(stack.pop()), "return");
+            
+            lastNodes = vars.get("_lastNodes") || {};
+            tag = currentNode.returnToLastTag;
+            
+            if (currentNode.returnToLastTag && lastNodes[tag]) {
+                console.log("Returning to last node with tag '" + tag + "'...");
+                runNode(story.getNode(lastNodes[tag]));
+            }
+            else {
+                console.log("Returning to previous node...");
+                runNode(story.getNode(stack.pop()), "return");
+            }
+            
             nextClickTime = Date.now();
         }
         
@@ -323,7 +422,6 @@ function create(context) {
         hasQuickSlot: hasQuickSlot,
         loadQuick: loadQuick,
         saveQuick: saveQuick,
-        getStoryTitle: getStoryTitle,
         clearState: clearState,
         getCurrentNodeId: getCurrentNodeId
     };

@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Mon, 31 Jul 2017 20:48:14 GMT
+    Build time: Sat, 05 Aug 2017 14:03:43 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5715,11 +5715,12 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/getAbsoluteRect":70,"../utils/scrolling":75,"../utils/setStyle":76,"enjoy-core/compose":11,"transform-js":20}],58:[function(require,module,exports){
+},{"../utils/getAbsoluteRect":70,"../utils/scrolling":76,"../utils/setStyle":77,"enjoy-core/compose":11,"transform-js":20}],58:[function(require,module,exports){
 
 var clone = require("clone");
 var merge = require("deepmerge");
 var evalScript = require("../utils/evalScript");
+var createNodeApi = require("../utils/node.js");
 
 // Wait how long before next() works again after a return?
 // This is to prevent popping more stuff from the stack than
@@ -5758,10 +5759,6 @@ function create(context) {
     function start() {
         clearState();
         runNode(story.getNode("start"));
-    }
-    
-    function getStoryTitle() {
-        return (story.meta.title || "Toothrot Engine");
     }
     
     function clearState() {
@@ -5868,8 +5865,10 @@ function create(context) {
     
     function runNode(node, nextType) {
         
-        var skipTo;
+        var skipTo, lastNodes;
         var copy = merge(clone(story.getSection(node.section)), clone(node));
+        
+        copy.items = [];
         
         console.log("Running node '" + node.id + "'...");
         
@@ -5881,13 +5880,32 @@ function create(context) {
             context.emit("timer_end");
         }
         
+        lastNodes = vars.get("_lastNodes") || {};
+        
+        copy.tags.forEach(function (tag) {
+            lastNodes[tag] = copy.id;
+        });
+        
+        vars.set("_lastNodes", lastNodes);
+        
+        env.set("last", function (tag) {
+            return lastNodes[tag];
+        });
+        
         env.set("skipTo", function (id) {
             skipTo = id;
         });
         
-        env.set("node", function () {
-            return copy;
+        env.set("node", function (id) {
+            
+            if (id) {
+                return createNodeApi(story.getAll().nodes[id], story);
+            }
+            
+            return createNodeApi(copy, story);
         });
+        
+        env.set("self", getSelf);
         
         env.set("addOption", function (label, target, value) {
             copy.options.push({
@@ -5899,18 +5917,68 @@ function create(context) {
             });
         });
         
-        copy.scripts = copy.scripts.map(function (script) {
+        if (node.scripts.entry) {
+            runScript(node.scripts.entry);
+        }
+        
+        copy.content = copy.content.replace(/\(@\s*([a-zA-Z0-9_]+)\s*@\)/g, function (match, slot) {
             
+            var script;
             var result = "";
             
-            try {
-                result = evalScript(story, env.getAll(), vars, script.body, script.line);
-            }
-            catch (error) {
-                console.error("Cannot execute script at line " + script.line + ":", error);
+            if (!(slot in node.scripts)) {
+                console.warn("No script for slot '" + slot + "' at node '" + node.id + "'.");
+                return "";
             }
             
-            return result;
+            script = node.scripts[slot];
+            
+            result = runScript(script);
+            
+            return result || "";
+        });
+        
+        if (createNodeApi(node, story).isntSneaky()) {
+            
+            copy.contains.forEach(function (id) {
+                
+                var scriptResult;
+                var item = story.getNode(id);
+                
+                if (!item || !item.scripts.brief) {
+                    return;
+                }
+                
+                if (item.wasIn.indexOf(node.id) < 0) {
+                    item.wasIn.push(node.id);
+                }
+                
+                env.set("self", function () {
+                    return createNodeApi(item, story);
+                });
+                
+                scriptResult = runScript(item.scripts.brief);
+                
+                copy.items.push({
+                    id: item.id,
+                    text: scriptResult
+                });
+                
+                env.set("self", getSelf);
+            });
+        }
+        
+        copy.options = copy.options.filter(function (option) {
+            
+            var hasFlag;
+            
+            if (!option.condition) {
+                return true;
+            }
+            
+            hasFlag = createNodeApi(node).is(option.condition.flag);
+            
+            return (option.condition.not ? !hasFlag : hasFlag);
         });
         
         if (skipTo) {
@@ -5936,9 +6004,29 @@ function create(context) {
         if (typeof node.timeout === "number") {
             startTimer(node);
         }
+        
+        function runScript(script) {
+            
+            var result;
+            
+            try {
+                result = evalScript(story.getAll(), env.getAll(), vars, script.body, script.line);
+            }
+            catch (error) {
+                console.error("Cannot execute script at line " + script.line + ":", error);
+            }
+            
+            return result;
+        }
+        
+        function getSelf() {
+            return createNodeApi(node, story);
+        }
     }
     
     function next() {
+        
+        var lastNodes, tag;
         
         if (focus.getMode() !== "node" || !currentNode) {
             return;
@@ -5950,8 +6038,19 @@ function create(context) {
             nextClickTime = Date.now();
         }
         else if (currentNode.returnToLast && nextClickWaitTimeReached()) {
-            console.log("Going to previous node...");
-            runNode(story.getNode(stack.pop()), "return");
+            
+            lastNodes = vars.get("_lastNodes") || {};
+            tag = currentNode.returnToLastTag;
+            
+            if (currentNode.returnToLastTag && lastNodes[tag]) {
+                console.log("Returning to last node with tag '" + tag + "'...");
+                runNode(story.getNode(lastNodes[tag]));
+            }
+            else {
+                console.log("Returning to previous node...");
+                runNode(story.getNode(stack.pop()), "return");
+            }
+            
             nextClickTime = Date.now();
         }
         
@@ -6041,7 +6140,6 @@ function create(context) {
         hasQuickSlot: hasQuickSlot,
         loadQuick: loadQuick,
         saveQuick: saveQuick,
-        getStoryTitle: getStoryTitle,
         clearState: clearState,
         getCurrentNodeId: getCurrentNodeId
     };
@@ -6050,7 +6148,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/evalScript":69,"clone":7,"deepmerge":8}],59:[function(require,module,exports){
+},{"../utils/evalScript":69,"../utils/node.js":72,"clone":7,"deepmerge":8}],59:[function(require,module,exports){
 //
 // # Screens component
 //
@@ -6749,7 +6847,7 @@ var NOTIFICATION_DURATION = 3000;
 
 function create(context) {
     
-    var ui, text, indicator, background, optionsParent, backgroundDimmer, optionsContainer;
+    var ui, text, indicator, optionsParent, optionsContainer;
     var container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
     var system, settings, env, focus;
@@ -6775,17 +6873,11 @@ function create(context) {
         
         ui = document.createElement("div");
         text = document.createElement("div");
-        indicator = document.createElement("div");
-        background = document.createElement("div");
         
         // Actions and options are put into a parent element
         // so that clicks can be intercepted and to allow
         // more flexibility in styling the elements with CSS.
         optionsParent = document.createElement("div");
-        
-        // The background can be dimmed using "dim(amount)" in scripts.
-        // This is the element used for this purpose:
-        backgroundDimmer = document.createElement("div");
         
         optionsContainer = document.createElement("div");
         screenContainer = document.createElement("div");
@@ -6803,29 +6895,24 @@ function create(context) {
         text.setAttribute("aria-relevant", "text");
         text.setAttribute("role", "main");
         
-        indicator.setAttribute("class", "NextIndicator");
-        indicator.setAttribute("title", "Click or press space to continue");
-        indicator.setAttribute("tabindex", "1");
-        
-        background.setAttribute("class", "Background");
-        backgroundDimmer.setAttribute("class", "BackgroundDimmer");
         optionsParent.setAttribute("class", "OptionsCurtain");
         optionsContainer.setAttribute("class", "OptionsContainer");
         screenContainer.setAttribute("class", "ScreenContainer");
         
         optionsParent.appendChild(optionsContainer);
-        container.appendChild(background);
-        container.appendChild(backgroundDimmer);
         container.appendChild(text);
         container.appendChild(screenContainer);
         document.body.appendChild(container);
         document.body.appendChild(ui);
         
-        ui.style.opacity = "0";
-        
         ui.innerHTML = format(templates.ui, vars.getAll());
         
         ui.setAttribute("role", "navigation");
+        
+        indicator = ui.querySelector(".next-indicator");
+        
+        indicator.setAttribute("title", "Click or press space to continue");
+        indicator.setAttribute("tabindex", "1");
         
         ui.addEventListener("click", onUiClick);
         container.addEventListener("click", onContainerClick);
@@ -6962,10 +7049,6 @@ function create(context) {
             container.setAttribute("data-node-id", currentNode.id);
             container.setAttribute("data-section", currentNode.section);
             
-            node.scripts.forEach(function (scriptResult, i) {
-                content = content.replace("(%s" + i + "%)", scriptResult);
-            });
-            
             node.links.forEach(function (link, i) {
                 if (link.type === "direct_link") {
                     content = content.replace(
@@ -6988,6 +7071,22 @@ function create(context) {
                 
                 return "";
             });
+            
+            content += node.items.map(function (item) {
+                
+                var description = item.text;
+                
+                if (!description) {
+                    return "";
+                }
+                
+                description = description.replace(/\{([^}]*)\}/g, function (match, label) {
+                    return insertLink(label, item.id);
+                });
+                
+                return '<p class="itemDescription">' + description + '</p>';
+                
+            }).join("");
             
             content = (function () {
                 
@@ -7050,11 +7149,12 @@ function create(context) {
                 }
                 
                 if (node.next || node.returnToLast) {
-                    // text.appendChild(indicator);
+                    indicator.classList.remove("disabled");
+                }
+                else {
+                    indicator.classList.add("disabled");
                 }
             }
-            
-            // text.focus();
             
         }
     }
@@ -7297,7 +7397,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/getClickableParent":71,"../utils/notifications.js":72,"../utils/revealText.js":73,"../utils/scrolling.js":75,"class-manipulator":6,"vrep":53}],62:[function(require,module,exports){
+},{"../utils/getClickableParent":71,"../utils/notifications.js":73,"../utils/revealText.js":74,"../utils/scrolling.js":76,"class-manipulator":6,"vrep":53}],62:[function(require,module,exports){
 //
 // Module for storing the game state in local storage.
 //
@@ -7541,6 +7641,10 @@ function create(context) {
         return getMeta("title");
     }
     
+    function getAll() {
+        return story;
+    }
+    
     return {
         init: init,
         destroy: destroy,
@@ -7550,7 +7654,8 @@ function create(context) {
         hasSection: hasSection,
         getMeta: getMeta,
         hasMeta: hasMeta,
-        getTitle: getTitle
+        getTitle: getTitle,
+        getAll: getAll
     };
 }
 
@@ -7995,7 +8100,7 @@ function getAbsoluteRect(element) {
 
 module.exports = getAbsoluteRect;
 
-},{"./scrollPosition":74}],71:[function(require,module,exports){
+},{"./scrollPosition":75}],71:[function(require,module,exports){
 
 function getClickableParent (node) {
     
@@ -8017,6 +8122,162 @@ function getClickableParent (node) {
 module.exports = getClickableParent;
 
 },{}],72:[function(require,module,exports){
+
+function create(node, story) {
+    
+    var api = {
+        
+        id: node.id,
+        
+        isA: isA,
+        isntA: isntA,
+        is: is,
+        isnt: isnt,
+        isIn: isIn,
+        isntIn: isntIn,
+        isSneaky: isSneaky,
+        isntSneaky: isntSneaky,
+        isEmpty: isEmpty,
+        isntEmpty: isntEmpty,
+        be: be,
+        beSneaky: beSneaky,
+        dontBe: dontBe,
+        dontBeSneaky: dontBeSneaky,
+        moveTo: moveTo,
+        contains: containsNode,
+        doesntContain: doesntContain,
+        raw: raw,
+        prop: prop
+    };
+    
+    function isA(tag) {
+        return contains(node.tags, tag);
+    }
+    
+    function isntA(tag) {
+        return !isA(tag);
+    }
+    
+    function is(flag) {
+        return contains(node.flags, flag);
+    }
+    
+    function isnt(flag) {
+        return !is(flag);
+    }
+    
+    function isEmpty() {
+        return node.contains.length < 1;
+    }
+    
+    function isntEmpty() {
+        return !isEmpty();
+    }
+    
+    function containsNode(id) {
+        return contains(node.contains, id);
+    }
+    
+    function doesntContain(id) {
+        return !containsNode(id);
+    }
+    
+    function isIn(id) {
+        
+        if (!story.hasNode(id)) {
+            return false;
+        }
+        
+        return contains(story.getNode(id).contains, id);
+    }
+    
+    function isntIn(id) {
+        return !isIn(id);
+    }
+    
+    function isSneaky() {
+        return is("sneaky");
+    }
+    
+    function isntSneaky() {
+        return !isSneaky();
+    }
+    
+    function be(flag) {
+        
+        if (!is(flag)) {
+            node.flags.push(flag);
+        }
+        
+        return api;
+    }
+    
+    function beSneaky() {
+        return be("sneaky");
+    }
+    
+    function dontBe(flag) {
+        
+        if (is(flag)) {
+            node.flags = node.flags.filter(function (nodeFlag) {
+                return nodeFlag !== flag;
+            });
+        }
+        
+        return api;
+    }
+    
+    function dontBeSneaky() {
+        return dontBe("sneaky");
+    }
+    
+    function moveTo(id) {
+        
+        if (!story.hasNode(id)) {
+            throw new Error(
+                "Cannot move node '" + node.id + "' to node '" + id + "': " +
+                "No such node ID!"
+            );
+        }
+        
+        node.wasIn.forEach(function (itemId) {
+            
+            var item = story.getNode(itemId);
+            
+            item.contains = item.contains.filter(function (child) {
+                return child !== node.id;
+            });
+            
+        });
+        
+        story.getNode(id).contains.push(node.id);
+        
+        return api;
+    }
+    
+    function raw() {
+        return node;
+    }
+    
+    function prop(name, value) {
+        
+        if (arguments.length > 1) {
+            node[name] = value;
+        }
+        
+        return value;
+    }
+    
+    return api;
+}
+
+function contains(array, thing) {
+    return (array.indexOf(thing) >= 0);
+}
+
+module.exports = create;
+
+},{}],73:[function(require,module,exports){
 /* global require, module, setTimeout */
 
 var format = require("vrep").format;
@@ -8094,7 +8355,7 @@ module.exports = {
     create: create
 };
 
-},{"transform-js":20,"vrep":53}],73:[function(require,module,exports){
+},{"transform-js":20,"vrep":53}],74:[function(require,module,exports){
 
 var transform = require("transform-js").transform;
 
@@ -8221,7 +8482,7 @@ function setOpacity(element) {
 
 module.exports = create;
 
-},{"transform-js":20}],74:[function(require,module,exports){
+},{"transform-js":20}],75:[function(require,module,exports){
 
 function getScrollX() {
     return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
@@ -8236,7 +8497,7 @@ module.exports = {
     getY: getScrollY
 };
 
-},{}],75:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 
 var getAbsoluteRect = require("./getAbsoluteRect");
 var scrollPosition = require("./scrollPosition");
@@ -8292,7 +8553,7 @@ module.exports = {
     isElementInView: isElementInView
 };
 
-},{"./getAbsoluteRect":70,"./scrollPosition":74}],76:[function(require,module,exports){
+},{"./getAbsoluteRect":70,"./scrollPosition":75}],77:[function(require,module,exports){
 
 var auto = require("enjoy-core/auto");
 

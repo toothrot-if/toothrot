@@ -18,7 +18,7 @@ var NOTIFICATION_DURATION = 3000;
 
 function create(context) {
     
-    var ui, text, indicator, background, optionsParent, backgroundDimmer, optionsContainer;
+    var ui, text, indicator, optionsParent, optionsContainer;
     var container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
     var system, settings, env, focus;
@@ -44,17 +44,11 @@ function create(context) {
         
         ui = document.createElement("div");
         text = document.createElement("div");
-        indicator = document.createElement("div");
-        background = document.createElement("div");
         
         // Actions and options are put into a parent element
         // so that clicks can be intercepted and to allow
         // more flexibility in styling the elements with CSS.
         optionsParent = document.createElement("div");
-        
-        // The background can be dimmed using "dim(amount)" in scripts.
-        // This is the element used for this purpose:
-        backgroundDimmer = document.createElement("div");
         
         optionsContainer = document.createElement("div");
         screenContainer = document.createElement("div");
@@ -72,29 +66,24 @@ function create(context) {
         text.setAttribute("aria-relevant", "text");
         text.setAttribute("role", "main");
         
-        indicator.setAttribute("class", "NextIndicator");
-        indicator.setAttribute("title", "Click or press space to continue");
-        indicator.setAttribute("tabindex", "1");
-        
-        background.setAttribute("class", "Background");
-        backgroundDimmer.setAttribute("class", "BackgroundDimmer");
         optionsParent.setAttribute("class", "OptionsCurtain");
         optionsContainer.setAttribute("class", "OptionsContainer");
         screenContainer.setAttribute("class", "ScreenContainer");
         
         optionsParent.appendChild(optionsContainer);
-        container.appendChild(background);
-        container.appendChild(backgroundDimmer);
         container.appendChild(text);
         container.appendChild(screenContainer);
         document.body.appendChild(container);
         document.body.appendChild(ui);
         
-        ui.style.opacity = "0";
-        
         ui.innerHTML = format(templates.ui, vars.getAll());
         
         ui.setAttribute("role", "navigation");
+        
+        indicator = ui.querySelector(".next-indicator");
+        
+        indicator.setAttribute("title", "Click or press space to continue");
+        indicator.setAttribute("tabindex", "1");
         
         ui.addEventListener("click", onUiClick);
         container.addEventListener("click", onContainerClick);
@@ -231,10 +220,6 @@ function create(context) {
             container.setAttribute("data-node-id", currentNode.id);
             container.setAttribute("data-section", currentNode.section);
             
-            node.scripts.forEach(function (scriptResult, i) {
-                content = content.replace("(%s" + i + "%)", scriptResult);
-            });
-            
             node.links.forEach(function (link, i) {
                 if (link.type === "direct_link") {
                     content = content.replace(
@@ -257,6 +242,22 @@ function create(context) {
                 
                 return "";
             });
+            
+            content += node.items.map(function (item) {
+                
+                var description = item.text;
+                
+                if (!description) {
+                    return "";
+                }
+                
+                description = description.replace(/\{([^}]*)\}/g, function (match, label) {
+                    return insertLink(label, item.id);
+                });
+                
+                return '<p class="itemDescription">' + description + '</p>';
+                
+            }).join("");
             
             content = (function () {
                 
@@ -319,11 +320,12 @@ function create(context) {
                 }
                 
                 if (node.next || node.returnToLast) {
-                    // text.appendChild(indicator);
+                    indicator.classList.remove("disabled");
+                }
+                else {
+                    indicator.classList.add("disabled");
                 }
             }
-            
-            // text.focus();
             
         }
     }

@@ -39,6 +39,10 @@ function create(context) {
         return getMeta("title");
     }
     
+    function getAll() {
+        return story;
+    }
+    
     return {
         init: init,
         destroy: destroy,
@@ -48,7 +52,8 @@ function create(context) {
         hasSection: hasSection,
         getMeta: getMeta,
         hasMeta: hasMeta,
-        getTitle: getTitle
+        getTitle: getTitle,
+        getAll: getAll
     };
 }
 

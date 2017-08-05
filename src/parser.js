@@ -62,80 +62,42 @@ function parse(text, then) {
     }
 }
 
+function parseScripts(node) {
+    
+    var pattern = /```js @([a-zA-Z0-9_]+)((.|\n)*?)\n```/g;
+    
+    node.content = node.content.replace(pattern, function (match, slot, body) {
+        
+        var line = countNewLines(node.content.split(match[0])[0]) + node.line + 1;
+        
+        slot = slot.trim();
+        body = body.trim();
+        
+        node.scripts[slot] = {
+            type: "script",
+            slot: slot,
+            line: line,
+            body: body
+        };
+        
+        return (new Array(line - node.line - 1)).join("\n");
+        
+    });
+    
+}
+
 function parseNodeContent(handleError, node) {
     
+    var linkPattern = /\[([^\)]+)\]\(#([a-zA-Z0-9_]+)\)/g;
     var oldContent = node.content;
     
-    node.content = node.content.replace(/\(!((.|\n)*?)!\)/g, function (match, p1) {
+    parseScripts(node);
+    
+    node.content = node.content.replace(linkPattern, function (match, label, target) {
         
         var line = countNewLines(oldContent.split(match)[0]) + node.line + 1;
         
-        node.scripts.push({
-            type: "script",
-            line: line,
-            body: p1.trim()
-        });
-        
-        return "(%s" + (node.scripts.length - 1) + "%)";
-    });
-    
-    node.content = node.content.replace(/\(:((.|\n)*?):\)/g, function (match, p1) {
-        
-        var parts = p1.split("=>");
-        var label, target, line;
-        
-        if (parts.length !== 2) {
-            handleError(createError({
-                id: "MALFORMED_LINK",
-                nodeId: node.id,
-                nodeLine: node.line
-            }));
-            return "";
-        }
-        
-        label = parts[0].trim();
-        target = parts[1].trim();
-        
-        line = countNewLines(oldContent.split(match)[0]) + node.line + 1;
-        
         node.links.push(link("direct_link", label, target, line));
-        
-        return "(%l" + (node.links.length - 1) + "%)";
-    });
-    
-    
-    node.content = node.content.replace(/\(#((.|\n)*?)#\)/g, function (match, p1) {
-        
-        var parts = p1.split("=>");
-        var label, targets, line;
-        
-        if (parts.length !== 2) {
-            handleError(createError({
-                id: "MALFORMED_OBJECT_LINK",
-                nodeId: node.id,
-                nodeLine: node.line
-            }));
-            return "";
-        }
-        
-        label = parts[0].trim();
-        targets = parts[1].trim();
-        line = countNewLines(oldContent.split(match)[0]) + node.line + 1;
-        
-        try {
-            targets = JSON.parse(targets);
-        }
-        catch (error) {
-            handleError(createError({
-                id: "INVALID_JSON_IN_OBJECT_LINK",
-                nodeId: node.id,
-                nodeLine: node.line,
-                errorMessage: error.message
-            }));
-            return "";
-        }
-        
-        node.links.push(link("object_link", label, targets, line));
         
         return "(%l" + (node.links.length - 1) + "%)";
     });
@@ -150,8 +112,19 @@ function parseNodeContent(handleError, node) {
         
     }).join("\n");
     
+    node.content = replaceVarSyntax(node.content);
+    node.content = replaceSlotSyntax(node.content);
+    
     node.raw = oldContent;
     node.content = parseMarkdown(node.content);
+}
+
+function replaceVarSyntax(content) {
+    return content.replace(/`\$([a-zA-Z0-9_]+)`/g, "($ $1 $)");
+}
+
+function replaceSlotSyntax(content) {
+    return content.replace(/`\@([a-zA-Z0-9_]+)`/g, "(@ $1 @)");
 }
 
 function parseStructure(text, handleError) {
@@ -178,7 +151,7 @@ function parseStructure(text, handleError) {
         if (!currentNode) {
             
             if (isTitle(line)) {
-                ast.meta.title = line.replace(/^#:/, "").trim();
+                ast.meta.title = line.replace(/^#/, "").trim();
             }
             else if (isSectionTitle(line)) {
                 setSection(line);
@@ -206,15 +179,19 @@ function parseStructure(text, handleError) {
         }
         else if (isNextCommand(line)) {
             parseNextCommand(line, lineOffset);
+            currentNode.content += "\n";
         }
         else if (isReturnToLast(line)) {
             parseReturnToLast(line, lineOffset);
+            currentNode.content += "\n";
         }
         else if (isOption(line)) {
             parseOption(line, lineOffset);
+            currentNode.content += "\n";
         }
         else if (isProperty(line)) {
             parseProperty(line, lineOffset);
+            currentNode.content += "\n";
         }
         else {
             currentNode.content += line + "\n";
@@ -225,7 +202,7 @@ function parseStructure(text, handleError) {
     
     function setSection(line) {
         
-        section = line.replace(/^##:/, "").trim();
+        section = line.replace(/^##/, "").trim();
         
         if (!ast.sections[section]) {
             ast.sections[section] = {};
@@ -273,20 +250,26 @@ function parseStructure(text, handleError) {
         currentNode.next = next;
     }
     
-    function parseReturnToLast() {
+    function parseReturnToLast(line) {
+        
+        var returnTag = line.replace(/^\(<\)/, "").trim() || null;
+        
         currentNode.returnToLast = true;
+        currentNode.returnToLastTag = returnTag;
     }
     
     function parseOption(line, lineOffset) {
         
-        var label, value, parts, valueParts, target;
+        var label, value, parts, valueParts, target, condition;
         
         if (!Array.isArray(currentNode.options)) {
             currentNode.options = [];
         }
         
         line = line.replace(/^\(@\)/, "");
-        parts = line.split("=>");
+        parts = line.split("???");
+        condition = parts.length > 1 ? parts[0].trim() : null;
+        parts = (parts.length > 1 ? parts[1] : line).split("=>");
         
         if (parts.length !== 2) {
             handleError(createError({
@@ -298,21 +281,28 @@ function parseStructure(text, handleError) {
             return;
         }
         
+        if (condition) {
+            condition = {
+                not: (/^!/).test(condition),
+                flag: condition.replace(/^!/, "")
+            };
+        }
+        
         valueParts = parts[1].split("|");
         label = parts[0].trim();
         target = valueParts[0].trim();
         
         value = (valueParts[1] ? valueParts[1].trim() : "");
         
-        currentNode.options.push(option(label, target, value, lineOffset));
+        currentNode.options.push(option(label, target, value, condition, lineOffset));
     }
     
     function parseProperty(line, lineOffset, isSection) {
         
+        var currentSection;
         var rawKey = line.split(":")[0];
         var value = line.split(rawKey + ":")[1];
         var key = rawKey.replace(/^\(#\)/, "").trim();
-        var currentSection;
         
         if (isSection) {
             
@@ -354,23 +344,28 @@ function countNewLines(text) {
 
 function node(line, lineOffset, section) {
     return {
-        id: line.replace(/^###:/, "").trim(),
+        id: line.replace(/^###/, "").trim(),
         content: "",
         line: lineOffset + 1,
         links: [],
-        scripts: [],
+        scripts: {},
         options: [],
+        tags: [],
+        flags: [],
+        contains: [],
+        wasIn: [],
         section: section
     };
 }
 
-function option(label, target, value, lineOffset) {
+function option(label, target, value, condition, lineOffset) {
     return {
         type: "option",
         value: value,
         line: lineOffset + 1,
         label: label,
-        target: target
+        target: target,
+        condition: condition
     };
 }
 
@@ -404,19 +399,19 @@ function isReturnToLast(line) {
 }
 
 function isNodeSeparator(line) {
-    return line.match(/^\(~~~\)/);
+    return line.match(/^\*\*\*/);
 }
 
 function isTitle(line) {
-    return line.match(/^#:/);
+    return line.match(/^#[^#]+/);
 }
 
 function isSectionTitle(line) {
-    return line.match(/^##:/);
+    return line.match(/^##[^#]+/);
 }
 
 function isNodeTitle(line) {
-    return line.match(/^###:/);
+    return line.match(/^###[^#]+/);
 }
 
 function removeComments(text) {
