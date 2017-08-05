@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Sat, 05 Aug 2017 15:04:36 GMT
+    Build time: Sat, 05 Aug 2017 20:27:57 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5215,7 +5215,7 @@ function create(context) {
         settings = context.getComponent("settings");
         
         context.on("run_node", onRunNode);
-        context.on("resume_game", onResume);
+        context.on("vars_resume", onResume);
         context.on("clear_state", stopAudio);
         context.on("update_setting", onUpdateSetting);
     }
@@ -5223,7 +5223,7 @@ function create(context) {
     function destroy() {
         
         context.removeListener("run_node", onRunNode);
-        context.removeListener("resume_game", onResume);
+        context.removeListener("vars_resume", onResume);
         context.removeListener("clear_state", stopAudio);
         context.removeListener("update_setting", onUpdateSetting);
         
@@ -5274,9 +5274,7 @@ function create(context) {
         }
     }
     
-    function onResume(data) {
-        
-        var vars = data.vars;
+    function onResume() {
         
         if (vars.get("_currentSound")) {
             playSound(unserializeAudioPath(vars._currentSound));
@@ -5715,7 +5713,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/getAbsoluteRect":70,"../utils/scrolling":76,"../utils/setStyle":77,"enjoy-core/compose":11,"transform-js":20}],58:[function(require,module,exports){
+},{"../utils/getAbsoluteRect":71,"../utils/scrolling":77,"../utils/setStyle":78,"enjoy-core/compose":11,"transform-js":20}],58:[function(require,module,exports){
 
 var clone = require("clone");
 var merge = require("deepmerge");
@@ -5801,6 +5799,8 @@ function create(context) {
     
     function hasCurrentSlot(then) {
         return hasSlot("current", function (error, exists) {
+            
+            console.log("hasCurrentSlot:", error, exists);
             
             if (exists) {
                 settings.set("current_slot_exists", true);
@@ -5999,7 +5999,7 @@ function create(context) {
         
         currentNode = node;
         
-        storage.save("current", serialize());
+        storage.save("current", serialize(), console.log.bind(console, "Saved?:"));
         
         if (typeof node.timeout === "number") {
             startTimer(node);
@@ -6148,7 +6148,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/evalScript":69,"../utils/node.js":72,"clone":7,"deepmerge":8}],59:[function(require,module,exports){
+},{"../utils/evalScript":70,"../utils/node.js":73,"clone":7,"deepmerge":8}],59:[function(require,module,exports){
 //
 // # Screens component
 //
@@ -6167,6 +6167,7 @@ var format = require("vrep").format;
 var transform = require("transform-js").transform;
 
 var evalScript = require("../utils/evalScript.js");
+var createConfirm = require("../utils/confirm.js");
 
 var MAX_SLOTS = 20;
 var SCREEN_FADE_IN = 400;
@@ -6179,7 +6180,7 @@ function none() {
 function create(context) {
     
     var storage, settings, system, interpreter, vars, env, focus;
-    var screens, currentScreen, screenStack, curtain;
+    var screens, currentScreen, screenStack, curtain, confirm;
     var curtainVisible = false;
     
     function init() {
@@ -6192,6 +6193,8 @@ function create(context) {
         screens = context.getResource("screens");
         settings = context.getComponent("settings");
         interpreter = context.getComponent("interpreter");
+        
+        confirm = createConfirm(context);
         
         // A stack for remembering which screen to return to.
         screenStack = [];
@@ -6208,7 +6211,9 @@ function create(context) {
         context.on("change_focus_mode", onFocusModeChange);
         
         setTimeout(function () {
-            run("main");
+            interpreter.hasCurrentSlot(function () {
+                run("main");
+            });
         }, 20);
     }
     
@@ -6719,7 +6724,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/evalScript.js":69,"enjoy-core/each":12,"transform-js":20,"vrep":53}],60:[function(require,module,exports){
+},{"../utils/confirm.js":68,"../utils/evalScript.js":70,"enjoy-core/each":12,"transform-js":20,"vrep":53}],60:[function(require,module,exports){
 
 var clone = require("clone");
 
@@ -6824,6 +6829,409 @@ function create(context) {
 module.exports = create;
 
 },{"clone":7}],61:[function(require,module,exports){
+//
+// Module for storing the game state in local storage.
+//
+// Savegames look like this:
+//
+//
+// {
+//     name: "fooBarBaz", // a name. will be given by the engine
+//     time: 012345678    // timestamp - this must be set by the storage
+//     data: {}           // this is what the engine gives the storage
+// }
+
+var none = function () {};
+
+function create(context) {
+    
+    var storageType, storageKey, getItem, setItem;
+    var memoryStorage = Object.create(null);
+    var testStorageKey = "TOOTHROT-storage-test";
+    
+    try {
+        
+        localStorage.setItem(testStorageKey, "works");
+        
+        if (localStorage.getItem(testStorageKey) === "works") {
+            storageType = "local";
+        }
+    }
+    catch (error) {
+        console.error(error);
+    }
+    
+    if (!storageType) {
+        
+        try {
+            
+            sessionStorage.setItem(testStorageKey, "works");
+            
+            if (sessionStorage.getItem(testStorageKey) === "works") {
+                storageType = "session";
+            }
+        }
+        catch (error) {
+            console.error(error);
+        }
+    }
+    
+    if (!storageType) {
+        storageType = "memory";
+    }
+    
+    if (storageType === "local") {
+        
+        getItem = function (name) {
+            return JSON.parse(localStorage.getItem(name) || "{}");
+        };
+        
+        setItem = function (name, value) {
+            return localStorage.setItem(name, JSON.stringify(value));
+        };
+    }
+    else if (storageType === "session") {
+        
+        getItem = function (name) {
+            return JSON.parse(sessionStorage.getItem(name) || "{}");
+        };
+        
+        setItem = function (name, value) {
+            return sessionStorage.setItem(name, JSON.stringify(value));
+        };
+    }
+    else {
+        
+        getItem = function (name) {
+            return JSON.parse(memoryStorage[name] || "{}");
+        };
+        
+        setItem = function (name, value) {
+            return memoryStorage[name] = JSON.stringify(value);
+        };
+    }
+    
+    function init() {
+        
+        var story = context.getComponent("story");
+        
+        // Each story should have its own storage key so that
+        // one story doesn't overwrite another story's savegames
+        // and settings.
+        storageKey = "TOOTHROT-" + story.getTitle();
+    }
+    
+    function save(name, data, then) {
+        
+        var store, error;
+        
+        then = then || none;
+        
+        try {
+            
+            store = getItem(storageKey);
+            
+            store[name] = {
+                name: name,
+                time: Date.now(),
+                data: data
+            };
+            
+            setItem(storageKey, store);
+            
+        }
+        catch (e) {
+            console.error(e);
+            error = e;
+        }
+        
+        if (error) {
+            return then(error);
+        }
+        
+        then(null, true);
+    }
+    
+    function load(name, then) {
+        
+        var value, error;
+        
+        then = then || none;
+        
+        try {
+            value = getItem(storageKey)[name];
+        }
+        catch (e) {
+            console.error(e);
+            error = e;
+        }
+        
+        if (error) {
+            return then(error);
+        }
+        
+        then(null, value);
+    }
+    
+    function all(then) {
+        
+        var value, error;
+        
+        then = then || none;
+        
+        try {
+            value = getItem(storageKey);
+        }
+        catch (e) {
+            console.error(e);
+            error = e;
+        }
+        
+        if (error) {
+            return then(error);
+        }
+        
+        then(null, value);
+    }
+    
+    function remove(name, then) {
+        
+        var value, error;
+        
+        then = then || none;
+        
+        try {
+            value = getItem(storageKey);
+        }
+        catch (e) {
+            console.error(e);
+            error = e;
+        }
+        
+        if (error) {
+            return then(error);
+        }
+        
+        delete value[name];
+        
+        setItem(storageKey, value);
+        
+        then(null, true);
+    }
+    
+    return {
+        init: init,
+        save: save,
+        load: load,
+        all: all,
+        remove: remove
+    };
+}
+
+module.exports = create;
+
+},{}],62:[function(require,module,exports){
+
+function create(context) {
+    
+    var story;
+    
+    function init() {
+        story = context.getResource("story");
+    }
+    
+    function destroy() {
+        story = null;
+    }
+    
+    function getNode(name) {
+        return story.nodes[name];
+    }
+    
+    function hasNode(name) {
+        return (name in story.nodes);
+    }
+    
+    function getSection(name) {
+        return story.sections[name];
+    }
+    
+    function hasSection(name) {
+        return (name in story.sections);
+    }
+    
+    function getMeta(name) {
+        return story.meta[name];
+    }
+    
+    function hasMeta(name) {
+        return (name in story.meta);
+    }
+    
+    function getTitle() {
+        return getMeta("title");
+    }
+    
+    function getAll() {
+        return story;
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        getNode: getNode,
+        hasNode: hasNode,
+        getSection: getSection,
+        hasSection: hasSection,
+        getMeta: getMeta,
+        hasMeta: hasMeta,
+        getTitle: getTitle,
+        getAll: getAll
+    };
+}
+
+module.exports = create;
+
+},{}],63:[function(require,module,exports){
+
+var clone = require("clone");
+
+function create(context) {
+    
+    var fullscreenMode, features;
+    
+    function init() {
+        features = {
+            fullscreen: hasFullscreen(),
+            exit: canExit()
+        };
+    }
+    
+    function destroy() {
+        features = null;
+    }
+    
+    function getFeatures() {
+        return clone(features);
+    }
+    
+    function toggleFullscreen() {
+        
+        var fullscreenOn = fullscreenEnabled() || (typeof nw !== "undefined" && fullscreenMode);
+        
+        if (fullscreenOn) {
+            exitFullscreen();
+        }
+        else {
+            fullscreen();
+        }
+        
+        context.emit("fullscreen_change", !fullscreenOn);
+    }
+    
+    function fullscreenEnabled() {
+        return document.fullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement ||
+            document.webkitFullscreenElement;
+    }
+    
+    function fullscreen() {
+        
+        fullscreenMode = true;
+        
+        if (typeof nw !== "undefined") {
+            nwEnterFullscreen();
+        }
+        else {
+            requestFullscreen(document.body);
+        }
+    }
+    
+    function exitFullscreen() {
+        
+        fullscreenMode = false;
+        
+        if (typeof nw !== "undefined") {
+            nwExitFullscreen();
+        }
+        else {
+            exitBrowserFullscreen();
+        }
+    }
+    
+    function nwEnterFullscreen() {
+        window.require('nw.gui').Window.get().enterKioskMode();
+    }
+    
+    function nwExitFullscreen() {
+        window.require('nw.gui').Window.get().leaveKioskMode();
+    }
+    
+    function exitBrowserFullscreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+        else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+        else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        }
+        else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+    
+    function requestFullscreen(element) {
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        }
+        else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
+        else if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+        }
+        else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+        }
+    }
+    
+    function hasFullscreen() {
+        return typeof nw !== undefined;
+    }
+    
+    function canExit() {
+        return typeof nw !== undefined;
+    }
+    
+    function exit() {
+        try {
+            var gui = window.require("nw.gui");
+            gui.App.quit();
+        }
+        catch (error) {
+            console.error("Cannot exit: " + error);
+        }
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        exit: exit,
+        canExit: canExit,
+        getFeatures: getFeatures,
+        hasFullscreen: hasFullscreen,
+        toggleFullscreen: toggleFullscreen,
+        enterFullscreen: fullscreen,
+        exitFullscreen: exitFullscreen
+    };
+}
+
+module.exports = create;
+
+},{"clone":7}],64:[function(require,module,exports){
 /* global __line */
 
 var format = require("vrep").format;
@@ -6832,6 +7240,7 @@ var scrolling = require("../utils/scrolling.js");
 var revealText = require("../utils/revealText.js");
 var getClickableParent = require("../utils/getClickableParent");
 var createNotification = require("../utils/notifications.js").create;
+var createConfirm = require("../utils/confirm.js");
 
 var KEY_CODE_ENTER = 13;
 var KEY_CODE_ESCAPE = 27;
@@ -6847,7 +7256,7 @@ function create(context) {
     var ui, text, indicator, optionsParent, optionsContainer;
     var container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
-    var system, settings, env, focus;
+    var system, settings, env, focus, confirm;
     
     function init() {
         
@@ -6863,6 +7272,7 @@ function create(context) {
         
         templates = context.getResource("templates");
         notify = createNotification(templates.notification);
+        confirm = createConfirm(context);
         
         timerTemplate = '<div class="TimerBar" style="width: {remaining}%;"></div>';
     
@@ -7394,410 +7804,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/getClickableParent":71,"../utils/notifications.js":73,"../utils/revealText.js":74,"../utils/scrolling.js":76,"class-manipulator":6,"vrep":53}],62:[function(require,module,exports){
-//
-// Module for storing the game state in local storage.
-//
-// Savegames look like this:
-//
-//
-// {
-//     name: "fooBarBaz", // a name. will be given by the engine
-//     time: 012345678    // timestamp - this must be set by the storage
-//     data: {}           // this is what the engine gives the storage
-// }
-
-var none = function () {};
-
-function create(context) {
-    
-    var storageType, storageKey, getItem, setItem;
-    var memoryStorage = Object.create(null);
-    var testStorageKey = "TOOTHROT-storage-test";
-    
-    try {
-        
-        localStorage.setItem(testStorageKey, "works");
-        
-        if (localStorage.getItem(testStorageKey) === "works") {
-            storageType = "local";
-        }
-    }
-    catch (error) {
-        // ...
-    }
-    
-    if (!storageType) {
-        
-        try {
-            
-            sessionStorage.setItem(testStorageKey, "works");
-            
-            if (sessionStorage.getItem(testStorageKey) === "works") {
-                storageType = "session";
-            }
-        }
-        catch (error) {
-            // ...
-        }
-    }
-    
-    if (!storageType) {
-        storageType = "memory";
-    }
-    
-    if (storageType === "local") {
-        
-        getItem = function (name) {
-            return JSON.parse(localStorage.getItem(name) || "{}");
-        };
-        
-        setItem = function (name, value) {
-            return localStorage.setItem(name, JSON.stringify(value));
-        };
-    }
-    else if (storageType === "session") {
-        
-        getItem = function (name) {
-            return JSON.parse(sessionStorage.getItem(name) || "{}");
-        };
-        
-        setItem = function (name, value) {
-            return sessionStorage.setItem(name, JSON.stringify(value));
-        };
-    }
-    else {
-        
-        getItem = function (name) {
-            return JSON.parse(memoryStorage[name] || "{}");
-        };
-        
-        setItem = function (name, value) {
-            return memoryStorage[name] = JSON.stringify(value);
-        };
-    }
-    
-    function init() {
-        
-        var story = context.getComponent("story");
-        
-        // Each story should have its own storage key so that
-        // one story doesn't overwrite another story's savegames
-        // and settings.
-        storageKey = "TOOTHROT-" + story.getTitle();
-    }
-    
-    function save(name, data, then) {
-        
-        var store, error;
-        
-        then = then || none;
-        
-        try {
-            
-            store = getItem(storageKey);
-            
-            store[name] = {
-                name: name,
-                time: Date.now(),
-                data: data
-            };
-            
-            setItem(storageKey, store);
-            
-        }
-        catch (e) {
-            console.error(e);
-            error = e;
-        }
-        
-        if (error) {
-            return then(error);
-        }
-        
-        then(null, true);
-    }
-    
-    function load(name, then) {
-        
-        var value, error;
-        
-        then = then || none;
-        
-        try {
-            value = getItem(storageKey)[name];
-        }
-        catch (e) {
-            console.error(e);
-            error = e;
-        }
-        
-        if (error) {
-            return then(error);
-        }
-        
-        then(null, value);
-    }
-    
-    function all(then) {
-        
-        var value, error;
-        
-        then = then || none;
-        
-        try {
-            value = getItem(storageKey);
-        }
-        catch (e) {
-            console.error(e);
-            error = e;
-        }
-        
-        if (error) {
-            return then(error);
-        }
-        
-        then(null, value);
-    }
-    
-    function remove(name, then) {
-        
-        var value, error;
-        
-        then = then || none;
-        
-        try {
-            value = getItem(storageKey);
-        }
-        catch (e) {
-            console.error(e);
-            error = e;
-        }
-        
-        if (error) {
-            return then(error);
-        }
-        
-        delete value[name];
-        
-        setItem(storageKey, value);
-        
-        then(null, true);
-    }
-    
-    return {
-        init: init,
-        save: save,
-        load: load,
-        all: all,
-        remove: remove
-    };
-}
-
-module.exports = create;
-
-},{}],63:[function(require,module,exports){
-
-function create(context) {
-    
-    var story;
-    
-    function init() {
-        story = context.getResource("story");
-    }
-    
-    function destroy() {
-        story = null;
-    }
-    
-    function getNode(name) {
-        return story.nodes[name];
-    }
-    
-    function hasNode(name) {
-        return (name in story.nodes);
-    }
-    
-    function getSection(name) {
-        return story.sections[name];
-    }
-    
-    function hasSection(name) {
-        return (name in story.sections);
-    }
-    
-    function getMeta(name) {
-        return story.meta[name];
-    }
-    
-    function hasMeta(name) {
-        return (name in story.meta);
-    }
-    
-    function getTitle() {
-        return getMeta("title");
-    }
-    
-    function getAll() {
-        return story;
-    }
-    
-    return {
-        init: init,
-        destroy: destroy,
-        getNode: getNode,
-        hasNode: hasNode,
-        getSection: getSection,
-        hasSection: hasSection,
-        getMeta: getMeta,
-        hasMeta: hasMeta,
-        getTitle: getTitle,
-        getAll: getAll
-    };
-}
-
-module.exports = create;
-
-},{}],64:[function(require,module,exports){
-
-var clone = require("clone");
-
-function create(context) {
-    
-    var fullscreenMode, features;
-    
-    function init() {
-        features = {
-            fullscreen: hasFullscreen(),
-            exit: canExit()
-        };
-    }
-    
-    function destroy() {
-        features = null;
-    }
-    
-    function getFeatures() {
-        return clone(features);
-    }
-    
-    function toggleFullscreen() {
-        
-        var fullscreenOn = fullscreenEnabled() || (typeof nw !== "undefined" && fullscreenMode);
-        
-        if (fullscreenOn) {
-            exitFullscreen();
-        }
-        else {
-            fullscreen();
-        }
-        
-        context.emit("fullscreen_change", !fullscreenOn);
-    }
-    
-    function fullscreenEnabled() {
-        return document.fullscreenElement ||
-            document.mozFullScreenElement ||
-            document.msFullscreenElement ||
-            document.webkitFullscreenElement;
-    }
-    
-    function fullscreen() {
-        
-        fullscreenMode = true;
-        
-        if (typeof nw !== "undefined") {
-            nwEnterFullscreen();
-        }
-        else {
-            requestFullscreen(document.body);
-        }
-    }
-    
-    function exitFullscreen() {
-        
-        fullscreenMode = false;
-        
-        if (typeof nw !== "undefined") {
-            nwExitFullscreen();
-        }
-        else {
-            exitBrowserFullscreen();
-        }
-    }
-    
-    function nwEnterFullscreen() {
-        window.require('nw.gui').Window.get().enterKioskMode();
-    }
-    
-    function nwExitFullscreen() {
-        window.require('nw.gui').Window.get().leaveKioskMode();
-    }
-    
-    function exitBrowserFullscreen() {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-        else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
-        else if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
-        }
-        else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        }
-    }
-    
-    function requestFullscreen(element) {
-        if (element.requestFullscreen) {
-            element.requestFullscreen();
-        }
-        else if (element.msRequestFullscreen) {
-            element.msRequestFullscreen();
-        }
-        else if (element.mozRequestFullScreen) {
-            element.mozRequestFullScreen();
-        }
-        else if (element.webkitRequestFullscreen) {
-            element.webkitRequestFullscreen();
-        }
-    }
-    
-    function hasFullscreen() {
-        return typeof nw !== undefined;
-    }
-    
-    function canExit() {
-        return typeof nw !== undefined;
-    }
-    
-    function exit() {
-        try {
-            var gui = window.require("nw.gui");
-            gui.App.quit();
-        }
-        catch (error) {
-            console.error("Cannot exit: " + error);
-        }
-    }
-    
-    return {
-        init: init,
-        destroy: destroy,
-        exit: exit,
-        canExit: canExit,
-        getFeatures: getFeatures,
-        hasFullscreen: hasFullscreen,
-        toggleFullscreen: toggleFullscreen,
-        enterFullscreen: fullscreen,
-        exitFullscreen: exitFullscreen
-    };
-}
-
-module.exports = create;
-
-},{"clone":7}],65:[function(require,module,exports){
+},{"../utils/confirm.js":68,"../utils/getClickableParent":72,"../utils/notifications.js":74,"../utils/revealText.js":75,"../utils/scrolling.js":77,"class-manipulator":6,"vrep":53}],65:[function(require,module,exports){
 
 function create(context) {
     
@@ -7805,10 +7812,22 @@ function create(context) {
     
     function init() {
         vars = {};
+        context.on("resume_game", onResume);
     }
     
     function destroy() {
         vars = null;
+    }
+    
+    function onResume(data) {
+        
+        clear();
+        
+        Object.keys(data.vars).forEach(function (key) {
+            vars[key] = data.vars[key];
+        });
+        
+        context.emit("vars_resume");
     }
     
     function get(key) {
@@ -7875,7 +7894,7 @@ var components = {
     interpreter: require("../components/interpreter.js"),
     screens: require("../components/screens.js"),
     settings: require("../components/settings.js"),
-    stage: require("../components/stage.js"),
+    ui: require("../components/ui.js"),
     storage: require("../components/storage.js"),
     story: require("../components/story.js"),
     system: require("../components/system.js"),
@@ -7904,7 +7923,54 @@ module.exports = {
     decode: decodeResources
 };
 
-},{"../components/audio.js":54,"../components/env.js":55,"../components/focus.js":56,"../components/highlighter.js":57,"../components/interpreter.js":58,"../components/screens.js":59,"../components/settings.js":60,"../components/stage.js":61,"../components/storage.js":62,"../components/story.js":63,"../components/system.js":64,"../components/vars.js":65,"../utils/context.js":68,"smoothscroll-polyfill":19}],68:[function(require,module,exports){
+},{"../components/audio.js":54,"../components/env.js":55,"../components/focus.js":56,"../components/highlighter.js":57,"../components/interpreter.js":58,"../components/screens.js":59,"../components/settings.js":60,"../components/storage.js":61,"../components/story.js":62,"../components/system.js":63,"../components/ui.js":64,"../components/vars.js":65,"../utils/context.js":69,"smoothscroll-polyfill":19}],68:[function(require,module,exports){
+
+function create(context) {
+    
+    var template = context.getResource("templates").confirm;
+    var focus = context.getComponent("focus");
+    
+    function confirm(text, then) {
+        
+        var boxContainer = document.createElement("div");
+        var oldFocus = focus.getMode();
+        
+        focus.setMode("messagebox");
+        
+        boxContainer.setAttribute("class", "MessageBoxContainer");
+        
+        boxContainer.innerHTML = template.replace("{message}", text);
+        
+        boxContainer.addEventListener("click", onClick);
+        document.body.appendChild(boxContainer);
+        
+        boxContainer.focus();
+        
+        function onClick(event) {
+            
+            var type = event.target.getAttribute("data-type");
+            var value = event.target.getAttribute("data-value");
+            
+            if (type === "messagebox-button") {
+                
+                event.stopPropagation();
+                event.preventDefault();
+                
+                focus.setMode(oldFocus);
+                boxContainer.parentNode.removeChild(boxContainer);
+                boxContainer.removeEventListener("click", onClick);
+                
+                then(value === "yes" ? true : false);
+            }
+        }
+    }
+    
+    return confirm;
+}
+
+module.exports = create;
+
+},{}],69:[function(require,module,exports){
 /* eslint-disable no-console */
 
 var EventEmitter = require("events");
@@ -8063,7 +8129,7 @@ module.exports = {
     create: create
 };
 
-},{"events":5}],69:[function(require,module,exports){
+},{"events":5}],70:[function(require,module,exports){
 /* eslint-disable no-unused-vars, no-eval */
 
 function evalScript(__story, _, $, __body, __line) {
@@ -8079,7 +8145,7 @@ function evalScript(__story, _, $, __body, __line) {
 
 module.exports = evalScript;
 
-},{}],70:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 
 var scrollPosition = require("./scrollPosition");
 
@@ -8097,7 +8163,7 @@ function getAbsoluteRect(element) {
 
 module.exports = getAbsoluteRect;
 
-},{"./scrollPosition":75}],71:[function(require,module,exports){
+},{"./scrollPosition":76}],72:[function(require,module,exports){
 
 function getClickableParent (node) {
     
@@ -8118,9 +8184,9 @@ function getClickableParent (node) {
 
 module.exports = getClickableParent;
 
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 
-function create(node, story) {
+function create(node, story, vars) {
     
     var api = {
         
@@ -8274,7 +8340,7 @@ function contains(array, thing) {
 
 module.exports = create;
 
-},{}],73:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 /* global require, module, setTimeout */
 
 var format = require("vrep").format;
@@ -8352,7 +8418,7 @@ module.exports = {
     create: create
 };
 
-},{"transform-js":20,"vrep":53}],74:[function(require,module,exports){
+},{"transform-js":20,"vrep":53}],75:[function(require,module,exports){
 
 var transform = require("transform-js").transform;
 
@@ -8479,7 +8545,7 @@ function setOpacity(element) {
 
 module.exports = create;
 
-},{"transform-js":20}],75:[function(require,module,exports){
+},{"transform-js":20}],76:[function(require,module,exports){
 
 function getScrollX() {
     return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
@@ -8494,7 +8560,7 @@ module.exports = {
     getY: getScrollY
 };
 
-},{}],76:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 
 var getAbsoluteRect = require("./getAbsoluteRect");
 var scrollPosition = require("./scrollPosition");
@@ -8550,7 +8616,7 @@ module.exports = {
     isElementInView: isElementInView
 };
 
-},{"./getAbsoluteRect":70,"./scrollPosition":75}],77:[function(require,module,exports){
+},{"./getAbsoluteRect":71,"./scrollPosition":76}],78:[function(require,module,exports){
 
 var auto = require("enjoy-core/auto");
 

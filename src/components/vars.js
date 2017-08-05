@@ -5,10 +5,22 @@ function create(context) {
     
     function init() {
         vars = {};
+        context.on("resume_game", onResume);
     }
     
     function destroy() {
         vars = null;
+    }
+    
+    function onResume(data) {
+        
+        clear();
+        
+        Object.keys(data.vars).forEach(function (key) {
+            vars[key] = data.vars[key];
+        });
+        
+        context.emit("vars_resume");
     }
     
     function get(key) {

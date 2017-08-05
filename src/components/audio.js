@@ -11,7 +11,7 @@ function create(context) {
         settings = context.getComponent("settings");
         
         context.on("run_node", onRunNode);
-        context.on("resume_game", onResume);
+        context.on("vars_resume", onResume);
         context.on("clear_state", stopAudio);
         context.on("update_setting", onUpdateSetting);
     }
@@ -19,7 +19,7 @@ function create(context) {
     function destroy() {
         
         context.removeListener("run_node", onRunNode);
-        context.removeListener("resume_game", onResume);
+        context.removeListener("vars_resume", onResume);
         context.removeListener("clear_state", stopAudio);
         context.removeListener("update_setting", onUpdateSetting);
         
@@ -70,9 +70,7 @@ function create(context) {
         }
     }
     
-    function onResume(data) {
-        
-        var vars = data.vars;
+    function onResume() {
         
         if (vars.get("_currentSound")) {
             playSound(unserializeAudioPath(vars._currentSound));

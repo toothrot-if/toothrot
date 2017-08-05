@@ -6,6 +6,7 @@ var scrolling = require("../utils/scrolling.js");
 var revealText = require("../utils/revealText.js");
 var getClickableParent = require("../utils/getClickableParent");
 var createNotification = require("../utils/notifications.js").create;
+var createConfirm = require("../utils/confirm.js");
 
 var KEY_CODE_ENTER = 13;
 var KEY_CODE_ESCAPE = 27;
@@ -21,7 +22,7 @@ function create(context) {
     var ui, text, indicator, optionsParent, optionsContainer;
     var container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
-    var system, settings, env, focus;
+    var system, settings, env, focus, confirm;
     
     function init() {
         
@@ -37,6 +38,7 @@ function create(context) {
         
         templates = context.getResource("templates");
         notify = createNotification(templates.notification);
+        confirm = createConfirm(context);
         
         timerTemplate = '<div class="TimerBar" style="width: {remaining}%;"></div>';
     

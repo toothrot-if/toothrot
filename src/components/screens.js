@@ -16,6 +16,7 @@ var format = require("vrep").format;
 var transform = require("transform-js").transform;
 
 var evalScript = require("../utils/evalScript.js");
+var createConfirm = require("../utils/confirm.js");
 
 var MAX_SLOTS = 20;
 var SCREEN_FADE_IN = 400;
@@ -28,7 +29,7 @@ function none() {
 function create(context) {
     
     var storage, settings, system, interpreter, vars, env, focus;
-    var screens, currentScreen, screenStack, curtain;
+    var screens, currentScreen, screenStack, curtain, confirm;
     var curtainVisible = false;
     
     function init() {
@@ -41,6 +42,8 @@ function create(context) {
         screens = context.getResource("screens");
         settings = context.getComponent("settings");
         interpreter = context.getComponent("interpreter");
+        
+        confirm = createConfirm(context);
         
         // A stack for remembering which screen to return to.
         screenStack = [];
@@ -57,7 +60,9 @@ function create(context) {
         context.on("change_focus_mode", onFocusModeChange);
         
         setTimeout(function () {
-            run("main");
+            interpreter.hasCurrentSlot(function () {
+                run("main");
+            });
         }, 20);
     }
     

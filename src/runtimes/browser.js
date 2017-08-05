@@ -19,7 +19,7 @@ var components = {
     interpreter: require("../components/interpreter.js"),
     screens: require("../components/screens.js"),
     settings: require("../components/settings.js"),
-    stage: require("../components/stage.js"),
+    ui: require("../components/ui.js"),
     storage: require("../components/storage.js"),
     story: require("../components/story.js"),
     system: require("../components/system.js"),

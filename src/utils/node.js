@@ -1,5 +1,5 @@
 
-function create(node, story) {
+function create(node, story, vars) {
     
     var api = {
         

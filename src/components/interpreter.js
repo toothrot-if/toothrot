@@ -84,6 +84,8 @@ function create(context) {
     function hasCurrentSlot(then) {
         return hasSlot("current", function (error, exists) {
             
+            console.log("hasCurrentSlot:", error, exists);
+            
             if (exists) {
                 settings.set("current_slot_exists", true);
             }
@@ -281,7 +283,7 @@ function create(context) {
         
         currentNode = node;
         
-        storage.save("current", serialize());
+        storage.save("current", serialize(), console.log.bind(console, "Saved?:"));
         
         if (typeof node.timeout === "number") {
             startTimer(node);

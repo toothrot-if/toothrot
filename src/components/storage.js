@@ -27,7 +27,7 @@ function create(context) {
         }
     }
     catch (error) {
-        // ...
+        console.error(error);
     }
     
     if (!storageType) {
@@ -41,7 +41,7 @@ function create(context) {
             }
         }
         catch (error) {
-            // ...
+            console.error(error);
         }
     }
     
