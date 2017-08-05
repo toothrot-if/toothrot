@@ -273,21 +273,6 @@ function create(context) {
             text.innerHTML += '<div class="separator"></div>';
             text.innerHTML += '<div class="TextItem current">' + content + "</div>";
             
-            setTimeout(function () {
-                
-                var className = "fitsInWindow";
-                
-                if (fitsInWindow(text)) {
-                    classList(text).add(className).apply();
-                }
-                else {
-                    classList(text).remove(className).apply();
-                }
-                
-                scrolling.scrollToBottom(text);
-                
-            }, 50);
-            
             if (
                 node.options.length ||
                 node.timeout ||
@@ -308,6 +293,21 @@ function create(context) {
                 
                 charAnimation.start();
             }
+            
+            setTimeout(function () {
+                
+                var className = "fitsInWindow";
+                
+                if (fitsInWindow(text)) {
+                    classList(text).add(className).apply();
+                }
+                else {
+                    classList(text).remove(className).apply();
+                }
+                
+                scrolling.scrollToBottom(text);
+                
+            }, 50);
             
             function insertSpecials() {
                 
@@ -459,9 +459,9 @@ function create(context) {
     }
     
     function showGameElements() {
-        scrolling.scrollToBottom(text, true);
         ui.style.display = "";
         text.style.display = "";
+        scrolling.scrollToBottom(text, true);
     }
     
     function onOptionsParentClick(event) {

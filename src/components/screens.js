@@ -27,7 +27,7 @@ function none() {
 
 function create(context) {
     
-    var storage, settings, system, interpreter, story, vars, env, focus;
+    var storage, settings, system, interpreter, vars, env, focus;
     var screens, currentScreen, screenStack, curtain;
     var curtainVisible = false;
     
@@ -35,7 +35,6 @@ function create(context) {
         
         env = context.getComponent("env");
         vars = context.getComponent("vars");
-        story = context.getComponent("story");
         focus = context.getComponent("focus");
         system = context.getComponent("system");
         storage = context.getComponent("storage");
@@ -266,8 +265,6 @@ function create(context) {
             
             tpl = getDomNodeContent(template);
             emptyTpl = getDomNodeContent(empty);
-            
-            console.log("slots:", slots);
             
             for (i = 0; i < MAX_SLOTS; i += 1) {
                 

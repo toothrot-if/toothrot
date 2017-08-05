@@ -78,6 +78,9 @@ You drop the sword.
 
 ### storage_room
 
+Storage Room
+------------
+
 (#) tags: ["room"]
 (#) contains: ["chest"]
 
@@ -87,6 +90,9 @@ Just some boring storage room. A [door](#kitchen) leads to the kitchen.
 
 
 ### kitchen
+
+Kitchen
+-------
 
 A rather boring kitchen. A [door](#storage_room) leads to a storage room.
 
@@ -180,6 +186,9 @@ This is another node.
 
 
 ### inventory
+
+Your Inventory
+--------------
 
 (#) flags: ["item_list"]
 

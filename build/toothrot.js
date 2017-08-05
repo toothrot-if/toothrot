@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Sat, 05 Aug 2017 14:03:43 GMT
+    Build time: Sat, 05 Aug 2017 15:04:36 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -6178,7 +6178,7 @@ function none() {
 
 function create(context) {
     
-    var storage, settings, system, interpreter, story, vars, env, focus;
+    var storage, settings, system, interpreter, vars, env, focus;
     var screens, currentScreen, screenStack, curtain;
     var curtainVisible = false;
     
@@ -6186,7 +6186,6 @@ function create(context) {
         
         env = context.getComponent("env");
         vars = context.getComponent("vars");
-        story = context.getComponent("story");
         focus = context.getComponent("focus");
         system = context.getComponent("system");
         storage = context.getComponent("storage");
@@ -6417,8 +6416,6 @@ function create(context) {
             
             tpl = getDomNodeContent(template);
             emptyTpl = getDomNodeContent(empty);
-            
-            console.log("slots:", slots);
             
             for (i = 0; i < MAX_SLOTS; i += 1) {
                 
@@ -7102,21 +7099,6 @@ function create(context) {
             text.innerHTML += '<div class="separator"></div>';
             text.innerHTML += '<div class="TextItem current">' + content + "</div>";
             
-            setTimeout(function () {
-                
-                var className = "fitsInWindow";
-                
-                if (fitsInWindow(text)) {
-                    classList(text).add(className).apply();
-                }
-                else {
-                    classList(text).remove(className).apply();
-                }
-                
-                scrolling.scrollToBottom(text);
-                
-            }, 50);
-            
             if (
                 node.options.length ||
                 node.timeout ||
@@ -7137,6 +7119,21 @@ function create(context) {
                 
                 charAnimation.start();
             }
+            
+            setTimeout(function () {
+                
+                var className = "fitsInWindow";
+                
+                if (fitsInWindow(text)) {
+                    classList(text).add(className).apply();
+                }
+                else {
+                    classList(text).remove(className).apply();
+                }
+                
+                scrolling.scrollToBottom(text);
+                
+            }, 50);
             
             function insertSpecials() {
                 
@@ -7288,9 +7285,9 @@ function create(context) {
     }
     
     function showGameElements() {
-        scrolling.scrollToBottom(text, true);
         ui.style.display = "";
         text.style.display = "";
+        scrolling.scrollToBottom(text, true);
     }
     
     function onOptionsParentClick(event) {
