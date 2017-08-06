@@ -15,7 +15,6 @@ function pack(dir) {
     var astFile = normalize(dir + "/ast.json");
     var templateFiles = fs.readdirSync(templatePath);
     var screenFiles = fs.readdirSync(screenPath);
-    var objects = JSON.parse("" + fs.readFileSync(normalize(dir + "/objects.json")));
     
 //
 // If there's an AST file in the resources folder (created by e.g. toothrot builder)
@@ -41,8 +40,7 @@ function pack(dir) {
         },
         templates: {},
         screens: {},
-        story: story,
-        objects: objects
+        story: story
     };
     
     templateFiles.forEach(function (file) {
