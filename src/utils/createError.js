@@ -2,7 +2,7 @@
 var format = require("vrep").format;
 var errors = require("./errors");
 
-function createError (error) {
+function createError(error) {
     
     var id = error ? error.id : "[none given]";
     var message = format(errors[id] || "", error || {});

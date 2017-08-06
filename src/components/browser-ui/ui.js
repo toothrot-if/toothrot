@@ -2,11 +2,11 @@
 
 var format = require("vrep").format;
 var classList = require("class-manipulator").list;
-var scrolling = require("../utils/scrolling.js");
-var revealText = require("../utils/revealText.js");
-var getClickableParent = require("../utils/getClickableParent");
-var createNotification = require("../utils/notifications.js").create;
-var createConfirm = require("../utils/confirm.js");
+var scrolling = require("../../utils/browser/scrolling.js");
+var revealText = require("../../utils/browser/revealText.js");
+var getClickableParent = require("../../utils/browser/getClickableParent");
+var createNotification = require("../../utils/browser/notifications.js").create;
+var createConfirm = require("../../utils/browser/confirm.js");
 
 var KEY_CODE_ENTER = 13;
 var KEY_CODE_ESCAPE = 27;

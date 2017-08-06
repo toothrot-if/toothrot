@@ -1,5 +1,5 @@
 
-function getClickableParent (node) {
+function getClickableParent(node) {
     
     var ELEMENT = 1;
     var first = node;

@@ -8,9 +8,10 @@
 
 var compose = require("enjoy-core/compose");
 var transform = require("transform-js").transform;
-var setStyle = require("../utils/setStyle");
-var scrolling = require("../utils/scrolling");
-var getAbsoluteRect = require("../utils/getAbsoluteRect");
+
+var setStyle = require("../../utils/browser/setStyle");
+var scrolling = require("../../utils/browser/scrolling");
+var getAbsoluteRect = require("../../utils/browser/getAbsoluteRect");
 
 function create(context) {
     

@@ -15,8 +15,8 @@ var formatter = require("vrep").create;
 var format = require("vrep").format;
 var transform = require("transform-js").transform;
 
-var evalScript = require("../utils/evalScript.js");
-var createConfirm = require("../utils/confirm.js");
+var evalScript = require("../../utils/evalScript.js");
+var createConfirm = require("../../utils/browser/confirm.js");
 
 var MAX_SLOTS = 20;
 var SCREEN_FADE_IN = 400;
