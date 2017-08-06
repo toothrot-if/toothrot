@@ -15,6 +15,7 @@ var components = {
     audio: require("../components/audio.js"),
     env: require("../components/env.js"),
     focus: require("../components/focus.js"),
+    nodes: require("../components/nodes.js"),
     highlighter: require("../components/highlighter.js"),
     interpreter: require("../components/interpreter.js"),
     screens: require("../components/screens.js"),

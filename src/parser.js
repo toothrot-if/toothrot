@@ -7,6 +7,9 @@ var parseMarkdown = require("marked");
 var createError = require("./utils/createError");
 var validator = require("./validator");
 
+var scriptPattern = /```js @([a-zA-Z0-9_]+)((.|\n)*?)\n```/g;
+var hierarchyPattern = /```json @hierarchy((.|\n)*?)\n```/g;
+
 //
 // ## Function `parse(text[, then])`
 //
@@ -64,7 +67,7 @@ function parse(text, then) {
 
 function parseScripts(node) {
     
-    var pattern = /```js @([a-zA-Z0-9_]+)((.|\n)*?)\n```/g;
+    var pattern = scriptPattern;
     
     node.content = node.content.replace(pattern, function (match, slot, body) {
         
@@ -198,14 +201,41 @@ function parseStructure(text, handleError) {
         }
     });
     
+    parseHierarchy();
+    
     return ast;
+    
+    function parseHierarchy() {
+        
+        var hierarchy = {};
+        
+        if (!ast.head.content) {
+            ast.head.hierarchy = hierarchy;
+            return;
+        }
+        
+        ast.head.content.replace(hierarchyPattern, function (match, body) {
+            try {
+                hierarchy = JSON.parse(body);
+            }
+            catch (error) {
+                handleError(createError({
+                    id: "HIERARCHY_JSON_ERROR"
+                }));
+            }
+        });
+        
+        ast.head.hierarchy = hierarchy;
+    }
     
     function setSection(line) {
         
         section = line.replace(/^##/, "").trim();
         
         if (!ast.sections[section]) {
-            ast.sections[section] = {};
+            ast.sections[section] = {
+                data: {}
+            };
         }
         
     }
@@ -309,7 +339,7 @@ function parseStructure(text, handleError) {
             currentSection = ast.sections[section];
             
             try {
-                currentSection[key] = JSON.parse(value);
+                currentSection.data[key] = JSON.parse(value);
             }
             catch (error) {
                 handleError(createError({
@@ -323,7 +353,7 @@ function parseStructure(text, handleError) {
         }
         else {
             try {
-                currentNode[key] = JSON.parse(value);
+                currentNode.data[key] = JSON.parse(value);
             }
             catch (error) {
                 handleError(createError({
@@ -343,18 +373,24 @@ function countNewLines(text) {
 }
 
 function node(line, lineOffset, section) {
+    
+    var id = line.replace(/^###/, "").trim();
+    
     return {
-        id: line.replace(/^###/, "").trim(),
-        content: "",
+        id: id,
+        section: section,
         line: lineOffset + 1,
+        content: "",
         links: [],
         scripts: {},
         options: [],
-        tags: [],
-        flags: [],
-        contains: [],
-        wasIn: [],
-        section: section
+        data: {
+            node: id,
+            tags: [],
+            flags: [],
+            contains: [],
+            wasIn: []
+        }
     };
 }
 

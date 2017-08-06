@@ -1,8 +1,8 @@
+/* eslint-disable no-console */
 
 var clone = require("clone");
 var merge = require("deepmerge");
 var evalScript = require("../utils/evalScript");
-var createNodeApi = require("../utils/node.js");
 
 // Wait how long before next() works again after a return?
 // This is to prevent popping more stuff from the stack than
@@ -13,7 +13,7 @@ var none = function () {};
 
 function create(context) {
     
-    var story, vars, env, storage, settings, focus, currentNode, nextClickTime, timeoutId;
+    var story, vars, env, nodes, storage, settings, focus, currentNode, nextClickTime, timeoutId;
     
     // A stack for remembering which node to return to.
     var stack = [];
@@ -24,6 +24,7 @@ function create(context) {
         vars = context.getComponent("vars");
         story = context.getComponent("story");
         focus = context.getComponent("focus");
+        nodes = context.getComponent("nodes");
         storage = context.getComponent("storage");
         settings = context.getComponent("settings");
         
@@ -83,8 +84,6 @@ function create(context) {
     
     function hasCurrentSlot(then) {
         return hasSlot("current", function (error, exists) {
-            
-            console.log("hasCurrentSlot:", error, exists);
             
             if (exists) {
                 settings.set("current_slot_exists", true);
@@ -149,7 +148,8 @@ function create(context) {
     
     function runNode(node, nextType) {
         
-        var skipTo, lastNodes;
+        var skipTo;
+        var data = nodes.get(node.id);
         var copy = merge(clone(story.getSection(node.section)), clone(node));
         
         copy.items = [];
@@ -164,17 +164,7 @@ function create(context) {
             context.emit("timer_end");
         }
         
-        lastNodes = vars.get("_lastNodes") || {};
-        
-        copy.tags.forEach(function (tag) {
-            lastNodes[tag] = copy.id;
-        });
-        
-        vars.set("_lastNodes", lastNodes);
-        
-        env.set("last", function (tag) {
-            return lastNodes[tag];
-        });
+        context.emit("before_run_node", node);
         
         env.set("skipTo", function (id) {
             skipTo = id;
@@ -183,10 +173,10 @@ function create(context) {
         env.set("node", function (id) {
             
             if (id) {
-                return createNodeApi(story.getAll().nodes[id], story);
+                return nodes.get(id);
             }
             
-            return createNodeApi(copy, story);
+            return nodes.get(copy.id);
         });
         
         env.set("self", getSelf);
@@ -222,23 +212,24 @@ function create(context) {
             return result || "";
         });
         
-        if (createNodeApi(node, story).isntSneaky()) {
+        if (data.isntSneaky()) {
             
-            copy.contains.forEach(function (id) {
+            data.raw().contains.forEach(function (id) {
                 
                 var scriptResult;
                 var item = story.getNode(id);
+                var data = nodes.get(id).raw();
                 
                 if (!item || !item.scripts.brief) {
                     return;
                 }
                 
-                if (item.wasIn.indexOf(node.id) < 0) {
-                    item.wasIn.push(node.id);
+                if (data.wasIn.indexOf(node.id) < 0) {
+                    data.wasIn.push(node.id);
                 }
                 
                 env.set("self", function () {
-                    return createNodeApi(item, story);
+                    return nodes.get(id);
                 });
                 
                 scriptResult = runScript(item.scripts.brief);
@@ -260,7 +251,7 @@ function create(context) {
                 return true;
             }
             
-            hasFlag = createNodeApi(node).is(option.condition.flag);
+            hasFlag = nodes.get(node.id).is(option.condition.flag);
             
             return (option.condition.not ? !hasFlag : hasFlag);
         });
@@ -283,9 +274,9 @@ function create(context) {
         
         currentNode = node;
         
-        storage.save("current", serialize(), console.log.bind(console, "Saved?:"));
+        storage.save("current", serialize());
         
-        if (typeof node.timeout === "number") {
+        if (typeof data.get("timeout") === "number") {
             startTimer(node);
         }
         
@@ -304,7 +295,7 @@ function create(context) {
         }
         
         function getSelf() {
-            return createNodeApi(node, story);
+            return nodes.get(node.id);
         }
     }
     
@@ -346,7 +337,7 @@ function create(context) {
     
     function startTimer(node) {
         
-        var timeout = node.timeout;
+        var timeout = node.data.timeout;
         var start = Date.now();
         
         context.emit("timer_start", timeout);

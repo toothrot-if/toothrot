@@ -43,6 +43,10 @@ function create(context) {
         return story;
     }
     
+    function getHierarchy() {
+        return story.head.hierarchy;
+    }
+    
     return {
         init: init,
         destroy: destroy,
@@ -53,7 +57,8 @@ function create(context) {
         getMeta: getMeta,
         hasMeta: hasMeta,
         getTitle: getTitle,
-        getAll: getAll
+        getAll: getAll,
+        getHierarchy: getHierarchy
     };
 }
 

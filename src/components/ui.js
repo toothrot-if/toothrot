@@ -277,7 +277,7 @@ function create(context) {
             
             if (
                 node.options.length ||
-                node.timeout ||
+                node.data.timeout ||
                 node.links.length ||
                 node.reveal === false ||
                 settings.get("textSpeed") >= 100
@@ -313,7 +313,7 @@ function create(context) {
             
             function insertSpecials() {
                 
-                if (typeof node.timeout === "number") {
+                if (typeof node.data.timeout === "number") {
                     addTimer(text);
                 }
                 
@@ -394,7 +394,7 @@ function create(context) {
             addOption(option, node);
         });
         
-        container.appendChild(optionsParent);
+        container.querySelector(".current").appendChild(optionsParent);
     }
     
     function addOption(opt) {
@@ -424,7 +424,7 @@ function create(context) {
         timeoutContainer.setAttribute("data-progress", "0");
         
         updateTimer(100);
-        text.appendChild(timeoutContainer);
+        text.querySelector(".current").appendChild(timeoutContainer);
         context.on("timer_update", updateTimer);
         
         function updateTimer(state) {

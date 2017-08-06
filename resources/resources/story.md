@@ -1,5 +1,14 @@
 # My Story
 
+```json @hierarchy
+{
+    "item": [],
+    "drop_zone": [],
+    "container": ["item", "drop_zone"],
+    "room": ["drop_zone"]
+}
+```
+
 
 ## default
 
@@ -7,7 +16,6 @@
 
 ```js @entry
 $.foo = "bar";
-console.log("start@entry called!");
 ```
 
 ```js @where
@@ -62,18 +70,18 @@ _.node("sword").be("taken").moveTo("inventory");
 
 You take that shiny-ass sword.
 
-(<) room
+(<) drop_zone
 
 
 ### drop_sword
 
 ```js @entry
-_.node("sword").dontBe("taken").moveTo(_.last("room"));
+_.node("sword").dontBe("taken").moveTo(_.last("drop_zone"));
 ```
 
 You drop the sword.
 
-(<) room
+(<) drop_zone
 
 
 ### storage_room
@@ -99,7 +107,7 @@ A rather boring kitchen. A [door](#storage_room) leads to a storage room.
 
 ### chest
 
-(#) tags: ["item"]
+(#) tags: ["container"]
 (#) flags: ["sneaky", "closed"]
 (#) contains: ["sword"]
 

@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Sat, 05 Aug 2017 20:27:57 GMT
+    Build time: Sun, 06 Aug 2017 17:15:26 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5713,12 +5713,12 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/getAbsoluteRect":71,"../utils/scrolling":77,"../utils/setStyle":78,"enjoy-core/compose":11,"transform-js":20}],58:[function(require,module,exports){
+},{"../utils/getAbsoluteRect":72,"../utils/scrolling":78,"../utils/setStyle":79,"enjoy-core/compose":11,"transform-js":20}],58:[function(require,module,exports){
+/* eslint-disable no-console */
 
 var clone = require("clone");
 var merge = require("deepmerge");
 var evalScript = require("../utils/evalScript");
-var createNodeApi = require("../utils/node.js");
 
 // Wait how long before next() works again after a return?
 // This is to prevent popping more stuff from the stack than
@@ -5729,7 +5729,7 @@ var none = function () {};
 
 function create(context) {
     
-    var story, vars, env, storage, settings, focus, currentNode, nextClickTime, timeoutId;
+    var story, vars, env, nodes, storage, settings, focus, currentNode, nextClickTime, timeoutId;
     
     // A stack for remembering which node to return to.
     var stack = [];
@@ -5740,6 +5740,7 @@ function create(context) {
         vars = context.getComponent("vars");
         story = context.getComponent("story");
         focus = context.getComponent("focus");
+        nodes = context.getComponent("nodes");
         storage = context.getComponent("storage");
         settings = context.getComponent("settings");
         
@@ -5799,8 +5800,6 @@ function create(context) {
     
     function hasCurrentSlot(then) {
         return hasSlot("current", function (error, exists) {
-            
-            console.log("hasCurrentSlot:", error, exists);
             
             if (exists) {
                 settings.set("current_slot_exists", true);
@@ -5865,7 +5864,8 @@ function create(context) {
     
     function runNode(node, nextType) {
         
-        var skipTo, lastNodes;
+        var skipTo;
+        var data = nodes.get(node.id);
         var copy = merge(clone(story.getSection(node.section)), clone(node));
         
         copy.items = [];
@@ -5880,17 +5880,7 @@ function create(context) {
             context.emit("timer_end");
         }
         
-        lastNodes = vars.get("_lastNodes") || {};
-        
-        copy.tags.forEach(function (tag) {
-            lastNodes[tag] = copy.id;
-        });
-        
-        vars.set("_lastNodes", lastNodes);
-        
-        env.set("last", function (tag) {
-            return lastNodes[tag];
-        });
+        context.emit("before_run_node", node);
         
         env.set("skipTo", function (id) {
             skipTo = id;
@@ -5899,10 +5889,10 @@ function create(context) {
         env.set("node", function (id) {
             
             if (id) {
-                return createNodeApi(story.getAll().nodes[id], story);
+                return nodes.get(id);
             }
             
-            return createNodeApi(copy, story);
+            return nodes.get(copy.id);
         });
         
         env.set("self", getSelf);
@@ -5938,23 +5928,24 @@ function create(context) {
             return result || "";
         });
         
-        if (createNodeApi(node, story).isntSneaky()) {
+        if (data.isntSneaky()) {
             
-            copy.contains.forEach(function (id) {
+            data.raw().contains.forEach(function (id) {
                 
                 var scriptResult;
                 var item = story.getNode(id);
+                var data = nodes.get(id).raw();
                 
                 if (!item || !item.scripts.brief) {
                     return;
                 }
                 
-                if (item.wasIn.indexOf(node.id) < 0) {
-                    item.wasIn.push(node.id);
+                if (data.wasIn.indexOf(node.id) < 0) {
+                    data.wasIn.push(node.id);
                 }
                 
                 env.set("self", function () {
-                    return createNodeApi(item, story);
+                    return nodes.get(id);
                 });
                 
                 scriptResult = runScript(item.scripts.brief);
@@ -5976,7 +5967,7 @@ function create(context) {
                 return true;
             }
             
-            hasFlag = createNodeApi(node).is(option.condition.flag);
+            hasFlag = nodes.get(node.id).is(option.condition.flag);
             
             return (option.condition.not ? !hasFlag : hasFlag);
         });
@@ -5999,9 +5990,9 @@ function create(context) {
         
         currentNode = node;
         
-        storage.save("current", serialize(), console.log.bind(console, "Saved?:"));
+        storage.save("current", serialize());
         
-        if (typeof node.timeout === "number") {
+        if (typeof data.get("timeout") === "number") {
             startTimer(node);
         }
         
@@ -6020,7 +6011,7 @@ function create(context) {
         }
         
         function getSelf() {
-            return createNodeApi(node, story);
+            return nodes.get(node.id);
         }
     }
     
@@ -6062,7 +6053,7 @@ function create(context) {
     
     function startTimer(node) {
         
-        var timeout = node.timeout;
+        var timeout = node.data.timeout;
         var start = Date.now();
         
         context.emit("timer_start", timeout);
@@ -6148,7 +6139,124 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/evalScript":70,"../utils/node.js":73,"clone":7,"deepmerge":8}],59:[function(require,module,exports){
+},{"../utils/evalScript":71,"clone":7,"deepmerge":8}],59:[function(require,module,exports){
+
+var clone = require("clone");
+var createApi = require("../utils/node.js");
+
+function createKey(id) {
+    return "__objdata_" + id;
+}
+
+function create(context) {
+    
+    var story, vars, env;
+    
+    function init() {
+        
+        env = context.getComponent("env");
+        vars = context.getComponent("vars");
+        story = context.getComponent("story");
+        
+        env.set("last", function (tag) {
+            
+            var lastNodes = vars.get("_lastNodes") || {};
+            
+            return lastNodes[tag];
+        });
+        
+        context.on("before_run_node", onBeforeRunNode);
+    }
+    
+    function destroy() {
+        
+        context.removeListener("before_run_node", onBeforeRunNode);
+        
+        vars = null;
+        story = null;
+    }
+    
+    function onBeforeRunNode(node) {
+        
+        var lastNodes = vars.get("_lastNodes") || {};
+        
+        getData(node.id).tags.forEach(function (originalTag) {
+            
+            var allTags = resolveTagHierarchy(originalTag);
+            
+            allTags.push(originalTag);
+            
+            allTags.forEach(function (tag) {
+                lastNodes[tag] = node.id;
+            });
+        });
+        
+        vars.set("_lastNodes", lastNodes);
+    }
+    
+    function resolveTagHierarchy(tag) {
+        
+        var tags = [];
+        var hierarchy = story.getHierarchy();
+        var ancestors = hierarchy[tag] || [];
+        
+        ancestors.forEach(function (ancestor) {
+            
+            tags.push(ancestor);
+            
+            resolveTagHierarchy(ancestor).forEach(function (otherTag) {
+                tags.push(otherTag);
+            });
+        });
+        
+        return tags;
+    }
+    
+    function get(id) {
+        
+        var data;
+        
+        if (!has(id)) {
+            throw new Error("No such node id: " + id);
+        }
+        
+        data = getData(id);
+        
+        return createApi(id, data, context.getComponent("nodes"));
+    }
+    
+    function has(id) {
+        return hasData(id) || story.hasNode(id);
+    }
+    
+    function hasData(id) {
+        return !!vars.get(createKey(id));
+    }
+    
+    function getData(id) {
+        
+        var key = createKey(id);
+        var data = vars.get(key);
+        
+        if (!data) {
+            data = clone(story.getNode(id).data);
+            vars.set(key, data);
+        }
+        
+        return data;
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        get: get,
+        has: has
+    };
+}
+
+module.exports = create;
+
+},{"../utils/node.js":74,"clone":7}],60:[function(require,module,exports){
 //
 // # Screens component
 //
@@ -6724,7 +6832,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/confirm.js":68,"../utils/evalScript.js":70,"enjoy-core/each":12,"transform-js":20,"vrep":53}],60:[function(require,module,exports){
+},{"../utils/confirm.js":69,"../utils/evalScript.js":71,"enjoy-core/each":12,"transform-js":20,"vrep":53}],61:[function(require,module,exports){
 
 var clone = require("clone");
 
@@ -6828,7 +6936,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"clone":7}],61:[function(require,module,exports){
+},{"clone":7}],62:[function(require,module,exports){
 //
 // Module for storing the game state in local storage.
 //
@@ -6858,7 +6966,7 @@ function create(context) {
         }
     }
     catch (error) {
-        console.error(error);
+        console.warn(error);
     }
     
     if (!storageType) {
@@ -6872,7 +6980,7 @@ function create(context) {
             }
         }
         catch (error) {
-            console.error(error);
+            console.warn(error);
         }
     }
     
@@ -7030,7 +7138,7 @@ function create(context) {
 
 module.exports = create;
 
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 
 function create(context) {
     
@@ -7076,6 +7184,10 @@ function create(context) {
         return story;
     }
     
+    function getHierarchy() {
+        return story.head.hierarchy;
+    }
+    
     return {
         init: init,
         destroy: destroy,
@@ -7086,13 +7198,14 @@ function create(context) {
         getMeta: getMeta,
         hasMeta: hasMeta,
         getTitle: getTitle,
-        getAll: getAll
+        getAll: getAll,
+        getHierarchy: getHierarchy
     };
 }
 
 module.exports = create;
 
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 
 var clone = require("clone");
 
@@ -7231,7 +7344,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"clone":7}],64:[function(require,module,exports){
+},{"clone":7}],65:[function(require,module,exports){
 /* global __line */
 
 var format = require("vrep").format;
@@ -7511,7 +7624,7 @@ function create(context) {
             
             if (
                 node.options.length ||
-                node.timeout ||
+                node.data.timeout ||
                 node.links.length ||
                 node.reveal === false ||
                 settings.get("textSpeed") >= 100
@@ -7547,7 +7660,7 @@ function create(context) {
             
             function insertSpecials() {
                 
-                if (typeof node.timeout === "number") {
+                if (typeof node.data.timeout === "number") {
                     addTimer(text);
                 }
                 
@@ -7628,7 +7741,7 @@ function create(context) {
             addOption(option, node);
         });
         
-        container.appendChild(optionsParent);
+        container.querySelector(".current").appendChild(optionsParent);
     }
     
     function addOption(opt) {
@@ -7658,7 +7771,7 @@ function create(context) {
         timeoutContainer.setAttribute("data-progress", "0");
         
         updateTimer(100);
-        text.appendChild(timeoutContainer);
+        text.querySelector(".current").appendChild(timeoutContainer);
         context.on("timer_update", updateTimer);
         
         function updateTimer(state) {
@@ -7804,7 +7917,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/confirm.js":68,"../utils/getClickableParent":72,"../utils/notifications.js":74,"../utils/revealText.js":75,"../utils/scrolling.js":77,"class-manipulator":6,"vrep":53}],65:[function(require,module,exports){
+},{"../utils/confirm.js":69,"../utils/getClickableParent":73,"../utils/notifications.js":75,"../utils/revealText.js":76,"../utils/scrolling.js":78,"class-manipulator":6,"vrep":53}],66:[function(require,module,exports){
 
 function create(context) {
     
@@ -7867,12 +7980,12 @@ function create(context) {
 
 module.exports = create;
 
-},{}],66:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 /* global require */
 
 window.TOOTHROT = require("./runtimes/browser.js");
 
-},{"./runtimes/browser.js":67}],67:[function(require,module,exports){
+},{"./runtimes/browser.js":68}],68:[function(require,module,exports){
 /* global setInterval, clearInterval */
 /* eslint no-console: off */
 
@@ -7890,6 +8003,7 @@ var components = {
     audio: require("../components/audio.js"),
     env: require("../components/env.js"),
     focus: require("../components/focus.js"),
+    nodes: require("../components/nodes.js"),
     highlighter: require("../components/highlighter.js"),
     interpreter: require("../components/interpreter.js"),
     screens: require("../components/screens.js"),
@@ -7923,7 +8037,7 @@ module.exports = {
     decode: decodeResources
 };
 
-},{"../components/audio.js":54,"../components/env.js":55,"../components/focus.js":56,"../components/highlighter.js":57,"../components/interpreter.js":58,"../components/screens.js":59,"../components/settings.js":60,"../components/storage.js":61,"../components/story.js":62,"../components/system.js":63,"../components/ui.js":64,"../components/vars.js":65,"../utils/context.js":69,"smoothscroll-polyfill":19}],68:[function(require,module,exports){
+},{"../components/audio.js":54,"../components/env.js":55,"../components/focus.js":56,"../components/highlighter.js":57,"../components/interpreter.js":58,"../components/nodes.js":59,"../components/screens.js":60,"../components/settings.js":61,"../components/storage.js":62,"../components/story.js":63,"../components/system.js":64,"../components/ui.js":65,"../components/vars.js":66,"../utils/context.js":70,"smoothscroll-polyfill":19}],69:[function(require,module,exports){
 
 function create(context) {
     
@@ -7970,7 +8084,7 @@ function create(context) {
 
 module.exports = create;
 
-},{}],69:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 /* eslint-disable no-console */
 
 var EventEmitter = require("events");
@@ -8129,7 +8243,7 @@ module.exports = {
     create: create
 };
 
-},{"events":5}],70:[function(require,module,exports){
+},{"events":5}],71:[function(require,module,exports){
 /* eslint-disable no-unused-vars, no-eval */
 
 function evalScript(__story, _, $, __body, __line) {
@@ -8145,7 +8259,7 @@ function evalScript(__story, _, $, __body, __line) {
 
 module.exports = evalScript;
 
-},{}],71:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 
 var scrollPosition = require("./scrollPosition");
 
@@ -8163,7 +8277,7 @@ function getAbsoluteRect(element) {
 
 module.exports = getAbsoluteRect;
 
-},{"./scrollPosition":76}],72:[function(require,module,exports){
+},{"./scrollPosition":77}],73:[function(require,module,exports){
 
 function getClickableParent (node) {
     
@@ -8184,13 +8298,13 @@ function getClickableParent (node) {
 
 module.exports = getClickableParent;
 
-},{}],73:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 
-function create(node, story, vars) {
+function create(id, data, nodes) {
     
     var api = {
         
-        id: node.id,
+        id: id,
         
         isA: isA,
         isntA: isntA,
@@ -8207,14 +8321,26 @@ function create(node, story, vars) {
         dontBe: dontBe,
         dontBeSneaky: dontBeSneaky,
         moveTo: moveTo,
+        insert: insert,
         contains: containsNode,
         doesntContain: doesntContain,
-        raw: raw,
-        prop: prop
+        get: get,
+        set: set,
+        prop: prop,
+        raw: raw
     };
     
+    function get(key) {
+        return data[key];
+    }
+    
+    function set(key, value) {
+        data[key] = value;
+        return api;
+    }
+    
     function isA(tag) {
-        return contains(node.tags, tag);
+        return contains(data.tags, tag);
     }
     
     function isntA(tag) {
@@ -8222,7 +8348,7 @@ function create(node, story, vars) {
     }
     
     function is(flag) {
-        return contains(node.flags, flag);
+        return contains(data.flags, flag);
     }
     
     function isnt(flag) {
@@ -8230,7 +8356,7 @@ function create(node, story, vars) {
     }
     
     function isEmpty() {
-        return node.contains.length < 1;
+        return data.contains.length < 1;
     }
     
     function isntEmpty() {
@@ -8238,7 +8364,7 @@ function create(node, story, vars) {
     }
     
     function containsNode(id) {
-        return contains(node.contains, id);
+        return contains(data.contains, id);
     }
     
     function doesntContain(id) {
@@ -8247,11 +8373,11 @@ function create(node, story, vars) {
     
     function isIn(id) {
         
-        if (!story.hasNode(id)) {
+        if (!nodes.has(id)) {
             return false;
         }
         
-        return contains(story.getNode(id).contains, id);
+        return nodes.get(id).contains(id);
     }
     
     function isntIn(id) {
@@ -8269,7 +8395,7 @@ function create(node, story, vars) {
     function be(flag) {
         
         if (!is(flag)) {
-            node.flags.push(flag);
+            data.flags.push(flag);
         }
         
         return api;
@@ -8282,7 +8408,7 @@ function create(node, story, vars) {
     function dontBe(flag) {
         
         if (is(flag)) {
-            node.flags = node.flags.filter(function (nodeFlag) {
+            data.flags = data.flags.filter(function (nodeFlag) {
                 return nodeFlag !== flag;
             });
         }
@@ -8294,41 +8420,59 @@ function create(node, story, vars) {
         return dontBe("sneaky");
     }
     
-    function moveTo(id) {
+    function moveTo(otherId) {
         
-        if (!story.hasNode(id)) {
+        var otherNode;
+        
+        if (!nodes.has(otherId)) {
             throw new Error(
-                "Cannot move node '" + node.id + "' to node '" + id + "': " +
+                "Cannot move node '" + id + "' to node '" + otherId + "': " +
                 "No such node ID!"
             );
         }
         
-        node.wasIn.forEach(function (itemId) {
+        otherNode = nodes.get(otherId);
+        
+        data.wasIn.forEach(function (itemId) {
             
-            var item = story.getNode(itemId);
+            var item = nodes.get(itemId);
             
-            item.contains = item.contains.filter(function (child) {
-                return child !== node.id;
-            });
+            item.set("contains", item.get("contains").filter(function (child) {
+                return child !== id;
+            }));
             
         });
         
-        story.getNode(id).contains.push(node.id);
+        otherNode.insert(id);
         
         return api;
     }
     
-    function raw() {
-        return node;
+    function insert(otherId) {
+        
+        if (!nodes.has(otherId)) {
+            console.warn("No such node ID: " + otherId);
+            return api;
+        }
+        
+        if (!contains(otherId)) {
+            data.contains.push(otherId);
+        }
+        
+        return api;
     }
     
     function prop(name, value) {
         
         if (arguments.length > 1) {
-            node[name] = value;
+            data[name] = value;
         }
         
-        return value;
+        return data[name];
+    }
+    
+    function raw() {
+        return data;
     }
     
     return api;
@@ -8340,7 +8484,7 @@ function contains(array, thing) {
 
 module.exports = create;
 
-},{}],74:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 /* global require, module, setTimeout */
 
 var format = require("vrep").format;
@@ -8418,7 +8562,7 @@ module.exports = {
     create: create
 };
 
-},{"transform-js":20,"vrep":53}],75:[function(require,module,exports){
+},{"transform-js":20,"vrep":53}],76:[function(require,module,exports){
 
 var transform = require("transform-js").transform;
 
@@ -8545,7 +8689,7 @@ function setOpacity(element) {
 
 module.exports = create;
 
-},{"transform-js":20}],76:[function(require,module,exports){
+},{"transform-js":20}],77:[function(require,module,exports){
 
 function getScrollX() {
     return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
@@ -8560,7 +8704,7 @@ module.exports = {
     getY: getScrollY
 };
 
-},{}],77:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 
 var getAbsoluteRect = require("./getAbsoluteRect");
 var scrollPosition = require("./scrollPosition");
@@ -8616,7 +8760,7 @@ module.exports = {
     isElementInView: isElementInView
 };
 
-},{"./getAbsoluteRect":71,"./scrollPosition":76}],78:[function(require,module,exports){
+},{"./getAbsoluteRect":72,"./scrollPosition":77}],79:[function(require,module,exports){
 
 var auto = require("enjoy-core/auto");
 
@@ -8627,4 +8771,4 @@ var setStyle = auto(function (element, key, unit, start, end, value) {
 
 module.exports = setStyle;
 
-},{"enjoy-core/auto":10}]},{},[66]);
+},{"enjoy-core/auto":10}]},{},[67]);

@@ -1,9 +1,9 @@
 
-function create(node, story, vars) {
+function create(id, data, nodes) {
     
     var api = {
         
-        id: node.id,
+        id: id,
         
         isA: isA,
         isntA: isntA,
@@ -20,14 +20,26 @@ function create(node, story, vars) {
         dontBe: dontBe,
         dontBeSneaky: dontBeSneaky,
         moveTo: moveTo,
+        insert: insert,
         contains: containsNode,
         doesntContain: doesntContain,
-        raw: raw,
-        prop: prop
+        get: get,
+        set: set,
+        prop: prop,
+        raw: raw
     };
     
+    function get(key) {
+        return data[key];
+    }
+    
+    function set(key, value) {
+        data[key] = value;
+        return api;
+    }
+    
     function isA(tag) {
-        return contains(node.tags, tag);
+        return contains(data.tags, tag);
     }
     
     function isntA(tag) {
@@ -35,7 +47,7 @@ function create(node, story, vars) {
     }
     
     function is(flag) {
-        return contains(node.flags, flag);
+        return contains(data.flags, flag);
     }
     
     function isnt(flag) {
@@ -43,7 +55,7 @@ function create(node, story, vars) {
     }
     
     function isEmpty() {
-        return node.contains.length < 1;
+        return data.contains.length < 1;
     }
     
     function isntEmpty() {
@@ -51,7 +63,7 @@ function create(node, story, vars) {
     }
     
     function containsNode(id) {
-        return contains(node.contains, id);
+        return contains(data.contains, id);
     }
     
     function doesntContain(id) {
@@ -60,11 +72,11 @@ function create(node, story, vars) {
     
     function isIn(id) {
         
-        if (!story.hasNode(id)) {
+        if (!nodes.has(id)) {
             return false;
         }
         
-        return contains(story.getNode(id).contains, id);
+        return nodes.get(id).contains(id);
     }
     
     function isntIn(id) {
@@ -82,7 +94,7 @@ function create(node, story, vars) {
     function be(flag) {
         
         if (!is(flag)) {
-            node.flags.push(flag);
+            data.flags.push(flag);
         }
         
         return api;
@@ -95,7 +107,7 @@ function create(node, story, vars) {
     function dontBe(flag) {
         
         if (is(flag)) {
-            node.flags = node.flags.filter(function (nodeFlag) {
+            data.flags = data.flags.filter(function (nodeFlag) {
                 return nodeFlag !== flag;
             });
         }
@@ -107,41 +119,59 @@ function create(node, story, vars) {
         return dontBe("sneaky");
     }
     
-    function moveTo(id) {
+    function moveTo(otherId) {
         
-        if (!story.hasNode(id)) {
+        var otherNode;
+        
+        if (!nodes.has(otherId)) {
             throw new Error(
-                "Cannot move node '" + node.id + "' to node '" + id + "': " +
+                "Cannot move node '" + id + "' to node '" + otherId + "': " +
                 "No such node ID!"
             );
         }
         
-        node.wasIn.forEach(function (itemId) {
+        otherNode = nodes.get(otherId);
+        
+        data.wasIn.forEach(function (itemId) {
             
-            var item = story.getNode(itemId);
+            var item = nodes.get(itemId);
             
-            item.contains = item.contains.filter(function (child) {
-                return child !== node.id;
-            });
+            item.set("contains", item.get("contains").filter(function (child) {
+                return child !== id;
+            }));
             
         });
         
-        story.getNode(id).contains.push(node.id);
+        otherNode.insert(id);
         
         return api;
     }
     
-    function raw() {
-        return node;
+    function insert(otherId) {
+        
+        if (!nodes.has(otherId)) {
+            console.warn("No such node ID: " + otherId);
+            return api;
+        }
+        
+        if (!contains(otherId)) {
+            data.contains.push(otherId);
+        }
+        
+        return api;
     }
     
     function prop(name, value) {
         
         if (arguments.length > 1) {
-            node[name] = value;
+            data[name] = value;
         }
         
-        return value;
+        return data[name];
+    }
+    
+    function raw() {
+        return data;
     }
     
     return api;

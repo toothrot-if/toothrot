@@ -4,6 +4,10 @@ var errors = {
     NO_TITLE: "No story title specified!",
     NO_START_NODE: "Required node 'start' is missing.",
     
+    HIERARCHY_JSON_ERROR: "The hierarchy section contains mal-formed JSON.",
+    CIRCULAR_HIERARCHY:
+        "The hierarchy is circular. Tag '{tag}' references itself.",
+    
     UNKNOWN_NEXT_NODE: "Unknown next node '{next}' for node '{nodeId}' (line {nodeLine}).",
     
     CONFLICT_NEXT_RETURN: "Conflict: Node '{nodeId}' (line {nodeLine}) has both a next node and " +

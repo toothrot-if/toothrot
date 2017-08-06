@@ -205,7 +205,6 @@ strong, b {
     padding-top: 20px;
     padding-left: 30px;
     padding-right: 30px;
-    padding-bottom: 60px;
     max-width: 500px;
     margin: auto;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
@@ -827,6 +826,10 @@ strong, b {
 .TextItem {
     transition-duration: 0.5s;
     opacity: 1;
+}
+
+.TextItem.current {
+    margin-bottom: 60px;
 }
 
 .disarmed {

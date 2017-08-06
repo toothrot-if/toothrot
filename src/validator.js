@@ -16,7 +16,50 @@ function validator(handleError) {
             handleError(createError({id: "NO_START_NODE"}));
         }
         
+        validateHierarchy(ast.head.hierarchy);
         validateNodes(ast.nodes);
+    }
+    
+    function validateHierarchy(hierarchy) {
+        
+        console.log("hierarchy:", hierarchy);
+        
+        try {
+            Object.keys(hierarchy).forEach(function (tag) {
+                console.log(tag);
+                resolveHierarchy(tag, hierarchy);
+            });
+        }
+        catch (tag) {
+            console.log(tag);
+            handleError(createError({
+                id: "CIRCULAR_HIERARCHY",
+                tag: tag
+            }));
+        }
+    }
+    
+    function resolveHierarchy(tag, hierarchy, resolving) {
+        
+        var tags = [];
+        var ancestors = hierarchy[tag];
+        
+        resolving = resolving || [];
+        
+        resolving.push(tag);
+        
+        ancestors.forEach(function (ancestor) {
+            
+            if (resolving.indexOf(ancestor) >= 0) {
+                throw tag;
+            }
+            
+            resolveHierarchy(ancestor, hierarchy, resolving).forEach(function (otherTag) {
+                tags.push(otherTag);
+            });
+        });
+        
+        return tags;
     }
     
     function validateNode(node, name, nodes) {
