@@ -20,6 +20,7 @@ html{color:#000;background:#FFF}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre
 
 * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 li {
@@ -36,7 +37,6 @@ html {
 
 body {
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.5);
 }
 
 .toothrot-bg1, .toothrot-bg2, .toothrot-bg3 {
@@ -50,7 +50,7 @@ body {
 
 .toothrot-bg1 {
     opacity: 1;
-    background: midnightblue;
+    background: black;
 }
 
 .toothrot-bg2 {
@@ -58,7 +58,7 @@ body {
 }
 
 .toothrot-bg3 {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
 }
 
 html, body, .Toothrot {
@@ -229,7 +229,7 @@ strong, b {
     padding-right: 30px;
     max-width: 650px;
     margin: auto;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
     min-height: 100%;
 }
 
@@ -244,6 +244,8 @@ strong, b {
 .OptionsContainer {
     text-align: center;
     margin-top: 20px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.3);
 }
 
 .Option {
@@ -256,7 +258,7 @@ strong, b {
 }
 
 .Option:first-child {
-    border-top: 1px solid;
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
 }
@@ -317,8 +319,15 @@ strong, b {
 
 .link, .link:visited {
     display: inline-block;
-    color: rgba(255, 255, 255, 0.8);
-    text-decoration: underline;
+    padding: 3px;
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-left: 5px;
+    margin-right: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
     font-weight: bold;
     cursor: pointer;
     transition-duration: 1s;
@@ -328,6 +337,11 @@ strong, b {
 .link:hover {
     background: rgba(250, 250, 250, 0.2);
     color: rgba(255, 255, 255, 1);
+}
+
+.link .icon {
+    color: white;
+    fill: white;
 }
 
 /*
@@ -364,9 +378,9 @@ strong, b {
 
 .Button, .Option {
     padding: 10px;
-    color: white;
+    color: rgba(255, 255, 255, 0.9);
     background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     font-weight: bold;
     min-width: 20px;
     text-align: center;
@@ -379,6 +393,10 @@ strong, b {
     -ms-user-select: none;
     user-select: none;
     transition-duration: 0.5s;
+}
+
+.Option {
+    border-top: 0;
 }
 
 .Button, .object_link {
@@ -658,16 +676,17 @@ strong, b {
     right: 0;
     top: 0;
     z-index: 1000;
-    padding: 20px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%);
+    padding: 10px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%,rgba(0,0,0,0) 100%);
 }
 
 .UIBar a {
     display: inline-block;
-    padding-left: 10px;
-    padding-right: 10px;
+    padding: 3px;
     cursor: pointer;
     text-decoration: none;
+    background: none;
+    border: none;
 }
 
 .UIBar .right {
@@ -821,6 +840,12 @@ strong, b {
 
 }
 
+
+
+
+
+
+
 .separator {
     height: 2px;
     margin: auto;
@@ -840,11 +865,13 @@ strong, b {
 
 .TextItem {
     transition-duration: 0.5s;
-    opacity: 1;
+    opacity: 0.6;
+    line-height: 1.5em;
 }
 
 .TextItem.current {
     margin-bottom: 60px;
+    opacity: 1;
 }
 
 .disarmed {
@@ -854,15 +881,21 @@ strong, b {
 }
 
 .disarmed.clicked {
-    opacity: 1;
+    opacity: 0.8;
+}
+
+.Option.disarmed {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .Option.disarmed.clicked {
-    opacity: 1;
+    color: rgba(255, 255, 255, 1);
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .link.clicked {
     color: white;
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .next-indicator {

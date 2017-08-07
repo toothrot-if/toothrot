@@ -51,6 +51,16 @@ function create(context) {
         ui = document.createElement("div");
         text = document.createElement("div");
         
+        [bg1, bg2, bg3, ui, container].forEach(function (element) {
+            element.style.display = "none";
+        });
+        
+        setTimeout(function () {
+            [bg1, bg2, bg3, container].forEach(function (element) {
+                element.style.display = "";
+            });
+        }, 1000);
+        
         // Actions and options are put into a parent element
         // so that clicks can be intercepted and to allow
         // more flexibility in styling the elements with CSS.
