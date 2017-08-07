@@ -22,16 +22,12 @@ function validator(handleError) {
     
     function validateHierarchy(hierarchy) {
         
-        console.log("hierarchy:", hierarchy);
-        
         try {
             Object.keys(hierarchy).forEach(function (tag) {
-                console.log(tag);
                 resolveHierarchy(tag, hierarchy);
             });
         }
         catch (tag) {
-            console.log(tag);
             handleError(createError({
                 id: "CIRCULAR_HIERARCHY",
                 tag: tag

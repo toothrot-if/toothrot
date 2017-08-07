@@ -49,7 +49,7 @@ function create(context) {
             nwEnterFullscreen();
         }
         else {
-            requestFullscreen(document.body);
+            requestFullscreen(document.body.parentNode);
         }
     }
     

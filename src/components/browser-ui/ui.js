@@ -22,7 +22,7 @@ function create(context) {
     var ui, text, indicator, optionsParent, optionsContainer;
     var container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
-    var system, settings, env, focus, confirm;
+    var system, settings, env, focus, confirm, nodes, bg1, bg2, bg3;
     
     function init() {
         
@@ -30,6 +30,7 @@ function create(context) {
         vars = context.getComponent("vars");
         story = context.getComponent("story");
         focus = context.getComponent("focus");
+        nodes = context.getComponent("nodes");
         system = context.getComponent("system");
         screens = context.getComponent("screens");
         settings = context.getComponent("settings");
@@ -41,7 +42,10 @@ function create(context) {
         confirm = createConfirm(context);
         
         timerTemplate = '<div class="TimerBar" style="width: {remaining}%;"></div>';
-    
+        
+        bg1 = document.createElement("div");
+        bg2 = document.createElement("div");
+        bg3 = document.createElement("div");
         container = document.createElement("div");
         
         ui = document.createElement("div");
@@ -62,6 +66,10 @@ function create(context) {
         
         container.setAttribute("class", "Toothrot");
         
+        bg1.setAttribute("class", "toothrot-bg1");
+        bg2.setAttribute("class", "toothrot-bg2");
+        bg3.setAttribute("class", "toothrot-bg3");
+        
         text.setAttribute("class", "Text");
         text.setAttribute("aria-live", "polite");
         text.setAttribute("aria-atomic", "true");
@@ -75,6 +83,9 @@ function create(context) {
         optionsParent.appendChild(optionsContainer);
         container.appendChild(text);
         container.appendChild(screenContainer);
+        document.body.appendChild(bg1);
+        document.body.appendChild(bg2);
+        document.body.appendChild(bg3);
         document.body.appendChild(container);
         document.body.appendChild(ui);
         
@@ -177,6 +188,31 @@ function create(context) {
         container.setAttribute("data-section", story.getNode("start").section);
     }
     
+    function setBg(bg) {
+        
+        if (bg3.getAttribute("data-current-bg") === bg) {
+            return;
+        }
+        
+        if (bg1.getAttribute("data-used")) {
+            bg2.style.background = bg;
+            bg2.style.opacity = 1;
+            bg1.style.opacity = 0;
+            bg1.removeAttribute("data-used");
+            bg2.setAttribute("data-used", "true");
+        }
+        else {
+            bg1.style.background = bg;
+            bg1.style.opacity = 1;
+            bg2.style.opacity = 0;
+            bg2.removeAttribute("data-used");
+            bg1.setAttribute("data-used", "true");
+        }
+        
+        bg3.setAttribute("data-current-bg", bg);
+        vars.set("__current_bg", bg);
+    }
+    
     function onNodeChange(node) {
         
         if (!currentNode) {
@@ -214,13 +250,24 @@ function create(context) {
         
         function replaceContent() {
             
+            var bg;
             var content = node.content;
+            var data = nodes.get(node.id);
             
             currentNode = node;
             currentSection = node.section;
             
             container.setAttribute("data-node-id", currentNode.id);
             container.setAttribute("data-section", currentNode.section);
+            
+            if (data.has("background")) {
+                bg = data.get("background");
+            }
+            else {
+                bg = vars.get("__current_bg");
+            }
+            
+            setBg(bg);
             
             node.links.forEach(function (link, i) {
                 if (link.type === "direct_link") {
@@ -261,6 +308,20 @@ function create(context) {
                 
             }).join("");
             
+            node.events.forEach(function (event) {
+                
+                if (event && typeof event === "object") {
+                    event = event.text;
+                }
+                
+                if (!event) {
+                    return;
+                }
+                
+                content += '<p class="event">' + event + '</p>';
+                
+            });
+            
             content = (function () {
                 
                 var mockParent = document.createElement("div");
@@ -280,6 +341,7 @@ function create(context) {
                 node.data.timeout ||
                 node.links.length ||
                 node.reveal === false ||
+                data.children().length ||
                 settings.get("textSpeed") >= 100
             ) {
                 insertSpecials();

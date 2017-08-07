@@ -56,7 +56,7 @@ function create(context) {
         
         return JSON.stringify({
             vars: vars.getAll(),
-            stack: stack,
+            stack: stack.slice(),
             node: currentNodeId,
             text: story.getNode(currentNodeId).content
         });
@@ -66,8 +66,10 @@ function create(context) {
         
         vars.clear();
         
+        console.log("data in resume():", data);
+        
         data = JSON.parse(data);
-        stack = data.stack;
+        stack = data.stack.slice();
         
         Object.keys(data.vars).forEach(function (key) {
             vars.set(key, data.vars[key]);
@@ -152,6 +154,7 @@ function create(context) {
         var data = nodes.get(node.id);
         var copy = merge(clone(story.getSection(node.section)), clone(node));
         
+        copy.events = [];
         copy.items = [];
         
         console.log("Running node '" + node.id + "'...");
@@ -165,6 +168,14 @@ function create(context) {
         }
         
         context.emit("before_run_node", node);
+        
+        env.set("event", function (text) {
+            copy.events.push(text);
+        });
+        
+        env.set("events", function () {
+            return copy.events.slice();
+        });
         
         env.set("skipTo", function (id) {
             skipTo = id;
@@ -285,7 +296,13 @@ function create(context) {
             var result;
             
             try {
-                result = evalScript(story.getAll(), env.getAll(), vars, script.body, script.line);
+                result = evalScript(
+                    story.getAll(),
+                    env.getAll(),
+                    vars.getAll(),
+                    script.body,
+                    script.line
+                );
             }
             catch (error) {
                 console.error("Cannot execute script at line " + script.line + ":", error);
@@ -378,13 +395,13 @@ function create(context) {
                         "' in node '" + node.id + "' (line " + node.line + ").");
                 }
                 
-                vars._choice = options[node.defaultOption].value;
+                vars.set("_choice", options[node.defaultOption].value);
                 
                 runNode(story.getNode(options[node.defaultOption].target));
             }
             else if (options.length) {
                 
-                vars._choice = options[0].value;
+                vars.set("_choice", options[0].value);
                 
                 runNode(story.getNode(options[0].target));
             }

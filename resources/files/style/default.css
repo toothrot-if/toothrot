@@ -31,12 +31,34 @@ html {
     font-family: "Open Sans Regular", sans-serif;
     color: white;
     font-size: 1em;
-    background: darkslategray;
+    background: black;
 }
 
 body {
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.toothrot-bg1, .toothrot-bg2, .toothrot-bg3 {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.toothrot-bg1 {
+    opacity: 1;
+    background: midnightblue;
+}
+
+.toothrot-bg2 {
+    opacity: 0;
+}
+
+.toothrot-bg3 {
+    background: rgba(0, 0, 0, 0.5);
 }
 
 html, body, .Toothrot {
@@ -51,7 +73,7 @@ html, body, .Toothrot {
     bottom: 0;
     margin-left: auto;
     margin-right: auto;
-    max-width: 600px;
+    max-width: 650px;
     z-index: 100;
     overflow: hidden;
 }
@@ -99,7 +121,7 @@ strong, b {
 #content {
     padding: 10px;
     padding-top: 60px;
-    max-width: 600px;
+    max-width: 650px;
     margin: auto;
 }
 
@@ -205,7 +227,7 @@ strong, b {
     padding-top: 20px;
     padding-left: 30px;
     padding-right: 30px;
-    max-width: 500px;
+    max-width: 650px;
     margin: auto;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
     min-height: 100%;
@@ -278,17 +300,17 @@ strong, b {
 
 .TimeoutContainer {
     padding: 2px;
-    background: rgb(40, 40, 40);
+    background: rgba(255, 255, 255, 0.4);
     margin-top: 20px;
     margin-bottom: -5px;
-    border-radius: 3px;
-    box-shadow: inset 2px 2px 2px black;
+    border-radius: 10px;
+    box-shadow: inset 2px 2px 2px rgba(0, 0, 0, 0.5);
 }
 
 .TimeoutContainer .TimerBar {
-    border-radius: 3px;
-    height: 8px;
-    background: rgb(80, 80, 80);
+    border-radius: 10px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.6);
     box-shadow: 1px 1px 1px rgba(20, 20, 20, 0.8);
     margin: auto;
 }
@@ -631,14 +653,13 @@ strong, b {
 
 
 .UIBar {
-    display: none;
     position: fixed;
     left: 0;
     right: 0;
     top: 0;
     z-index: 1000;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%);
 }
 
 .UIBar a {
@@ -646,6 +667,7 @@ strong, b {
     padding-left: 10px;
     padding-right: 10px;
     cursor: pointer;
+    text-decoration: none;
 }
 
 .UIBar .right {
@@ -704,7 +726,6 @@ strong, b {
 .Text {
     margin-bottom: 10px;
     width: 95%;
-    font-size: 1.2em;
     padding-left: 0;
     padding-right: 0;
 }
@@ -742,23 +763,17 @@ strong, b {
     display: block;
 }
 
-.UIBar {
-    box-shadow: -2px -2px 8px rgba(0, 0, 0, 0.4);
-    background: #2d2929;
-    background: -moz-linear-gradient(top, #2d2929 0%, #111111 100%);
-    background: -webkit-linear-gradient(top, #2d2929 0%,#111111 100%);
-    background: linear-gradient(to bottom, #2d2929 0%,#111111 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#2d2929', endColorstr='#111111',GradientType=0 );
-}
-
 }
 
 @media (max-width: 800px) {
 
+.fullscreen-link {
+    display: none !important;
+}
+
 .Text {
     margin-bottom: 10px;
     max-width: 90%;
-    font-size: 1.3em;
 }
 
 .Toothrot {
@@ -833,7 +848,7 @@ strong, b {
 }
 
 .disarmed {
-    opacity: 0.3;
+    opacity: 0.6;
     pointer-events: none;
     cursor: default;
 }
@@ -843,7 +858,7 @@ strong, b {
 }
 
 .Option.disarmed.clicked {
-    opacity: 0.8;
+    opacity: 1;
 }
 
 .link.clicked {
@@ -869,6 +884,10 @@ strong, b {
 
 .next-indicator.disabled {
     opacity: 0;
+}
+
+.event {
+    font-style: italic;
 }
 
 

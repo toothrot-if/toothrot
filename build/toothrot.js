@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Sun, 06 Aug 2017 17:15:26 GMT
+    Build time: Mon, 07 Aug 2017 12:30:22 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5425,173 +5425,6 @@ module.exports = create;
 
 },{"howler":18}],55:[function(require,module,exports){
 //
-// # Script environment component
-//
-// The environment for scripts. It's available in scripts as: _
-//
-
-function create(context) {
-    
-    var env = {
-        oneOf: function () {
-            return arguments[Math.floor(Math.random() * arguments.length)];
-        }
-    };
-    
-    function init() {
-        
-        var _ = context.get("_");
-        
-        Object.keys(_).forEach(function (key) {
-            set(key, _[key]);
-        });
-    }
-    
-    function destroy() {
-        env = null;
-    }
-    
-    function set(key, value) {
-        env[key] = value;
-    }
-    
-    function get(key) {
-        return env[key];
-    }
-    
-    function has(key) {
-        return (key in env);
-    }
-    
-    function getAll() {
-        return env;
-    }
-    
-    return {
-        init: init,
-        destroy: destroy,
-        set: set,
-        get: get,
-        getAll: getAll,
-        has: has
-    };
-}
-
-module.exports = create;
-
-},{}],56:[function(require,module,exports){
-
-function create(context) {
-    
-    var mode, modes, focusOffset;
-    
-    function init() {
-        modes = {};
-    }
-    
-    function destroy() {
-        modes = null;
-    }
-    
-    function getElements() {
-        return document.querySelectorAll("[data-focus-mode='" + mode + "']");
-    }
-    
-    function setMode(newMode) {
-        context.emit("before_change_focus_mode", mode);
-        mode = newMode;
-        context.emit("change_focus_mode", mode);
-    }
-    
-    function getMode() {
-        return mode;
-    }
-    
-    function hasMode(name) {
-        return (name in modes);
-    }
-    
-    function previous() {
-        
-        var element;
-        
-        if (typeof focusOffset !== "number") {
-            focusOffset = 0;
-        }
-        
-        focusOffset -= 1;
-        
-        if (focusOffset < 0) {
-            focusOffset = count() - 1;
-        }
-        
-        element = getElementInFocus();
-        
-        context.emit("focus_previous", element);
-        context.emit("focus_change", element);
-    }
-    
-    function next() {
-        
-        var element;
-        
-        if (typeof focusOffset !== "number") {
-            focusOffset = -1;
-        }
-        
-        focusOffset += 1;
-        
-        if (focusOffset > count() - 1) {
-            focusOffset = 0;
-        }
-        
-        element = getElementInFocus();
-        
-        context.emit("focus_next", element);
-        context.emit("focus_change", element);
-    }
-    
-    function execute() {
-        
-        if (typeof focusOffset === "number") {
-            getElementInFocus().click();
-            reset();
-        }
-        else {
-            document.activeElement.click();
-        }
-    }
-    
-    function getElementInFocus() {
-        return getElements()[focusOffset];
-    }
-    
-    function count() {
-        return getElements().length;
-    }
-    
-    function reset() {
-        focusOffset = undefined;
-    }
-    
-    return {
-        init: init,
-        destroy: destroy,
-        getMode: getMode,
-        setMode: setMode,
-        hasMode: hasMode,
-        getElements: getElements,
-        getElementInFocus: getElementInFocus,
-        execute: execute,
-        next: next,
-        previous: previous
-    };
-}
-
-module.exports = create;
-
-},{}],57:[function(require,module,exports){
-//
 // # Highlighter Component
 //
 // The highlighter is an absolutely positioned element that can be moved over
@@ -5601,9 +5434,10 @@ module.exports = create;
 
 var compose = require("enjoy-core/compose");
 var transform = require("transform-js").transform;
-var setStyle = require("../utils/setStyle");
-var scrolling = require("../utils/scrolling");
-var getAbsoluteRect = require("../utils/getAbsoluteRect");
+
+var setStyle = require("../../utils/browser/setStyle");
+var scrolling = require("../../utils/browser/scrolling");
+var getAbsoluteRect = require("../../utils/browser/getAbsoluteRect");
 
 function create(context) {
     
@@ -5713,550 +5547,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/getAbsoluteRect":72,"../utils/scrolling":78,"../utils/setStyle":79,"enjoy-core/compose":11,"transform-js":20}],58:[function(require,module,exports){
-/* eslint-disable no-console */
-
-var clone = require("clone");
-var merge = require("deepmerge");
-var evalScript = require("../utils/evalScript");
-
-// Wait how long before next() works again after a return?
-// This is to prevent popping more stuff from the stack than
-// is expected.
-var NEXT_RETURN_WAIT = 1000;
-
-var none = function () {};
-
-function create(context) {
-    
-    var story, vars, env, nodes, storage, settings, focus, currentNode, nextClickTime, timeoutId;
-    
-    // A stack for remembering which node to return to.
-    var stack = [];
-    
-    function init() {
-        
-        env = context.getComponent("env");
-        vars = context.getComponent("vars");
-        story = context.getComponent("story");
-        focus = context.getComponent("focus");
-        nodes = context.getComponent("nodes");
-        storage = context.getComponent("storage");
-        settings = context.getComponent("settings");
-        
-        nextClickTime = Date.now();
-        
-        focus.setMode("screen");
-    }
-    
-    function destroy() {
-        env = null;
-        vars = null;
-        story = null;
-    }
-    
-    function start() {
-        clearState();
-        runNode(story.getNode("start"));
-    }
-    
-    function clearState() {
-        stack = [];
-        vars.clear();
-        context.emit("clear_state");
-    }
-    
-    function serialize() {
-        
-        var currentNodeId = currentNode ? currentNode.id : "start";
-        
-        return JSON.stringify({
-            vars: vars.getAll(),
-            stack: stack,
-            node: currentNodeId,
-            text: story.getNode(currentNodeId).content
-        });
-    }
-    
-    function resume(data) {
-        
-        vars.clear();
-        
-        data = JSON.parse(data);
-        stack = data.stack;
-        
-        Object.keys(data.vars).forEach(function (key) {
-            vars.set(key, data.vars[key]);
-        });
-        
-        context.emit("resume_game", data);
-        
-        runNode(story.getNode(data.node));
-    }
-    
-    function loadCurrentSlot() {
-        load("current");
-    }
-    
-    function hasCurrentSlot(then) {
-        return hasSlot("current", function (error, exists) {
-            
-            if (exists) {
-                settings.set("current_slot_exists", true);
-            }
-            
-            if (then) {
-                then(error, exists);
-            }
-        });
-    }
-    
-    function hasSlot(name, then) {
-        storage.load(name, function (error, data) {
-            then(error, !!data);
-        });
-    }
-    
-    function load(name, then) {
-        
-        then = then || none;
-        
-        storage.load(name, function (error, data) {
-            
-            if (error) {
-                return;
-            }
-            
-            resume(data.data);
-            then();
-        });
-    }
-    
-    function save(name, then) {
-        
-        then = then || none;
-        
-        storage.save(name, serialize(), function (error) {
-            
-            if (error) {
-                return;
-            }
-            
-            then();
-        });
-    }
-    
-    function hasQuickSlot(quickSlotId, then) {
-        return hasSlot("qs_" + quickSlotId, then);
-    }
-    
-    function loadQuick(quickSlotId, then) {
-        return load("qs_" + quickSlotId, then);
-    }
-    
-    function saveQuick(quickSlotId, then) {
-        return save("qs_" + quickSlotId, then);
-    }
-    
-    function runNodeById(node) {
-        runNode(story.getNode(node));
-    }
-    
-    function runNode(node, nextType) {
-        
-        var skipTo;
-        var data = nodes.get(node.id);
-        var copy = merge(clone(story.getSection(node.section)), clone(node));
-        
-        copy.items = [];
-        
-        console.log("Running node '" + node.id + "'...");
-        
-        focus.setMode("node");
-        
-        if (timeoutId) {
-            clearInterval(timeoutId);
-            timeoutId = undefined;
-            context.emit("timer_end");
-        }
-        
-        context.emit("before_run_node", node);
-        
-        env.set("skipTo", function (id) {
-            skipTo = id;
-        });
-        
-        env.set("node", function (id) {
-            
-            if (id) {
-                return nodes.get(id);
-            }
-            
-            return nodes.get(copy.id);
-        });
-        
-        env.set("self", getSelf);
-        
-        env.set("addOption", function (label, target, value) {
-            copy.options.push({
-                type: "option",
-                value: value || "",
-                line: 0,
-                label: "" + label,
-                target: "" + (target || "")
-            });
-        });
-        
-        if (node.scripts.entry) {
-            runScript(node.scripts.entry);
-        }
-        
-        copy.content = copy.content.replace(/\(@\s*([a-zA-Z0-9_]+)\s*@\)/g, function (match, slot) {
-            
-            var script;
-            var result = "";
-            
-            if (!(slot in node.scripts)) {
-                console.warn("No script for slot '" + slot + "' at node '" + node.id + "'.");
-                return "";
-            }
-            
-            script = node.scripts[slot];
-            
-            result = runScript(script);
-            
-            return result || "";
-        });
-        
-        if (data.isntSneaky()) {
-            
-            data.raw().contains.forEach(function (id) {
-                
-                var scriptResult;
-                var item = story.getNode(id);
-                var data = nodes.get(id).raw();
-                
-                if (!item || !item.scripts.brief) {
-                    return;
-                }
-                
-                if (data.wasIn.indexOf(node.id) < 0) {
-                    data.wasIn.push(node.id);
-                }
-                
-                env.set("self", function () {
-                    return nodes.get(id);
-                });
-                
-                scriptResult = runScript(item.scripts.brief);
-                
-                copy.items.push({
-                    id: item.id,
-                    text: scriptResult
-                });
-                
-                env.set("self", getSelf);
-            });
-        }
-        
-        copy.options = copy.options.filter(function (option) {
-            
-            var hasFlag;
-            
-            if (!option.condition) {
-                return true;
-            }
-            
-            hasFlag = nodes.get(node.id).is(option.condition.flag);
-            
-            return (option.condition.not ? !hasFlag : hasFlag);
-        });
-        
-        if (skipTo) {
-            console.log("Skipping from node '" + node.id + "' to '" + skipTo + "'.");
-            return runNode(story.getNode(skipTo));
-        }
-        
-        if (currentNode && !node.parent && nextType !== "return") {
-            
-            if (stack.indexOf(currentNode.id) >= 0) {
-                stack.splice(0, stack.length);
-            }
-            
-            stack.push(currentNode.id);
-        }
-        
-        context.emit("run_node", copy);
-        
-        currentNode = node;
-        
-        storage.save("current", serialize());
-        
-        if (typeof data.get("timeout") === "number") {
-            startTimer(node);
-        }
-        
-        function runScript(script) {
-            
-            var result;
-            
-            try {
-                result = evalScript(story.getAll(), env.getAll(), vars, script.body, script.line);
-            }
-            catch (error) {
-                console.error("Cannot execute script at line " + script.line + ":", error);
-            }
-            
-            return result;
-        }
-        
-        function getSelf() {
-            return nodes.get(node.id);
-        }
-    }
-    
-    function next() {
-        
-        var lastNodes, tag;
-        
-        if (focus.getMode() !== "node" || !currentNode) {
-            return;
-        }
-        
-        if (currentNode.next) {
-            console.log("Going to next node...");
-            runNode(story.getNode(currentNode.next), "next");
-            nextClickTime = Date.now();
-        }
-        else if (currentNode.returnToLast && nextClickWaitTimeReached()) {
-            
-            lastNodes = vars.get("_lastNodes") || {};
-            tag = currentNode.returnToLastTag;
-            
-            if (currentNode.returnToLastTag && lastNodes[tag]) {
-                console.log("Returning to last node with tag '" + tag + "'...");
-                runNode(story.getNode(lastNodes[tag]));
-            }
-            else {
-                console.log("Returning to previous node...");
-                runNode(story.getNode(stack.pop()), "return");
-            }
-            
-            nextClickTime = Date.now();
-        }
-        
-    }
-    
-    function nextClickWaitTimeReached() {
-        return Date.now() - nextClickTime > NEXT_RETURN_WAIT;
-    }
-    
-    function startTimer(node) {
-        
-        var timeout = node.data.timeout;
-        var start = Date.now();
-        
-        context.emit("timer_start", timeout);
-        
-        function updateTimer(percentage) {
-            
-            var remaining = 100 - percentage;
-            
-            context.emit("timer_update", {
-                percentage: percentage,
-                remaining: remaining
-            });
-        }
-        
-        timeoutId = setInterval(function () {
-            
-            var time = Date.now() - start;
-            var percentage = Math.round(time / (timeout / 100));
-            var options = node.options;
-            
-            if (percentage >= 100) {
-                percentage = 100;
-                updateTimer(percentage);
-                clearInterval(timeoutId);
-                timeoutId = undefined;
-            }
-            else {
-                updateTimer(percentage);
-                return;
-            }
-            
-            context.emit("timer_end");
-            
-            if (options.length && typeof node.defaultOption === "number") {
-                
-                if (node.defaultOption < 0 || node.defaultOption >= options.length) {
-                    throw new Error("Unknown default option '" + node.defaultOption +
-                        "' in node '" + node.id + "' (line " + node.line + ").");
-                }
-                
-                vars._choice = options[node.defaultOption].value;
-                
-                runNode(story.getNode(options[node.defaultOption].target));
-            }
-            else if (options.length) {
-                
-                vars._choice = options[0].value;
-                
-                runNode(story.getNode(options[0].target));
-            }
-            else {
-                next();
-            }
-        }, 50);
-    }
-    
-    function getCurrentNodeId() {
-        if (currentNode) {
-            return currentNode.id;
-        }
-    }
-    
-    return {
-        init: init,
-        destroy: destroy,
-        start: start,
-        runNode: runNode,
-        runNodeById: runNodeById,
-        next: next,
-        save: save,
-        load: load,
-        hasSlot: hasSlot,
-        hasCurrentSlot: hasCurrentSlot,
-        loadCurrentSlot: loadCurrentSlot,
-        hasQuickSlot: hasQuickSlot,
-        loadQuick: loadQuick,
-        saveQuick: saveQuick,
-        clearState: clearState,
-        getCurrentNodeId: getCurrentNodeId
-    };
-    
-}
-
-module.exports = create;
-
-},{"../utils/evalScript":71,"clone":7,"deepmerge":8}],59:[function(require,module,exports){
-
-var clone = require("clone");
-var createApi = require("../utils/node.js");
-
-function createKey(id) {
-    return "__objdata_" + id;
-}
-
-function create(context) {
-    
-    var story, vars, env;
-    
-    function init() {
-        
-        env = context.getComponent("env");
-        vars = context.getComponent("vars");
-        story = context.getComponent("story");
-        
-        env.set("last", function (tag) {
-            
-            var lastNodes = vars.get("_lastNodes") || {};
-            
-            return lastNodes[tag];
-        });
-        
-        context.on("before_run_node", onBeforeRunNode);
-    }
-    
-    function destroy() {
-        
-        context.removeListener("before_run_node", onBeforeRunNode);
-        
-        vars = null;
-        story = null;
-    }
-    
-    function onBeforeRunNode(node) {
-        
-        var lastNodes = vars.get("_lastNodes") || {};
-        
-        getData(node.id).tags.forEach(function (originalTag) {
-            
-            var allTags = resolveTagHierarchy(originalTag);
-            
-            allTags.push(originalTag);
-            
-            allTags.forEach(function (tag) {
-                lastNodes[tag] = node.id;
-            });
-        });
-        
-        vars.set("_lastNodes", lastNodes);
-    }
-    
-    function resolveTagHierarchy(tag) {
-        
-        var tags = [];
-        var hierarchy = story.getHierarchy();
-        var ancestors = hierarchy[tag] || [];
-        
-        ancestors.forEach(function (ancestor) {
-            
-            tags.push(ancestor);
-            
-            resolveTagHierarchy(ancestor).forEach(function (otherTag) {
-                tags.push(otherTag);
-            });
-        });
-        
-        return tags;
-    }
-    
-    function get(id) {
-        
-        var data;
-        
-        if (!has(id)) {
-            throw new Error("No such node id: " + id);
-        }
-        
-        data = getData(id);
-        
-        return createApi(id, data, context.getComponent("nodes"));
-    }
-    
-    function has(id) {
-        return hasData(id) || story.hasNode(id);
-    }
-    
-    function hasData(id) {
-        return !!vars.get(createKey(id));
-    }
-    
-    function getData(id) {
-        
-        var key = createKey(id);
-        var data = vars.get(key);
-        
-        if (!data) {
-            data = clone(story.getNode(id).data);
-            vars.set(key, data);
-        }
-        
-        return data;
-    }
-    
-    return {
-        init: init,
-        destroy: destroy,
-        get: get,
-        has: has
-    };
-}
-
-module.exports = create;
-
-},{"../utils/node.js":74,"clone":7}],60:[function(require,module,exports){
+},{"../../utils/browser/getAbsoluteRect":70,"../../utils/browser/scrolling":75,"../../utils/browser/setStyle":76,"enjoy-core/compose":11,"transform-js":20}],56:[function(require,module,exports){
 //
 // # Screens component
 //
@@ -6274,8 +5565,8 @@ var formatter = require("vrep").create;
 var format = require("vrep").format;
 var transform = require("transform-js").transform;
 
-var evalScript = require("../utils/evalScript.js");
-var createConfirm = require("../utils/confirm.js");
+var evalScript = require("../../utils/evalScript.js");
+var createConfirm = require("../../utils/browser/confirm.js");
 
 var MAX_SLOTS = 20;
 var SCREEN_FADE_IN = 400;
@@ -6832,528 +6123,16 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/confirm.js":69,"../utils/evalScript.js":71,"enjoy-core/each":12,"transform-js":20,"vrep":53}],61:[function(require,module,exports){
-
-var clone = require("clone");
-
-function none() {
-    // does nothing
-}
-
-function create(context) {
-    
-    var storage, settings;
-    
-    function init() {
-        
-        storage = context.getComponent("storage");
-        
-        settings = {
-            textSpeed: 50,
-            soundVolume: 100,
-            ambienceVolume: 100,
-            musicVolume: 100
-        };
-    }
-    
-    function destroy() {
-        storage = null;
-    }
-    
-    function set(name, value) {
-        settings[name] = value;
-        context.emit("update_setting", name);
-    }
-    
-    function remove(name) {
-        delete settings[name];
-        context.emit("remove_setting", name);
-    }
-    
-    function get(name) {
-        return settings[name];
-    }
-    
-    function getAll() {
-        return clone(settings);
-    }
-    
-    function has(name) {
-        return (name in settings);
-    }
-    
-    function load(then) {
-        
-        then = then || none;
-        
-        storage.load("settings", function (error, data) {
-            
-            if (error) {
-                return then(error);
-            }
-            
-            if (!data) {
-                storage.save("settings", settings.getAll(), function () {
-                    then();
-                });
-            }
-            else {
-                mergeSettings(data.data);
-                then();
-            }
-        });
-    }
-    
-    function mergeSettings(other) {
-        for (var key in other) {
-            set(key, other[key]);
-        }
-    }
-    
-    function save(then) {
-        
-        then = then || none;
-        
-        storage.save("settings", getAll(), function () {
-            then();
-        });
-    }
-    
-    return {
-        init: init,
-        destroy: destroy,
-        load: load,
-        save: save,
-        update: mergeSettings,
-        remove: remove,
-        set: set,
-        has: has,
-        get: get,
-        getAll: getAll
-    };
-    
-}
-
-module.exports = create;
-
-},{"clone":7}],62:[function(require,module,exports){
-//
-// Module for storing the game state in local storage.
-//
-// Savegames look like this:
-//
-//
-// {
-//     name: "fooBarBaz", // a name. will be given by the engine
-//     time: 012345678    // timestamp - this must be set by the storage
-//     data: {}           // this is what the engine gives the storage
-// }
-
-var none = function () {};
-
-function create(context) {
-    
-    var storageType, storageKey, getItem, setItem;
-    var memoryStorage = Object.create(null);
-    var testStorageKey = "TOOTHROT-storage-test";
-    
-    try {
-        
-        localStorage.setItem(testStorageKey, "works");
-        
-        if (localStorage.getItem(testStorageKey) === "works") {
-            storageType = "local";
-        }
-    }
-    catch (error) {
-        console.warn(error);
-    }
-    
-    if (!storageType) {
-        
-        try {
-            
-            sessionStorage.setItem(testStorageKey, "works");
-            
-            if (sessionStorage.getItem(testStorageKey) === "works") {
-                storageType = "session";
-            }
-        }
-        catch (error) {
-            console.warn(error);
-        }
-    }
-    
-    if (!storageType) {
-        storageType = "memory";
-    }
-    
-    if (storageType === "local") {
-        
-        getItem = function (name) {
-            return JSON.parse(localStorage.getItem(name) || "{}");
-        };
-        
-        setItem = function (name, value) {
-            return localStorage.setItem(name, JSON.stringify(value));
-        };
-    }
-    else if (storageType === "session") {
-        
-        getItem = function (name) {
-            return JSON.parse(sessionStorage.getItem(name) || "{}");
-        };
-        
-        setItem = function (name, value) {
-            return sessionStorage.setItem(name, JSON.stringify(value));
-        };
-    }
-    else {
-        
-        getItem = function (name) {
-            return JSON.parse(memoryStorage[name] || "{}");
-        };
-        
-        setItem = function (name, value) {
-            return memoryStorage[name] = JSON.stringify(value);
-        };
-    }
-    
-    function init() {
-        
-        var story = context.getComponent("story");
-        
-        // Each story should have its own storage key so that
-        // one story doesn't overwrite another story's savegames
-        // and settings.
-        storageKey = "TOOTHROT-" + story.getTitle();
-    }
-    
-    function save(name, data, then) {
-        
-        var store, error;
-        
-        then = then || none;
-        
-        try {
-            
-            store = getItem(storageKey);
-            
-            store[name] = {
-                name: name,
-                time: Date.now(),
-                data: data
-            };
-            
-            setItem(storageKey, store);
-            
-        }
-        catch (e) {
-            console.error(e);
-            error = e;
-        }
-        
-        if (error) {
-            return then(error);
-        }
-        
-        then(null, true);
-    }
-    
-    function load(name, then) {
-        
-        var value, error;
-        
-        then = then || none;
-        
-        try {
-            value = getItem(storageKey)[name];
-        }
-        catch (e) {
-            console.error(e);
-            error = e;
-        }
-        
-        if (error) {
-            return then(error);
-        }
-        
-        then(null, value);
-    }
-    
-    function all(then) {
-        
-        var value, error;
-        
-        then = then || none;
-        
-        try {
-            value = getItem(storageKey);
-        }
-        catch (e) {
-            console.error(e);
-            error = e;
-        }
-        
-        if (error) {
-            return then(error);
-        }
-        
-        then(null, value);
-    }
-    
-    function remove(name, then) {
-        
-        var value, error;
-        
-        then = then || none;
-        
-        try {
-            value = getItem(storageKey);
-        }
-        catch (e) {
-            console.error(e);
-            error = e;
-        }
-        
-        if (error) {
-            return then(error);
-        }
-        
-        delete value[name];
-        
-        setItem(storageKey, value);
-        
-        then(null, true);
-    }
-    
-    return {
-        init: init,
-        save: save,
-        load: load,
-        all: all,
-        remove: remove
-    };
-}
-
-module.exports = create;
-
-},{}],63:[function(require,module,exports){
-
-function create(context) {
-    
-    var story;
-    
-    function init() {
-        story = context.getResource("story");
-    }
-    
-    function destroy() {
-        story = null;
-    }
-    
-    function getNode(name) {
-        return story.nodes[name];
-    }
-    
-    function hasNode(name) {
-        return (name in story.nodes);
-    }
-    
-    function getSection(name) {
-        return story.sections[name];
-    }
-    
-    function hasSection(name) {
-        return (name in story.sections);
-    }
-    
-    function getMeta(name) {
-        return story.meta[name];
-    }
-    
-    function hasMeta(name) {
-        return (name in story.meta);
-    }
-    
-    function getTitle() {
-        return getMeta("title");
-    }
-    
-    function getAll() {
-        return story;
-    }
-    
-    function getHierarchy() {
-        return story.head.hierarchy;
-    }
-    
-    return {
-        init: init,
-        destroy: destroy,
-        getNode: getNode,
-        hasNode: hasNode,
-        getSection: getSection,
-        hasSection: hasSection,
-        getMeta: getMeta,
-        hasMeta: hasMeta,
-        getTitle: getTitle,
-        getAll: getAll,
-        getHierarchy: getHierarchy
-    };
-}
-
-module.exports = create;
-
-},{}],64:[function(require,module,exports){
-
-var clone = require("clone");
-
-function create(context) {
-    
-    var fullscreenMode, features;
-    
-    function init() {
-        features = {
-            fullscreen: hasFullscreen(),
-            exit: canExit()
-        };
-    }
-    
-    function destroy() {
-        features = null;
-    }
-    
-    function getFeatures() {
-        return clone(features);
-    }
-    
-    function toggleFullscreen() {
-        
-        var fullscreenOn = fullscreenEnabled() || (typeof nw !== "undefined" && fullscreenMode);
-        
-        if (fullscreenOn) {
-            exitFullscreen();
-        }
-        else {
-            fullscreen();
-        }
-        
-        context.emit("fullscreen_change", !fullscreenOn);
-    }
-    
-    function fullscreenEnabled() {
-        return document.fullscreenElement ||
-            document.mozFullScreenElement ||
-            document.msFullscreenElement ||
-            document.webkitFullscreenElement;
-    }
-    
-    function fullscreen() {
-        
-        fullscreenMode = true;
-        
-        if (typeof nw !== "undefined") {
-            nwEnterFullscreen();
-        }
-        else {
-            requestFullscreen(document.body);
-        }
-    }
-    
-    function exitFullscreen() {
-        
-        fullscreenMode = false;
-        
-        if (typeof nw !== "undefined") {
-            nwExitFullscreen();
-        }
-        else {
-            exitBrowserFullscreen();
-        }
-    }
-    
-    function nwEnterFullscreen() {
-        window.require('nw.gui').Window.get().enterKioskMode();
-    }
-    
-    function nwExitFullscreen() {
-        window.require('nw.gui').Window.get().leaveKioskMode();
-    }
-    
-    function exitBrowserFullscreen() {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-        else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
-        else if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
-        }
-        else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        }
-    }
-    
-    function requestFullscreen(element) {
-        if (element.requestFullscreen) {
-            element.requestFullscreen();
-        }
-        else if (element.msRequestFullscreen) {
-            element.msRequestFullscreen();
-        }
-        else if (element.mozRequestFullScreen) {
-            element.mozRequestFullScreen();
-        }
-        else if (element.webkitRequestFullscreen) {
-            element.webkitRequestFullscreen();
-        }
-    }
-    
-    function hasFullscreen() {
-        return typeof nw !== undefined;
-    }
-    
-    function canExit() {
-        return typeof nw !== undefined;
-    }
-    
-    function exit() {
-        try {
-            var gui = window.require("nw.gui");
-            gui.App.quit();
-        }
-        catch (error) {
-            console.error("Cannot exit: " + error);
-        }
-    }
-    
-    return {
-        init: init,
-        destroy: destroy,
-        exit: exit,
-        canExit: canExit,
-        getFeatures: getFeatures,
-        hasFullscreen: hasFullscreen,
-        toggleFullscreen: toggleFullscreen,
-        enterFullscreen: fullscreen,
-        exitFullscreen: exitFullscreen
-    };
-}
-
-module.exports = create;
-
-},{"clone":7}],65:[function(require,module,exports){
+},{"../../utils/browser/confirm.js":69,"../../utils/evalScript.js":78,"enjoy-core/each":12,"transform-js":20,"vrep":53}],57:[function(require,module,exports){
 /* global __line */
 
 var format = require("vrep").format;
 var classList = require("class-manipulator").list;
-var scrolling = require("../utils/scrolling.js");
-var revealText = require("../utils/revealText.js");
-var getClickableParent = require("../utils/getClickableParent");
-var createNotification = require("../utils/notifications.js").create;
-var createConfirm = require("../utils/confirm.js");
+var scrolling = require("../../utils/browser/scrolling.js");
+var revealText = require("../../utils/browser/revealText.js");
+var getClickableParent = require("../../utils/browser/getClickableParent");
+var createNotification = require("../../utils/browser/notifications.js").create;
+var createConfirm = require("../../utils/browser/confirm.js");
 
 var KEY_CODE_ENTER = 13;
 var KEY_CODE_ESCAPE = 27;
@@ -7369,7 +6148,7 @@ function create(context) {
     var ui, text, indicator, optionsParent, optionsContainer;
     var container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
-    var system, settings, env, focus, confirm;
+    var system, settings, env, focus, confirm, nodes, bg1, bg2, bg3;
     
     function init() {
         
@@ -7377,6 +6156,7 @@ function create(context) {
         vars = context.getComponent("vars");
         story = context.getComponent("story");
         focus = context.getComponent("focus");
+        nodes = context.getComponent("nodes");
         system = context.getComponent("system");
         screens = context.getComponent("screens");
         settings = context.getComponent("settings");
@@ -7388,7 +6168,10 @@ function create(context) {
         confirm = createConfirm(context);
         
         timerTemplate = '<div class="TimerBar" style="width: {remaining}%;"></div>';
-    
+        
+        bg1 = document.createElement("div");
+        bg2 = document.createElement("div");
+        bg3 = document.createElement("div");
         container = document.createElement("div");
         
         ui = document.createElement("div");
@@ -7409,6 +6192,10 @@ function create(context) {
         
         container.setAttribute("class", "Toothrot");
         
+        bg1.setAttribute("class", "toothrot-bg1");
+        bg2.setAttribute("class", "toothrot-bg2");
+        bg3.setAttribute("class", "toothrot-bg3");
+        
         text.setAttribute("class", "Text");
         text.setAttribute("aria-live", "polite");
         text.setAttribute("aria-atomic", "true");
@@ -7422,6 +6209,9 @@ function create(context) {
         optionsParent.appendChild(optionsContainer);
         container.appendChild(text);
         container.appendChild(screenContainer);
+        document.body.appendChild(bg1);
+        document.body.appendChild(bg2);
+        document.body.appendChild(bg3);
         document.body.appendChild(container);
         document.body.appendChild(ui);
         
@@ -7524,6 +6314,31 @@ function create(context) {
         container.setAttribute("data-section", story.getNode("start").section);
     }
     
+    function setBg(bg) {
+        
+        if (bg3.getAttribute("data-current-bg") === bg) {
+            return;
+        }
+        
+        if (bg1.getAttribute("data-used")) {
+            bg2.style.background = bg;
+            bg2.style.opacity = 1;
+            bg1.style.opacity = 0;
+            bg1.removeAttribute("data-used");
+            bg2.setAttribute("data-used", "true");
+        }
+        else {
+            bg1.style.background = bg;
+            bg1.style.opacity = 1;
+            bg2.style.opacity = 0;
+            bg2.removeAttribute("data-used");
+            bg1.setAttribute("data-used", "true");
+        }
+        
+        bg3.setAttribute("data-current-bg", bg);
+        vars.set("__current_bg", bg);
+    }
+    
     function onNodeChange(node) {
         
         if (!currentNode) {
@@ -7561,13 +6376,24 @@ function create(context) {
         
         function replaceContent() {
             
+            var bg;
             var content = node.content;
+            var data = nodes.get(node.id);
             
             currentNode = node;
             currentSection = node.section;
             
             container.setAttribute("data-node-id", currentNode.id);
             container.setAttribute("data-section", currentNode.section);
+            
+            if (data.has("background")) {
+                bg = data.get("background");
+            }
+            else {
+                bg = vars.get("__current_bg");
+            }
+            
+            setBg(bg);
             
             node.links.forEach(function (link, i) {
                 if (link.type === "direct_link") {
@@ -7608,6 +6434,20 @@ function create(context) {
                 
             }).join("");
             
+            node.events.forEach(function (event) {
+                
+                if (event && typeof event === "object") {
+                    event = event.text;
+                }
+                
+                if (!event) {
+                    return;
+                }
+                
+                content += '<p class="event">' + event + '</p>';
+                
+            });
+            
             content = (function () {
                 
                 var mockParent = document.createElement("div");
@@ -7627,6 +6467,7 @@ function create(context) {
                 node.data.timeout ||
                 node.links.length ||
                 node.reveal === false ||
+                data.children().length ||
                 settings.get("textSpeed") >= 100
             ) {
                 insertSpecials();
@@ -7917,7 +6758,1246 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/confirm.js":69,"../utils/getClickableParent":73,"../utils/notifications.js":75,"../utils/revealText.js":76,"../utils/scrolling.js":78,"class-manipulator":6,"vrep":53}],66:[function(require,module,exports){
+},{"../../utils/browser/confirm.js":69,"../../utils/browser/getClickableParent":71,"../../utils/browser/notifications.js":72,"../../utils/browser/revealText.js":73,"../../utils/browser/scrolling.js":75,"class-manipulator":6,"vrep":53}],58:[function(require,module,exports){
+//
+// # Script environment component
+//
+// The environment for scripts. It's available in scripts as: _
+//
+
+function create(context) {
+    
+    var env = {
+        oneOf: function () {
+            return arguments[Math.floor(Math.random() * arguments.length)];
+        }
+    };
+    
+    function init() {
+        
+        var _ = context.get("_");
+        
+        Object.keys(_).forEach(function (key) {
+            set(key, _[key]);
+        });
+    }
+    
+    function destroy() {
+        env = null;
+    }
+    
+    function set(key, value) {
+        env[key] = value;
+    }
+    
+    function get(key) {
+        return env[key];
+    }
+    
+    function has(key) {
+        return (key in env);
+    }
+    
+    function getAll() {
+        return env;
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        set: set,
+        get: get,
+        getAll: getAll,
+        has: has
+    };
+}
+
+module.exports = create;
+
+},{}],59:[function(require,module,exports){
+
+function create(context) {
+    
+    var mode, modes, focusOffset;
+    
+    function init() {
+        modes = {};
+    }
+    
+    function destroy() {
+        modes = null;
+    }
+    
+    function getElements() {
+        return document.querySelectorAll("[data-focus-mode='" + mode + "']");
+    }
+    
+    function setMode(newMode) {
+        context.emit("before_change_focus_mode", mode);
+        mode = newMode;
+        context.emit("change_focus_mode", mode);
+    }
+    
+    function getMode() {
+        return mode;
+    }
+    
+    function hasMode(name) {
+        return (name in modes);
+    }
+    
+    function previous() {
+        
+        var element;
+        
+        if (typeof focusOffset !== "number") {
+            focusOffset = 0;
+        }
+        
+        focusOffset -= 1;
+        
+        if (focusOffset < 0) {
+            focusOffset = count() - 1;
+        }
+        
+        element = getElementInFocus();
+        
+        context.emit("focus_previous", element);
+        context.emit("focus_change", element);
+    }
+    
+    function next() {
+        
+        var element;
+        
+        if (typeof focusOffset !== "number") {
+            focusOffset = -1;
+        }
+        
+        focusOffset += 1;
+        
+        if (focusOffset > count() - 1) {
+            focusOffset = 0;
+        }
+        
+        element = getElementInFocus();
+        
+        context.emit("focus_next", element);
+        context.emit("focus_change", element);
+    }
+    
+    function execute() {
+        
+        if (typeof focusOffset === "number") {
+            getElementInFocus().click();
+            reset();
+        }
+        else {
+            document.activeElement.click();
+        }
+    }
+    
+    function getElementInFocus() {
+        return getElements()[focusOffset];
+    }
+    
+    function count() {
+        return getElements().length;
+    }
+    
+    function reset() {
+        focusOffset = undefined;
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        getMode: getMode,
+        setMode: setMode,
+        hasMode: hasMode,
+        getElements: getElements,
+        getElementInFocus: getElementInFocus,
+        execute: execute,
+        next: next,
+        previous: previous
+    };
+}
+
+module.exports = create;
+
+},{}],60:[function(require,module,exports){
+/* eslint-disable no-console */
+
+var clone = require("clone");
+var merge = require("deepmerge");
+var evalScript = require("../utils/evalScript");
+
+// Wait how long before next() works again after a return?
+// This is to prevent popping more stuff from the stack than
+// is expected.
+var NEXT_RETURN_WAIT = 1000;
+
+var none = function () {};
+
+function create(context) {
+    
+    var story, vars, env, nodes, storage, settings, focus, currentNode, nextClickTime, timeoutId;
+    
+    // A stack for remembering which node to return to.
+    var stack = [];
+    
+    function init() {
+        
+        env = context.getComponent("env");
+        vars = context.getComponent("vars");
+        story = context.getComponent("story");
+        focus = context.getComponent("focus");
+        nodes = context.getComponent("nodes");
+        storage = context.getComponent("storage");
+        settings = context.getComponent("settings");
+        
+        nextClickTime = Date.now();
+        
+        focus.setMode("screen");
+    }
+    
+    function destroy() {
+        env = null;
+        vars = null;
+        story = null;
+    }
+    
+    function start() {
+        clearState();
+        runNode(story.getNode("start"));
+    }
+    
+    function clearState() {
+        stack = [];
+        vars.clear();
+        context.emit("clear_state");
+    }
+    
+    function serialize() {
+        
+        var currentNodeId = currentNode ? currentNode.id : "start";
+        
+        return JSON.stringify({
+            vars: vars.getAll(),
+            stack: stack.slice(),
+            node: currentNodeId,
+            text: story.getNode(currentNodeId).content
+        });
+    }
+    
+    function resume(data) {
+        
+        vars.clear();
+        
+        console.log("data in resume():", data);
+        
+        data = JSON.parse(data);
+        stack = data.stack.slice();
+        
+        Object.keys(data.vars).forEach(function (key) {
+            vars.set(key, data.vars[key]);
+        });
+        
+        context.emit("resume_game", data);
+        
+        runNode(story.getNode(data.node));
+    }
+    
+    function loadCurrentSlot() {
+        load("current");
+    }
+    
+    function hasCurrentSlot(then) {
+        return hasSlot("current", function (error, exists) {
+            
+            if (exists) {
+                settings.set("current_slot_exists", true);
+            }
+            
+            if (then) {
+                then(error, exists);
+            }
+        });
+    }
+    
+    function hasSlot(name, then) {
+        storage.load(name, function (error, data) {
+            then(error, !!data);
+        });
+    }
+    
+    function load(name, then) {
+        
+        then = then || none;
+        
+        storage.load(name, function (error, data) {
+            
+            if (error) {
+                return;
+            }
+            
+            resume(data.data);
+            then();
+        });
+    }
+    
+    function save(name, then) {
+        
+        then = then || none;
+        
+        storage.save(name, serialize(), function (error) {
+            
+            if (error) {
+                return;
+            }
+            
+            then();
+        });
+    }
+    
+    function hasQuickSlot(quickSlotId, then) {
+        return hasSlot("qs_" + quickSlotId, then);
+    }
+    
+    function loadQuick(quickSlotId, then) {
+        return load("qs_" + quickSlotId, then);
+    }
+    
+    function saveQuick(quickSlotId, then) {
+        return save("qs_" + quickSlotId, then);
+    }
+    
+    function runNodeById(node) {
+        runNode(story.getNode(node));
+    }
+    
+    function runNode(node, nextType) {
+        
+        var skipTo;
+        var data = nodes.get(node.id);
+        var copy = merge(clone(story.getSection(node.section)), clone(node));
+        
+        copy.events = [];
+        copy.items = [];
+        
+        console.log("Running node '" + node.id + "'...");
+        
+        focus.setMode("node");
+        
+        if (timeoutId) {
+            clearInterval(timeoutId);
+            timeoutId = undefined;
+            context.emit("timer_end");
+        }
+        
+        context.emit("before_run_node", node);
+        
+        env.set("event", function (text) {
+            copy.events.push(text);
+        });
+        
+        env.set("events", function () {
+            return copy.events.slice();
+        });
+        
+        env.set("skipTo", function (id) {
+            skipTo = id;
+        });
+        
+        env.set("node", function (id) {
+            
+            if (id) {
+                return nodes.get(id);
+            }
+            
+            return nodes.get(copy.id);
+        });
+        
+        env.set("self", getSelf);
+        
+        env.set("addOption", function (label, target, value) {
+            copy.options.push({
+                type: "option",
+                value: value || "",
+                line: 0,
+                label: "" + label,
+                target: "" + (target || "")
+            });
+        });
+        
+        if (node.scripts.entry) {
+            runScript(node.scripts.entry);
+        }
+        
+        copy.content = copy.content.replace(/\(@\s*([a-zA-Z0-9_]+)\s*@\)/g, function (match, slot) {
+            
+            var script;
+            var result = "";
+            
+            if (!(slot in node.scripts)) {
+                console.warn("No script for slot '" + slot + "' at node '" + node.id + "'.");
+                return "";
+            }
+            
+            script = node.scripts[slot];
+            
+            result = runScript(script);
+            
+            return result || "";
+        });
+        
+        if (data.isntSneaky()) {
+            
+            data.raw().contains.forEach(function (id) {
+                
+                var scriptResult;
+                var item = story.getNode(id);
+                var data = nodes.get(id).raw();
+                
+                if (!item || !item.scripts.brief) {
+                    return;
+                }
+                
+                if (data.wasIn.indexOf(node.id) < 0) {
+                    data.wasIn.push(node.id);
+                }
+                
+                env.set("self", function () {
+                    return nodes.get(id);
+                });
+                
+                scriptResult = runScript(item.scripts.brief);
+                
+                copy.items.push({
+                    id: item.id,
+                    text: scriptResult
+                });
+                
+                env.set("self", getSelf);
+            });
+        }
+        
+        copy.options = copy.options.filter(function (option) {
+            
+            var hasFlag;
+            
+            if (!option.condition) {
+                return true;
+            }
+            
+            hasFlag = nodes.get(node.id).is(option.condition.flag);
+            
+            return (option.condition.not ? !hasFlag : hasFlag);
+        });
+        
+        if (skipTo) {
+            console.log("Skipping from node '" + node.id + "' to '" + skipTo + "'.");
+            return runNode(story.getNode(skipTo));
+        }
+        
+        if (currentNode && !node.parent && nextType !== "return") {
+            
+            if (stack.indexOf(currentNode.id) >= 0) {
+                stack.splice(0, stack.length);
+            }
+            
+            stack.push(currentNode.id);
+        }
+        
+        context.emit("run_node", copy);
+        
+        currentNode = node;
+        
+        storage.save("current", serialize());
+        
+        if (typeof data.get("timeout") === "number") {
+            startTimer(node);
+        }
+        
+        function runScript(script) {
+            
+            var result;
+            
+            try {
+                result = evalScript(
+                    story.getAll(),
+                    env.getAll(),
+                    vars.getAll(),
+                    script.body,
+                    script.line
+                );
+            }
+            catch (error) {
+                console.error("Cannot execute script at line " + script.line + ":", error);
+            }
+            
+            return result;
+        }
+        
+        function getSelf() {
+            return nodes.get(node.id);
+        }
+    }
+    
+    function next() {
+        
+        var lastNodes, tag;
+        
+        if (focus.getMode() !== "node" || !currentNode) {
+            return;
+        }
+        
+        if (currentNode.next) {
+            console.log("Going to next node...");
+            runNode(story.getNode(currentNode.next), "next");
+            nextClickTime = Date.now();
+        }
+        else if (currentNode.returnToLast && nextClickWaitTimeReached()) {
+            
+            lastNodes = vars.get("_lastNodes") || {};
+            tag = currentNode.returnToLastTag;
+            
+            if (currentNode.returnToLastTag && lastNodes[tag]) {
+                console.log("Returning to last node with tag '" + tag + "'...");
+                runNode(story.getNode(lastNodes[tag]));
+            }
+            else {
+                console.log("Returning to previous node...");
+                runNode(story.getNode(stack.pop()), "return");
+            }
+            
+            nextClickTime = Date.now();
+        }
+        
+    }
+    
+    function nextClickWaitTimeReached() {
+        return Date.now() - nextClickTime > NEXT_RETURN_WAIT;
+    }
+    
+    function startTimer(node) {
+        
+        var timeout = node.data.timeout;
+        var start = Date.now();
+        
+        context.emit("timer_start", timeout);
+        
+        function updateTimer(percentage) {
+            
+            var remaining = 100 - percentage;
+            
+            context.emit("timer_update", {
+                percentage: percentage,
+                remaining: remaining
+            });
+        }
+        
+        timeoutId = setInterval(function () {
+            
+            var time = Date.now() - start;
+            var percentage = Math.round(time / (timeout / 100));
+            var options = node.options;
+            
+            if (percentage >= 100) {
+                percentage = 100;
+                updateTimer(percentage);
+                clearInterval(timeoutId);
+                timeoutId = undefined;
+            }
+            else {
+                updateTimer(percentage);
+                return;
+            }
+            
+            context.emit("timer_end");
+            
+            if (options.length && typeof node.defaultOption === "number") {
+                
+                if (node.defaultOption < 0 || node.defaultOption >= options.length) {
+                    throw new Error("Unknown default option '" + node.defaultOption +
+                        "' in node '" + node.id + "' (line " + node.line + ").");
+                }
+                
+                vars.set("_choice", options[node.defaultOption].value);
+                
+                runNode(story.getNode(options[node.defaultOption].target));
+            }
+            else if (options.length) {
+                
+                vars.set("_choice", options[0].value);
+                
+                runNode(story.getNode(options[0].target));
+            }
+            else {
+                next();
+            }
+        }, 50);
+    }
+    
+    function getCurrentNodeId() {
+        if (currentNode) {
+            return currentNode.id;
+        }
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        start: start,
+        runNode: runNode,
+        runNodeById: runNodeById,
+        next: next,
+        save: save,
+        load: load,
+        hasSlot: hasSlot,
+        hasCurrentSlot: hasCurrentSlot,
+        loadCurrentSlot: loadCurrentSlot,
+        hasQuickSlot: hasQuickSlot,
+        loadQuick: loadQuick,
+        saveQuick: saveQuick,
+        clearState: clearState,
+        getCurrentNodeId: getCurrentNodeId
+    };
+    
+}
+
+module.exports = create;
+
+},{"../utils/evalScript":78,"clone":7,"deepmerge":8}],61:[function(require,module,exports){
+
+var clone = require("clone");
+var createApi = require("../utils/node.js");
+
+function createKey(id) {
+    return "__objdata_" + id;
+}
+
+function create(context) {
+    
+    var story, vars, env;
+    
+    function init() {
+        
+        env = context.getComponent("env");
+        vars = context.getComponent("vars");
+        story = context.getComponent("story");
+        
+        env.set("last", function (tag) {
+            
+            var lastNodes = vars.get("_lastNodes") || {};
+            
+            return lastNodes[tag];
+        });
+        
+        context.on("before_run_node", onBeforeRunNode);
+    }
+    
+    function destroy() {
+        
+        context.removeListener("before_run_node", onBeforeRunNode);
+        
+        vars = null;
+        story = null;
+    }
+    
+    function onBeforeRunNode(node) {
+        
+        var lastNodes = vars.get("_lastNodes") || {};
+        
+        getData(node.id).tags.forEach(function (originalTag) {
+            
+            var allTags = resolveTagHierarchy(originalTag);
+            
+            allTags.push(originalTag);
+            
+            allTags.forEach(function (tag) {
+                lastNodes[tag] = node.id;
+            });
+        });
+        
+        vars.set("_lastNodes", lastNodes);
+    }
+    
+    function resolveTagHierarchy(tag) {
+        
+        var tags = [];
+        var hierarchy = story.getHierarchy();
+        var ancestors = hierarchy[tag] || [];
+        
+        ancestors.forEach(function (ancestor) {
+            
+            tags.push(ancestor);
+            
+            resolveTagHierarchy(ancestor).forEach(function (otherTag) {
+                tags.push(otherTag);
+            });
+        });
+        
+        return tags;
+    }
+    
+    function get(id) {
+        
+        var data;
+        
+        if (!has(id)) {
+            throw new Error("No such node id: " + id);
+        }
+        
+        data = getData(id);
+        
+        return createApi(id, data, context.getComponent("nodes"));
+    }
+    
+    function has(id) {
+        return hasData(id) || story.hasNode(id);
+    }
+    
+    function hasData(id) {
+        return !!vars.get(createKey(id));
+    }
+    
+    function getData(id) {
+        
+        var key = createKey(id);
+        var data = vars.get(key);
+        
+        if (!data) {
+            data = clone(story.getNode(id).data);
+            vars.set(key, data);
+        }
+        
+        return data;
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        get: get,
+        has: has
+    };
+}
+
+module.exports = create;
+
+},{"../utils/node.js":79,"clone":7}],62:[function(require,module,exports){
+
+var clone = require("clone");
+
+function none() {
+    // does nothing
+}
+
+function create(context) {
+    
+    var storage, settings;
+    
+    function init() {
+        
+        storage = context.getComponent("storage");
+        
+        settings = {
+            textSpeed: 50,
+            soundVolume: 100,
+            ambienceVolume: 100,
+            musicVolume: 100
+        };
+    }
+    
+    function destroy() {
+        storage = null;
+    }
+    
+    function set(name, value) {
+        settings[name] = value;
+        context.emit("update_setting", name);
+    }
+    
+    function remove(name) {
+        delete settings[name];
+        context.emit("remove_setting", name);
+    }
+    
+    function get(name) {
+        return settings[name];
+    }
+    
+    function getAll() {
+        return clone(settings);
+    }
+    
+    function has(name) {
+        return (name in settings);
+    }
+    
+    function load(then) {
+        
+        then = then || none;
+        
+        storage.load("settings", function (error, data) {
+            
+            if (error) {
+                return then(error);
+            }
+            
+            if (!data) {
+                storage.save("settings", settings.getAll(), function () {
+                    then();
+                });
+            }
+            else {
+                mergeSettings(data.data);
+                then();
+            }
+        });
+    }
+    
+    function mergeSettings(other) {
+        for (var key in other) {
+            set(key, other[key]);
+        }
+    }
+    
+    function save(then) {
+        
+        then = then || none;
+        
+        storage.save("settings", getAll(), function () {
+            then();
+        });
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        load: load,
+        save: save,
+        update: mergeSettings,
+        remove: remove,
+        set: set,
+        has: has,
+        get: get,
+        getAll: getAll
+    };
+    
+}
+
+module.exports = create;
+
+},{"clone":7}],63:[function(require,module,exports){
+//
+// Module for storing the game state in local storage.
+//
+// Savegames look like this:
+//
+//
+// {
+//     name: "fooBarBaz", // a name. will be given by the engine
+//     time: 012345678    // timestamp - this must be set by the storage
+//     data: {}           // this is what the engine gives the storage
+// }
+
+var none = function () {};
+
+function create(context) {
+    
+    var storageType, storageKey, getItem, setItem;
+    var memoryStorage = Object.create(null);
+    var testStorageKey = "TOOTHROT-storage-test";
+    
+    try {
+        
+        localStorage.setItem(testStorageKey, "works");
+        
+        if (localStorage.getItem(testStorageKey) === "works") {
+            storageType = "local";
+        }
+    }
+    catch (error) {
+        console.warn(error);
+    }
+    
+    if (!storageType) {
+        
+        try {
+            
+            sessionStorage.setItem(testStorageKey, "works");
+            
+            if (sessionStorage.getItem(testStorageKey) === "works") {
+                storageType = "session";
+            }
+        }
+        catch (error) {
+            console.warn(error);
+        }
+    }
+    
+    if (!storageType) {
+        storageType = "memory";
+    }
+    
+    if (storageType === "local") {
+        
+        getItem = function (name) {
+            return JSON.parse(localStorage.getItem(name) || "{}");
+        };
+        
+        setItem = function (name, value) {
+            return localStorage.setItem(name, JSON.stringify(value));
+        };
+    }
+    else if (storageType === "session") {
+        
+        getItem = function (name) {
+            return JSON.parse(sessionStorage.getItem(name) || "{}");
+        };
+        
+        setItem = function (name, value) {
+            return sessionStorage.setItem(name, JSON.stringify(value));
+        };
+    }
+    else {
+        
+        getItem = function (name) {
+            return JSON.parse(memoryStorage[name] || "{}");
+        };
+        
+        setItem = function (name, value) {
+            return memoryStorage[name] = JSON.stringify(value);
+        };
+    }
+    
+    function init() {
+        
+        var story = context.getComponent("story");
+        
+        // Each story should have its own storage key so that
+        // one story doesn't overwrite another story's savegames
+        // and settings.
+        storageKey = "TOOTHROT-" + story.getTitle();
+    }
+    
+    function save(name, data, then) {
+        
+        var store, error;
+        
+        then = then || none;
+        
+        try {
+            
+            store = getItem(storageKey);
+            
+            store[name] = {
+                name: name,
+                time: Date.now(),
+                data: data
+            };
+            
+            setItem(storageKey, store);
+            
+        }
+        catch (e) {
+            console.error(e);
+            error = e;
+        }
+        
+        if (error) {
+            return then(error);
+        }
+        
+        then(null, true);
+    }
+    
+    function load(name, then) {
+        
+        var value, error;
+        
+        then = then || none;
+        
+        try {
+            value = getItem(storageKey)[name];
+        }
+        catch (e) {
+            console.error(e);
+            error = e;
+        }
+        
+        if (error) {
+            return then(error);
+        }
+        
+        then(null, value);
+    }
+    
+    function all(then) {
+        
+        var value, error;
+        
+        then = then || none;
+        
+        try {
+            value = getItem(storageKey);
+        }
+        catch (e) {
+            console.error(e);
+            error = e;
+        }
+        
+        if (error) {
+            return then(error);
+        }
+        
+        then(null, value);
+    }
+    
+    function remove(name, then) {
+        
+        var value, error;
+        
+        then = then || none;
+        
+        try {
+            value = getItem(storageKey);
+        }
+        catch (e) {
+            console.error(e);
+            error = e;
+        }
+        
+        if (error) {
+            return then(error);
+        }
+        
+        delete value[name];
+        
+        setItem(storageKey, value);
+        
+        then(null, true);
+    }
+    
+    return {
+        init: init,
+        save: save,
+        load: load,
+        all: all,
+        remove: remove
+    };
+}
+
+module.exports = create;
+
+},{}],64:[function(require,module,exports){
+
+function create(context) {
+    
+    var story;
+    
+    function init() {
+        story = context.getResource("story");
+    }
+    
+    function destroy() {
+        story = null;
+    }
+    
+    function getNode(name) {
+        return story.nodes[name];
+    }
+    
+    function hasNode(name) {
+        return (name in story.nodes);
+    }
+    
+    function getSection(name) {
+        return story.sections[name];
+    }
+    
+    function hasSection(name) {
+        return (name in story.sections);
+    }
+    
+    function getMeta(name) {
+        return story.meta[name];
+    }
+    
+    function hasMeta(name) {
+        return (name in story.meta);
+    }
+    
+    function getTitle() {
+        return getMeta("title");
+    }
+    
+    function getAll() {
+        return story;
+    }
+    
+    function getHierarchy() {
+        return story.head.hierarchy;
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        getNode: getNode,
+        hasNode: hasNode,
+        getSection: getSection,
+        hasSection: hasSection,
+        getMeta: getMeta,
+        hasMeta: hasMeta,
+        getTitle: getTitle,
+        getAll: getAll,
+        getHierarchy: getHierarchy
+    };
+}
+
+module.exports = create;
+
+},{}],65:[function(require,module,exports){
+
+var clone = require("clone");
+
+function create(context) {
+    
+    var fullscreenMode, features;
+    
+    function init() {
+        features = {
+            fullscreen: hasFullscreen(),
+            exit: canExit()
+        };
+    }
+    
+    function destroy() {
+        features = null;
+    }
+    
+    function getFeatures() {
+        return clone(features);
+    }
+    
+    function toggleFullscreen() {
+        
+        var fullscreenOn = fullscreenEnabled() || (typeof nw !== "undefined" && fullscreenMode);
+        
+        if (fullscreenOn) {
+            exitFullscreen();
+        }
+        else {
+            fullscreen();
+        }
+        
+        context.emit("fullscreen_change", !fullscreenOn);
+    }
+    
+    function fullscreenEnabled() {
+        return document.fullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement ||
+            document.webkitFullscreenElement;
+    }
+    
+    function fullscreen() {
+        
+        fullscreenMode = true;
+        
+        if (typeof nw !== "undefined") {
+            nwEnterFullscreen();
+        }
+        else {
+            requestFullscreen(document.body.parentNode);
+        }
+    }
+    
+    function exitFullscreen() {
+        
+        fullscreenMode = false;
+        
+        if (typeof nw !== "undefined") {
+            nwExitFullscreen();
+        }
+        else {
+            exitBrowserFullscreen();
+        }
+    }
+    
+    function nwEnterFullscreen() {
+        window.require('nw.gui').Window.get().enterKioskMode();
+    }
+    
+    function nwExitFullscreen() {
+        window.require('nw.gui').Window.get().leaveKioskMode();
+    }
+    
+    function exitBrowserFullscreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+        else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+        else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        }
+        else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+    
+    function requestFullscreen(element) {
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        }
+        else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
+        else if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+        }
+        else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+        }
+    }
+    
+    function hasFullscreen() {
+        return typeof nw !== undefined;
+    }
+    
+    function canExit() {
+        return typeof nw !== undefined;
+    }
+    
+    function exit() {
+        try {
+            var gui = window.require("nw.gui");
+            gui.App.quit();
+        }
+        catch (error) {
+            console.error("Cannot exit: " + error);
+        }
+    }
+    
+    return {
+        init: init,
+        destroy: destroy,
+        exit: exit,
+        canExit: canExit,
+        getFeatures: getFeatures,
+        hasFullscreen: hasFullscreen,
+        toggleFullscreen: toggleFullscreen,
+        enterFullscreen: fullscreen,
+        exitFullscreen: exitFullscreen
+    };
+}
+
+module.exports = create;
+
+},{"clone":7}],66:[function(require,module,exports){
 
 function create(context) {
     
@@ -8004,11 +8084,11 @@ var components = {
     env: require("../components/env.js"),
     focus: require("../components/focus.js"),
     nodes: require("../components/nodes.js"),
-    highlighter: require("../components/highlighter.js"),
+    highlighter: require("../components/browser-ui/highlighter.js"),
     interpreter: require("../components/interpreter.js"),
-    screens: require("../components/screens.js"),
+    screens: require("../components/browser-ui/screens.js"),
     settings: require("../components/settings.js"),
-    ui: require("../components/ui.js"),
+    ui: require("../components/browser-ui/ui.js"),
     storage: require("../components/storage.js"),
     story: require("../components/story.js"),
     system: require("../components/system.js"),
@@ -8037,7 +8117,7 @@ module.exports = {
     decode: decodeResources
 };
 
-},{"../components/audio.js":54,"../components/env.js":55,"../components/focus.js":56,"../components/highlighter.js":57,"../components/interpreter.js":58,"../components/nodes.js":59,"../components/screens.js":60,"../components/settings.js":61,"../components/storage.js":62,"../components/story.js":63,"../components/system.js":64,"../components/ui.js":65,"../components/vars.js":66,"../utils/context.js":70,"smoothscroll-polyfill":19}],69:[function(require,module,exports){
+},{"../components/audio.js":54,"../components/browser-ui/highlighter.js":55,"../components/browser-ui/screens.js":56,"../components/browser-ui/ui.js":57,"../components/env.js":58,"../components/focus.js":59,"../components/interpreter.js":60,"../components/nodes.js":61,"../components/settings.js":62,"../components/storage.js":63,"../components/story.js":64,"../components/system.js":65,"../components/vars.js":66,"../utils/context.js":77,"smoothscroll-polyfill":19}],69:[function(require,module,exports){
 
 function create(context) {
     
@@ -8085,6 +8165,332 @@ function create(context) {
 module.exports = create;
 
 },{}],70:[function(require,module,exports){
+
+var scrollPosition = require("./scrollPosition");
+
+function getAbsoluteRect(element) {
+    
+    var rect = element.getBoundingClientRect();
+    
+    return {
+        left: rect.left + scrollPosition.getX(),
+        top: rect.top + scrollPosition.getY(),
+        width: rect.width,
+        height: rect.height
+    };
+}
+
+module.exports = getAbsoluteRect;
+
+},{"./scrollPosition":74}],71:[function(require,module,exports){
+
+function getClickableParent(node) {
+    
+    var ELEMENT = 1;
+    var first = node;
+    
+    while (node.parentNode) {
+        
+        node = node.parentNode;
+        
+        if (node.nodeType === ELEMENT && node.getAttribute("data-type")) {
+            return node;
+        }
+    }
+    
+    return first;
+}
+
+module.exports = getClickableParent;
+
+},{}],72:[function(require,module,exports){
+/* global require, module, setTimeout */
+
+var format = require("vrep").format;
+var transform = require("transform-js").transform;
+
+function create(template, fadeDuration) {
+    
+    var duration = fadeDuration || 200;
+    
+    return function (message, type, timeout) {
+        
+        var container = document.createElement("div");
+        var hidden = false;
+        var shown = false;
+        
+        container.setAttribute("class", "NotificationContainer");
+        
+        type = type || "default";
+        
+        container.style.opacity = "0";
+        container.innerHTML = format(template, {message: message, type: type});
+        
+        document.body.appendChild(container);
+        
+        show();
+        
+        setTimeout(hide, timeout || 2000);
+        
+        function show() {
+            
+            if (shown) {
+                return;
+            }
+            
+            transform(
+                0,
+                1,
+                function (v) {
+                    container.style.opacity = "" + v;
+                },
+                {duration: duration},
+                function () {
+                    shown = true;
+                }
+            );
+        }
+        
+        function hide() {
+            
+            if (hidden) {
+                return;
+            }
+            
+            transform(
+                1,
+                0,
+                function (v) {
+                    container.style.opacity = "" + v;
+                },
+                {duration: duration},
+                function () {
+                    hidden = true;
+                    container.parentNode.removeChild(container);
+                }
+            );
+        }
+        
+        return {
+            hide: hide
+        };
+    };
+}
+
+module.exports = {
+    create: create
+};
+
+},{"transform-js":20,"vrep":53}],73:[function(require,module,exports){
+
+var transform = require("transform-js").transform;
+
+function create(element, speed, then) {
+    
+    var chars, left;
+    var offset = 1000 / (speed || 40);
+    var stop = false;
+    var timeouts = [];
+    
+    markCharacters(element);
+    hideCharacters(element);
+    
+    chars = element.querySelectorAll(".Char");
+    left = chars.length;
+    
+    then = then || function () {};
+    
+    function start() {
+        
+        [].forEach.call(chars, function (char, i) {
+            
+            var id = setTimeout(function () {
+                
+                if (stop) {
+                    return;
+                }
+                
+                transform(0, 1, setOpacity(char), {duration: 10 * offset}, function () {
+                    
+                    left -= 1;
+                    
+                    if (stop) {
+                        return;
+                    }
+                    
+                    if (left <= 0) {
+                        then();
+                    }
+                    
+                });
+                
+            }, i * offset);
+            
+            timeouts.push(id);
+        });
+    }
+    
+    function cancel() {
+        
+        if (stop || left <= 0) {
+            return false;
+        }
+        
+        stop = true;
+        
+        timeouts.forEach(function (id) {
+            clearTimeout(id);
+        });
+        
+        [].forEach.call(chars, function (char) {
+            char.style.opacity = "1";
+        });
+        
+        then();
+        
+        return true;
+    }
+    
+    return {
+        start: start,
+        cancel: cancel
+    };
+}
+
+function hideCharacters(element) {
+    
+    var chars = element.querySelectorAll(".Char");
+    
+    [].forEach.call(chars, function (char) {
+        char.style.opacity = 0;
+    });
+}
+
+function markCharacters(element, offset) {
+    
+    var TEXT_NODE = 3;
+    var ELEMENT = 1;
+    
+    offset = offset || 0;
+    
+    [].forEach.call(element.childNodes, function (child) {
+        
+        var text = "", newNode;
+        
+        if (child.nodeType === TEXT_NODE) {
+            
+            [].forEach.call(child.textContent, function (char) {
+                text += '<span class="Char" data-char="' + offset + '">' + char + '</span>';
+                offset += 1;
+            });
+            
+            newNode = document.createElement("span");
+            
+            newNode.setAttribute("class", "CharContainer");
+            
+            newNode.innerHTML = text;
+            
+            child.parentNode.replaceChild(newNode, child);
+        }
+        else if (child.nodeType === ELEMENT) {
+            offset = markCharacters(child, offset);
+        }
+    });
+    
+    return offset;
+}
+
+function setOpacity(element) {
+    return function (v) {
+        element.style.opacity = v;
+    };
+}
+
+module.exports = create;
+
+},{"transform-js":20}],74:[function(require,module,exports){
+
+function getScrollX() {
+    return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
+}
+
+function getScrollY() {
+    return (window.pageYOffset || document.scrollTop || 0) - (document.clientTop || 0);
+}
+
+module.exports = {
+    getX: getScrollX,
+    getY: getScrollY
+};
+
+},{}],75:[function(require,module,exports){
+
+var getAbsoluteRect = require("./getAbsoluteRect");
+var scrollPosition = require("./scrollPosition");
+
+var getScrollX = scrollPosition.getX;
+var getScrollY = scrollPosition.getY;
+
+function scrollToBottom(element, instantly) {
+    if (instantly) {
+        element.scroll(0, element.scrollHeight);
+    }
+    else {
+        element.scroll({
+            top: element.scrollHeight,
+            left: 0,
+            behavior: "smooth"
+        });
+    }
+}
+
+function scrollToElement(element) {
+    
+    if (isElementInView(element)) {
+        return;
+    }
+    
+    try {
+        element.scrollIntoView({
+            behavior: "smooth"
+        });
+    }
+    catch (error) {
+        console.error(error);
+    }
+}
+
+function isElementInView(element) {
+    
+    var rect = getAbsoluteRect(element);
+    var scrollX = getScrollX();
+    var scrollY = getScrollY();
+    var xInView = (scrollX <= rect.left) && (rect.left <= (scrollX + window.innerWidth));
+    var yInView = (scrollY <= rect.top) && (rect.top <= (scrollY + window.innerHeight));
+    
+    return (xInView && yInView);
+}
+
+module.exports = {
+    getX: getScrollX,
+    getY: getScrollY,
+    scrollToBottom: scrollToBottom,
+    scrollToElement: scrollToElement,
+    isElementInView: isElementInView
+};
+
+},{"./getAbsoluteRect":70,"./scrollPosition":74}],76:[function(require,module,exports){
+
+var auto = require("enjoy-core/auto");
+
+var setStyle = auto(function (element, key, unit, start, end, value) {
+    element.style[key] = (start + (value * (end - start))) + unit;
+    return value;
+});
+
+module.exports = setStyle;
+
+},{"enjoy-core/auto":10}],77:[function(require,module,exports){
 /* eslint-disable no-console */
 
 var EventEmitter = require("events");
@@ -8243,7 +8649,7 @@ module.exports = {
     create: create
 };
 
-},{"events":5}],71:[function(require,module,exports){
+},{"events":5}],78:[function(require,module,exports){
 /* eslint-disable no-unused-vars, no-eval */
 
 function evalScript(__story, _, $, __body, __line) {
@@ -8259,46 +8665,7 @@ function evalScript(__story, _, $, __body, __line) {
 
 module.exports = evalScript;
 
-},{}],72:[function(require,module,exports){
-
-var scrollPosition = require("./scrollPosition");
-
-function getAbsoluteRect(element) {
-    
-    var rect = element.getBoundingClientRect();
-    
-    return {
-        left: rect.left + scrollPosition.getX(),
-        top: rect.top + scrollPosition.getY(),
-        width: rect.width,
-        height: rect.height
-    };
-}
-
-module.exports = getAbsoluteRect;
-
-},{"./scrollPosition":77}],73:[function(require,module,exports){
-
-function getClickableParent (node) {
-    
-    var ELEMENT = 1;
-    var first = node;
-    
-    while (node.parentNode) {
-        
-        node = node.parentNode;
-        
-        if (node.nodeType === ELEMENT && node.getAttribute("data-type")) {
-            return node;
-        }
-    }
-    
-    return first;
-}
-
-module.exports = getClickableParent;
-
-},{}],74:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 
 function create(id, data, nodes) {
     
@@ -8323,15 +8690,21 @@ function create(id, data, nodes) {
         moveTo: moveTo,
         insert: insert,
         contains: containsNode,
+        children: children,
         doesntContain: doesntContain,
         get: get,
         set: set,
+        has: has,
         prop: prop,
         raw: raw
     };
     
     function get(key) {
         return data[key];
+    }
+    
+    function has(key) {
+        return (key in data);
     }
     
     function set(key, value) {
@@ -8462,6 +8835,10 @@ function create(id, data, nodes) {
         return api;
     }
     
+    function children() {
+        return data.contains.slice();
+    }
+    
     function prop(name, value) {
         
         if (arguments.length > 1) {
@@ -8484,291 +8861,4 @@ function contains(array, thing) {
 
 module.exports = create;
 
-},{}],75:[function(require,module,exports){
-/* global require, module, setTimeout */
-
-var format = require("vrep").format;
-var transform = require("transform-js").transform;
-
-function create(template, fadeDuration) {
-    
-    var duration = fadeDuration || 200;
-    
-    return function (message, type, timeout) {
-        
-        var container = document.createElement("div");
-        var hidden = false;
-        var shown = false;
-        
-        container.setAttribute("class", "NotificationContainer");
-        
-        type = type || "default";
-        
-        container.style.opacity = "0";
-        container.innerHTML = format(template, {message: message, type: type});
-        
-        document.body.appendChild(container);
-        
-        show();
-        
-        setTimeout(hide, timeout || 2000);
-        
-        function show() {
-            
-            if (shown) {
-                return;
-            }
-            
-            transform(
-                0,
-                1,
-                function (v) {
-                    container.style.opacity = "" + v;
-                },
-                {duration: duration},
-                function () {
-                    shown = true;
-                }
-            );
-        }
-        
-        function hide() {
-            
-            if (hidden) {
-                return;
-            }
-            
-            transform(
-                1,
-                0,
-                function (v) {
-                    container.style.opacity = "" + v;
-                },
-                {duration: duration},
-                function () {
-                    hidden = true;
-                    container.parentNode.removeChild(container);
-                }
-            );
-        }
-        
-        return {
-            hide: hide
-        };
-    };
-}
-
-module.exports = {
-    create: create
-};
-
-},{"transform-js":20,"vrep":53}],76:[function(require,module,exports){
-
-var transform = require("transform-js").transform;
-
-function create(element, speed, then) {
-    
-    var chars, left;
-    var offset = 1000 / (speed || 40);
-    var stop = false;
-    var timeouts = [];
-    
-    markCharacters(element);
-    hideCharacters(element);
-    
-    chars = element.querySelectorAll(".Char");
-    left = chars.length;
-    
-    then = then || function () {};
-    
-    function start() {
-        
-        [].forEach.call(chars, function (char, i) {
-            
-            var id = setTimeout(function () {
-                
-                if (stop) {
-                    return;
-                }
-                
-                transform(0, 1, setOpacity(char), {duration: 10 * offset}, function () {
-                    
-                    left -= 1;
-                    
-                    if (stop) {
-                        return;
-                    }
-                    
-                    if (left <= 0) {
-                        then();
-                    }
-                    
-                });
-                
-            }, i * offset);
-            
-            timeouts.push(id);
-        });
-    }
-    
-    function cancel() {
-        
-        if (stop || left <= 0) {
-            return false;
-        }
-        
-        stop = true;
-        
-        timeouts.forEach(function (id) {
-            clearTimeout(id);
-        });
-        
-        [].forEach.call(chars, function (char) {
-            char.style.opacity = "1";
-        });
-        
-        then();
-        
-        return true;
-    }
-    
-    return {
-        start: start,
-        cancel: cancel
-    };
-}
-
-function hideCharacters(element) {
-    
-    var chars = element.querySelectorAll(".Char");
-    
-    [].forEach.call(chars, function (char) {
-        char.style.opacity = 0;
-    });
-}
-
-function markCharacters(element, offset) {
-    
-    var TEXT_NODE = 3;
-    var ELEMENT = 1;
-    
-    offset = offset || 0;
-    
-    [].forEach.call(element.childNodes, function (child) {
-        
-        var text = "", newNode;
-        
-        if (child.nodeType === TEXT_NODE) {
-            
-            [].forEach.call(child.textContent, function (char) {
-                text += '<span class="Char" data-char="' + offset + '">' + char + '</span>';
-                offset += 1;
-            });
-            
-            newNode = document.createElement("span");
-            
-            newNode.setAttribute("class", "CharContainer");
-            
-            newNode.innerHTML = text;
-            
-            child.parentNode.replaceChild(newNode, child);
-        }
-        else if (child.nodeType === ELEMENT) {
-            offset = markCharacters(child, offset);
-        }
-    });
-    
-    return offset;
-}
-
-function setOpacity(element) {
-    return function (v) {
-        element.style.opacity = v;
-    };
-}
-
-module.exports = create;
-
-},{"transform-js":20}],77:[function(require,module,exports){
-
-function getScrollX() {
-    return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
-}
-
-function getScrollY() {
-    return (window.pageYOffset || document.scrollTop || 0) - (document.clientTop || 0);
-}
-
-module.exports = {
-    getX: getScrollX,
-    getY: getScrollY
-};
-
-},{}],78:[function(require,module,exports){
-
-var getAbsoluteRect = require("./getAbsoluteRect");
-var scrollPosition = require("./scrollPosition");
-
-var getScrollX = scrollPosition.getX;
-var getScrollY = scrollPosition.getY;
-
-function scrollToBottom(element, instantly) {
-    if (instantly) {
-        element.scroll(0, element.scrollHeight);
-    }
-    else {
-        element.scroll({
-            top: element.scrollHeight,
-            left: 0,
-            behavior: "smooth"
-        });
-    }
-}
-
-function scrollToElement(element) {
-    
-    if (isElementInView(element)) {
-        return;
-    }
-    
-    try {
-        element.scrollIntoView({
-            behavior: "smooth"
-        });
-    }
-    catch (error) {
-        console.error(error);
-    }
-}
-
-function isElementInView(element) {
-    
-    var rect = getAbsoluteRect(element);
-    var scrollX = getScrollX();
-    var scrollY = getScrollY();
-    var xInView = (scrollX <= rect.left) && (rect.left <= (scrollX + window.innerWidth));
-    var yInView = (scrollY <= rect.top) && (rect.top <= (scrollY + window.innerHeight));
-    
-    return (xInView && yInView);
-}
-
-module.exports = {
-    getX: getScrollX,
-    getY: getScrollY,
-    scrollToBottom: scrollToBottom,
-    scrollToElement: scrollToElement,
-    isElementInView: isElementInView
-};
-
-},{"./getAbsoluteRect":72,"./scrollPosition":77}],79:[function(require,module,exports){
-
-var auto = require("enjoy-core/auto");
-
-var setStyle = auto(function (element, key, unit, start, end, value) {
-    element.style[key] = (start + (value * (end - start))) + unit;
-    return value;
-});
-
-module.exports = setStyle;
-
-},{"enjoy-core/auto":10}]},{},[67]);
+},{}]},{},[67]);

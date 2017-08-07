@@ -22,15 +22,21 @@ function create(id, data, nodes) {
         moveTo: moveTo,
         insert: insert,
         contains: containsNode,
+        children: children,
         doesntContain: doesntContain,
         get: get,
         set: set,
+        has: has,
         prop: prop,
         raw: raw
     };
     
     function get(key) {
         return data[key];
+    }
+    
+    function has(key) {
+        return (key in data);
     }
     
     function set(key, value) {
@@ -159,6 +165,10 @@ function create(id, data, nodes) {
         }
         
         return api;
+    }
+    
+    function children() {
+        return data.contains.slice();
     }
     
     function prop(name, value) {

@@ -14,24 +14,100 @@
 
 ### start
 
-```js @entry
-$.foo = "bar";
-```
+(#) background: "url('images/muffin-dot-dat.png') center/cover"
 
 ```js @where
-_.self().is("open") ? "the bright room" : "the smelly room"
+JSON.stringify($._lastNodes, null, 4);
 ```
 
 Welcome to [Toothrot Engine](#toothrot_engine)!
 
-The variable `foo` contains: `$foo`
+`@where`.
 
-Let's go to `@where`. Or go to [the storage room](#storage_room)?
+From here, you can go to [the storage room](#storage_room).
 
-[Visit another node.](#another_node)
+(@) Play an example game => street
+
+
+### street
+
+In front of your house
+---------------------------------
+
+(#) tags: ["room"]
+(#) contains: ["engine_dealer"]
+
+```js @entry
+_.event(_.oneOf(
+    "A car drives past.",
+    "An elderly lady pushes a shopping cart across the street.",
+    "Far away, the siren of an ambulance blares.",
+    "A group of teenagers passes by.",
+    "",
+    "",
+    ""
+));
+```
+
+This is the front of your house. It's not the best neighborhood, but you got used to
+it over the years. A door leads [inside](#enter_house).
+
+(@) Wait => wait
+(@) Use an item => inventory
+
+
+### enter_house
+
+You unlock the door and enter your house, leaving the sounds of the city behind.
+
+(>) kitchen
+
+
+### exit_house
+
+You exit the house and close the door behind you.
+
+(>) street
+
+
+### wait
+
+Time passes.
+
+(<)
+
+
+### engine_dealer
+
+```js @brief
+if (_.self().isnt("seen_sword") && _.node().contains("sword")) {
+    _.self().be("seen_sword");
+    _.event('Suspicious guy: "What the heck are you doing with that sword?"');
+}
+else {
+    _.event(
+        _.oneOf(
+            'Suspicious guy: "Hey you!"',
+            'Suspicious guy: "Pssst... need an engine?"',
+            'Suspicious guy: "Come here, I got something for you!"',
+            "The suspicious guy clears his throat.",
+            "",
+            ""
+        )
+    );
+}
+
+"A {suspicious guy} in a long coat stands in the shadows. He's staring at you."
+```
+
+A man wearing the cliché attire of a private detective, a long coat and a black fedora.
+
+(<)
 
 
 ### toothrot_engine
+
+(#) background: "url('images/coldmountain.png') center/cover"
 
 An engine for developing text-based games. It has a weird name.
 
@@ -86,15 +162,24 @@ You drop the sword.
 
 ### storage_room
 
+```js @where
+JSON.stringify($._lastNodes, null, 4);
+```
+
 Storage Room
 ------------
 
 (#) tags: ["room"]
 (#) contains: ["chest"]
+(#) background: "url('images/cloudsinthedesert.png') center/cover"
 
-Just some boring storage room. A [door](#kitchen) leads to the kitchen.
+Just some boring storage room. A door leads to the [kitchen](#kitchen).
+
+`@where`
 
 (@) Use an item => inventory
+
+(>) start
 
 
 ### kitchen
@@ -102,7 +187,14 @@ Just some boring storage room. A [door](#kitchen) leads to the kitchen.
 Kitchen
 -------
 
-A rather boring kitchen. A [door](#storage_room) leads to a storage room.
+(#) tags: ["room"]
+
+Your kitchen. Nothing much, but it gets the job done.
+
+One door leads to a [storage room](#storage_room),
+another one to the [street](#exit_house) outside.
+
+(@) Use an item => inventory
 
 
 ### chest
@@ -182,13 +274,6 @@ Yeah, right. I totally believe you.
 ### examine_engine
 
 It's a fabulous open source product! Yes!
-
-(<)
-
-
-### another_node
-
-This is another node.
 
 (<)
 
