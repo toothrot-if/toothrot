@@ -8,14 +8,20 @@ An engine for creating text-based games.
 
 Toothrot Engine allows you to create interactive fiction, parser-less text adventures or other
 text-based games. The games are written in an eye-friendly text-based format (similar to Markdown)
-and allow inclusion of JavaScript.
+and allow writing your game logic in JavaScript.
+
+To develop games with this engine, basic knowledge of JavaScript and HTML is recommended,
+though not required for simple choice-based or hypertext games.
+
+## Screenshots
+
+![Default theme](docs/images/default-theme.png)
 
 ## Features
 
  * Markdown-like format for writing games
  * Different modes of interaction:
    * Regular links (like known from Twine)
-   * Objekt links (as an alternative to text parsers known from text adventures)
    * Option menus (like in ChoiceScript or in visual novels)
    * Going to the next node by clicking or pushing a button (like in visual novels)
  * Customizable screen system written in regular HTML and CSS with default screens:
@@ -24,7 +30,9 @@ and allow inclusion of JavaScript.
    * Savegame screen
    * Settings screen
  * Savegame system with slots, auto-save and quick save/load
- * Simple object system with multiple inheritance
+ * Text nodes can also be things in the simple world model, e.g. rooms, items or persons
+ * Text nodes can be tagged and put into a hierarchy
+ * Text nodes can contain other text nodes
  * Support for mobile devices (and "add to homescreen")
  * Exports games for browsers (works without a web server) or as Windows/Mac/Linux desktop apps
  * Audio support with separate channels for sounds, ambience and music
@@ -32,24 +40,26 @@ and allow inclusion of JavaScript.
  * Games playable with screen readers (experimental)
  * Extensible JavaScript API
  * Speed-adjustable reveal effect for text (like in visual novels)
+ * Browser builds support application cache (offline mode) out of the box
 
 ## Installation
 
 You need Node.js to run the engine. If you don't have it installed, download it here:
 [https://nodejs.org/en/download/](https://nodejs.org/en/download/)
 
-Once you have Node.js up and running, open a terminal window and type:
+Once you have Node.js up and running, installing toothrot is as simple as opening
+a terminal window and typing the following:
 
-    $ npm install -g toothrot
+    npm install -g toothrot
 
 ## Creating a new project
 
 You can now create a new project in the terminal like this:
 
 ```
-$ mkdir my_project
-$ cd my_project
-$ toothrot init
+mkdir my_project
+cd my_project
+toothrot init
 ```
 
 This will create the following files and folders in `my_project`:
@@ -58,7 +68,7 @@ This will create the following files and folders in `my_project`:
 + files
   + style
     - default.css
-    - indicator.gif
+    - custom.css
   - index.html
 + resources
   + screens
@@ -68,7 +78,8 @@ This will create the following files and folders in `my_project`:
     - settings.html
   + templates
     - confirm.html
-  - objects.json
+    - notification.html
+    - ui.html
   - story.md
 - project.json
 ```
@@ -85,13 +96,10 @@ screens to your game.
 The `resources/templates/` folder contains non-screen templates. Currently only `confirm.html`
 is used. You can change this file to customize the appearance of confirm dialogs.
 
-The `resources/objects.json` file contains object definitions. See the section about objects
-in this README for details.
-
 The `files/index.html` file is the main file of the project. When you build your projects for
 the browser, you can double-click on this file to start the game.
 
-You can customize your game's appearance by changing `files/style/default.css`. Of course, you
+You can customize your game's appearance by changing `files/style/custom.css`. Of course, you
 can also add new CSS files to your `files/index.html` file.
 
 The file `project.json` contains information about your project, e.g. for which desktop
@@ -106,7 +114,7 @@ You can change all of your project files to your liking, then build your project
 To create a working game from your project, you need to build it. This can be done by writing
 the following in the terminal:
 
-    $ toothrot build
+    toothrot build
 
 This will package all the resources and create a folder `my_project/build/browser/`.
 To run your game, just double-click on the `index.html` file or open that file in
@@ -114,7 +122,7 @@ your browser (drag and drop usually works, too).
 
 You can also build desktop applications from your project for Linux, Windows and Mac OS X like so:
 
-    $ toothrot build-desktop
+    toothrot build-desktop
 
 This will download a whole lot of stuff the first time you run it. If you have a slow connection,
 you can go grab a coffee now. ;)
@@ -143,40 +151,42 @@ to structure your story.
 A basic story file looks like this:
 
 
-    #: My Story
+    # My Story
     
-    ##: default_section
+    ## default_section
     
     
-    ###: start
+    ### start
     
     This is some text with **markdown** formating.
     
-    And (: this is a link to another node => another_node :). Click it.
+    And [this is a link to another node](#another_node). Click it.
     
     
-    ###: another_node
+    ### another_node
     
     This is the text of another node.
     
     (<)
 
 
-A toothrot story file is divided into sections (starting with "##:") and nodes
-(starting with "###:").
+A toothrot story file is divided into sections (starting with "##") and nodes
+(starting with "###").
 
-Nodes are pieces of text that are displayed one at a time. The first node is always
+Nodes are pieces of text that are displayed one after the other. The first node is always
 the `start` node.
 
 ### Next nodes
 
 Nodes can have a next node. The next node can be reached by clicking somewhere on the screen
 or by pressing either the `SPACE` or `RIGHT` button. You can specify the next node by writing
-`(>) name_of_next_node` on a new line. For example, if you want the next node of the node
-`my_node` to be `another_node`, you can write it like this:
+`(>) name_of_next_node` on a new line.
+
+For example, if you want the next node of the node `my_node` to be `another_node`,
+you can write it like this:
 
 ```
-###: my_node
+### my_node
 
 Some text.
 
@@ -187,21 +197,21 @@ Sometimes you will want to create many connected nodes that don't need to be acc
 somewhere else. There's a shorthand notation for such nodes:
 
 ```
-###: boring_story
+### boring_story
 
 Once upon a time, there was a man.
-(~~~)
+***
 He married a woman from another village.
-(~~~)
+***
 They had a lot of children.
-(~~~)
+***
 The man and the woman grew older and older.
-(~~~)
+***
 Then they died.
 ```
 
 In this example, we have a named node `boring_story` and a bunch of connected nodes
-defined by `(~~~)`.
+defined by `***`.
 
 
 ### Returning to the last node
@@ -211,15 +221,22 @@ current node. This is as easy as writing this on a new line at the end of your n
 
     (<)
 
+You can also return to the last node with a certain tag. For example, if you want to
+return to the last visited node that is tagged "room", you can write:
+
+    (<) room
+
+For more about tags, see the section about it further below.
+
 ### Linking to other nodes
 
 You can link to other nodes in a node's text by using this notation:
 
-    This is a link: (: click me => another_node :)
+    This is a link: [click me](#another_node)
 
-Everything between the `(:` and `:)` is translated to a link. The first part
-before the `=>` is the link text. The second part, after the `=>` is the
-name of the node that will be reached when the user clicks on the link.
+The first part between `[` and `]` is the link text or label.
+The second part, between `(#` and `)` is the name of the node that will be reached
+when the user clicks on the link.
 
 ### Option menus
 
@@ -242,132 +259,119 @@ When a user clicks on an option with a value, the chosen value will be saved in 
 variable `$._choice`. In the example above, if the user clicks the option, the `$._choice` variable
 will contain the string `"This is the value"`.
 
-### Object links
+Options can be shown or hidden depending on a node's flags (see the section about flags for more
+info). For example, the following will show the `Open` option only when the node has a flag
+`closed` set, and it will only show the `Close` option if that flag is not set on the node.
 
-In traditional text adventures, you can use a verb on an object. This usually looks like this:
+    (@) closed  ??? Open => open_container
+    (@) !closed ??? Closed => close_container
 
-    open door
 
-You can do something similar with Toothrot's object links. An object link, when clicked, will show
-a list of actions that can be used upon the link text (the "object").
+### Node properties
 
-Object links can be written like this:
+Nodes can be given properties using the `(#)` syntax:
 
-    This is an object link: (# door => {"open": "open_door", "examine": "examine_door"} #)
+    ### my_node
+    
+    (#) key: "value"
+    
+    The node's text.
 
-When someone clicks on this link (which has the text `door`), then a menu with the actions
-`open` and `examine` will appear. When you click on `open` then the node `open_door` will
-be shown. And if you click on `examine`, the node `examine_door` will be shown instead.
+A line starting with `(#)` sets a property of the node. The first part after the `(#)` and
+the `:` is the property name. Everything after the `:` until the end of the line is the
+property's value. Values must be valid [JSON](http://json.org) values
+(strings, numbers, array, objects).
 
-The menu of actions can also be closed without doing anything by clicking somewhere on the screen
-or by using the `ESC` key.
+Node properties can be changed at runtime of the game using scripts. Property values are
+automatically saved when a savegame is created and will be restored when the savegame is
+loaded.
 
-If object links are too simple for what you want to do, objects are an alternative.
+### The world model
 
-### Objects
+The world model of toothrot games is both simple and very flexible. But if you're not
+familiar with parser-based interactive fiction engines like Inform, you might be wondering
+what a world model is and why you would ever need one.
 
-Objects in Toothrot are defined in the `resources/objects.json` file. Each object can
-have many different aspects, and each aspect defines actions that can be used upon
-the object. Each object has a list of currently active aspects and when the object
-is printed in a node's text, only those actions of currently active aspects will be
-shown.
+In a "pure" choice-based game (similar to some of the early Choose Your Own Adventure books) or
+a "pure" hypertext fiction, each text node always contains the same text, no matter how the
+player might have reached it. The experience of the player is unique for each set of choices
+she makes, but the game (or the world of the story) itself never actually changes.
 
-An example `objects.json` file looks like this:
+This is fine for a broad range of interactive fiction, but if you want to write a game
+where the world of the story actually reacts to the actions of the player, you need some kind
+of model of how the world of the game behaves to the player's input.
 
-```json
-{
-    "closable": {
-        "label": "closable thing",
-        "prototypes": [],
-        "activeAspects": ["closed"],
-        "aspects": {
-            "closed": {
-                "open": "open_{name}"
-            },
-            "open": {
-                "close": "close_{name}"
-            }
-        }
-    },
-    "door": {
-        "label": "door",
-        "prototypes": ["closable"],
-        "activeAspects": ["closed", "locked"],
-        "aspects": {
-            "locked": {
-                "unlock": "unlock_{name}"
-            },
-            "unlocked": {
-                "lock": "lock_{name}"
-            }
-        }
-    }
-}
-```
+The world model in toothrot is not nearly as sophisticated as the world model of traditional
+parser-based interactive fiction engines like Inform. Instead, it gives you a few simple
+building blocks that you can use to define your own world model.
 
-This file defines two different objects: `closable` and `door`.
+#### Giving meaning to nodes
 
-The `prototypes` property contains the names of other objects to inherit from.
-Inheriting means that the object will have all the aspects of its prototypes
-on top of its own aspects.
+Nodes, the fundamental building blocks in toothrot, are more than just pieces of text.
 
-In the example, the `door` object has the `closable` object as a prototype. Therefore,
-the `door` object will have these aspects: `closed`, `open`, `locked` and `unlocked`.
+Nodes can be labeled using *tags*. With tags, you can define a node to be a room or an item,
+or you can label it something else completely. The engine doesn't actually know what
+a "room" or an "item" is, but it allows you to treat one kind of node differently from
+another kind.
 
-The `activeAspects` property contains the currently active aspects at the point
-of creation of the object. This list can be changed during the story using the
-object's JavaScript API.
+Each node can have an unlimited number of tags. Tags can be put into a hierarchy. This way you
+can define, for example, that a container is an item and that both a person and an
+animal are beings.
 
-The `aspects` property contains the object's own aspects. For example, the `door`
-object has an own aspect `locked` with an associated action `unlock`.
+A node's internal state can be changed using so-called *flags*. A flag doesn't have a value itself,
+it just defines that a fact is true or not true for a node. Options (you can think about them
+as actions the player can do) can be shown or hidden depending on these flags. For example, a
+node that acts as a container can have or not have a `closed` flag set and then display either
+a `Close` or `Open` option depending on whether or not the flag is set.
 
-Each action of an object defines the name of a node that will be shown when the user first
-clicks on the object and then on the name of the action. So if a user clicks on the `door`
-object while the `locked` aspect is active, then the `unlock` action will be shown in the
-list of actions. And if the user then clicks on `unlock` the node `unlock_{name}` will be
-shown. The `{name}` portion of the node name is always replaced with the *actual* name of
-the object, not the name of the object the aspect is inherited from.
+### Scripts and slots
 
-This means that the action `unlock` on the `door` object will lead to the node `unlock_door`,
-but the action `open` on the same object will **not** lead to the node `open_closable`. Instead
-this will lead to the node `open_door`!
+Simple choices or links don't cut it for your game? Then you can use JavaScript to further
+customize the behavior of your game.
 
-You must always make sure that the node referenced in an action actually exists. If it doesn't
-exist then an error will be displayed in the browser console once a node containing the object
-is displayed - and instead of the object link you will see an ugly `undefined` in the node's text.
+Each node can contain named blocks of JavaScript:
 
-#### Object JavaScript API
+    ### my_node
+    
+    ```js @my_script
+        "And here's some more text."
+    ```
+    
+    Here's some text. `@my_script`
+    
 
-Objects can be printed and manipulated using JavaScript.
+The above defines a script named `my_script` for the node `my_node`. This script will be executed
+only if it is referenced in the node's text. Scripts can be referenced by using the slot syntax.
+The "\`@my_script`" part written in the text of the node tells the engine to execute the script
+`my_script` and replace the \`@my_script` with whatever the result of the script was.
 
-To print the `door` object, you can write this:
+If you would run the above example, the text that would be displayed is:
 
-    (! _.o("door").print() !)
+    Here's some text. And here's some more text.
 
-If you want to print the `door` object with another label, you can do it like this:
+### Special scripts
 
-    (! _.o("door").print("some strange door") !)
+Normally, scripts are only executed if they are referenced in a node's text. But there are
+some special scripts that are executed even if they are not referenced in the text.
 
-If you permanently alter an object's label, use the `.label()` method:
+Currently, the engine recognizes these special script names:
 
-    (-) (! _.o("door").label("some strange door") !)
+| Script name (`@[name]`) | Context    | Executed when?                |
+|:------------------------|:-----------|:------------------------------|
+| @entry                  | Node       | When entering the node        |
+| @brief                  | Node       | When parent node is displayed |
 
-You can change the `door` object's active aspects like so:
+You can use `@entry` to ensure a script is executed each time before the node where it
+is written in gets displayed.
 
-    (-) (! _.o("door").drop("closed").add("open") !)
+A `@brief` script is a little more complicated to understand. As said at the start of this README, nodes can contain other nodes. To enable the player to actually interact with the child nodes
+of a node, some text must be displayed informing the player about the existence of the child node.
+To accomplish this, the `@brief` script of the child is called before displaying the parent node.
+The return value of the `@brief` script is then displayed right under the parent's node text.
 
-The `.drop()` method drops an aspect from an object's list of active aspects.
+#### Node JavaScript API
 
-The `.add()` method adds an aspect to an object's list of active aspects.
-
-You can check if an aspect is currently active in an object using the `.is()` method:
-
-    The door is (! _.o("door").is("closed") ? "closed" : "not closed" !).
-
-You can also change the target node of an object's action using `.rewire()`:
-
-    (-) (! _.o("magicDoor").rewire("enter", "door_location_2") !)
-
+Much of a node's behavior can be controlled using the node JavaScript API.
 
 ## Variables
 
