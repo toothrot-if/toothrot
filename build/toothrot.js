@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Mon, 07 Aug 2017 16:32:22 GMT
+    Build time: Tue, 08 Aug 2017 15:59:10 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -4373,6 +4373,43 @@ module.exports = toArray;
 })();
 
 },{}],19:[function(require,module,exports){
+/*! scrollbarWidth.js v0.1.0 | felixexter | MIT | https://github.com/felixexter/scrollbarWidth */
+(function (root, factory) {
+	if (typeof define === 'function' && define.amd) {
+		define([], factory);
+	} else if (typeof exports === 'object') {
+		module.exports = factory();
+	} else {
+		(root.jQuery || root).scrollbarWidth = factory();
+	}
+}(this, function () {
+	'use strict';
+
+	function scrollbarWidth() {
+		var
+			body = document.body,
+			box = document.createElement('div'),
+			boxStyle = box.style,
+			width;
+
+		boxStyle.position = 'absolute';
+		boxStyle.top = boxStyle.left = '-9999px';
+		boxStyle.width = boxStyle.height = '100px';
+		boxStyle.overflow = 'scroll';
+
+		body.appendChild(box);
+
+		width = box.offsetWidth - box.clientWidth;
+
+		body.removeChild(box);
+
+		return width;
+	}
+
+	return scrollbarWidth;
+}));
+
+},{}],20:[function(require,module,exports){
 /*
  * smoothscroll polyfill - v0.3.5
  * https://iamdustan.github.io/smoothscroll
@@ -4694,7 +4731,7 @@ module.exports = toArray;
   }
 })(window, document);
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /* global requestAnimationFrame */
 
 var eases = require("eases");
@@ -4889,7 +4926,7 @@ module.exports = {
     transform: transform
 };
 
-},{"eases":39}],21:[function(require,module,exports){
+},{"eases":40}],22:[function(require,module,exports){
 function backInOut(t) {
   var s = 1.70158 * 1.525
   if ((t *= 2) < 1)
@@ -4898,21 +4935,21 @@ function backInOut(t) {
 }
 
 module.exports = backInOut
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 function backIn(t) {
   var s = 1.70158
   return t * t * ((s + 1) * t - s)
 }
 
 module.exports = backIn
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 function backOut(t) {
   var s = 1.70158
   return --t * t * ((s + 1) * t + s) + 1
 }
 
 module.exports = backOut
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 var bounceOut = require('./bounce-out')
 
 function bounceInOut(t) {
@@ -4922,7 +4959,7 @@ function bounceInOut(t) {
 }
 
 module.exports = bounceInOut
-},{"./bounce-out":26}],25:[function(require,module,exports){
+},{"./bounce-out":27}],26:[function(require,module,exports){
 var bounceOut = require('./bounce-out')
 
 function bounceIn(t) {
@@ -4930,7 +4967,7 @@ function bounceIn(t) {
 }
 
 module.exports = bounceIn
-},{"./bounce-out":26}],26:[function(require,module,exports){
+},{"./bounce-out":27}],27:[function(require,module,exports){
 function bounceOut(t) {
   var a = 4.0 / 11.0
   var b = 8.0 / 11.0
@@ -4952,26 +4989,26 @@ function bounceOut(t) {
 }
 
 module.exports = bounceOut
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 function circInOut(t) {
   if ((t *= 2) < 1) return -0.5 * (Math.sqrt(1 - t * t) - 1)
   return 0.5 * (Math.sqrt(1 - (t -= 2) * t) + 1)
 }
 
 module.exports = circInOut
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 function circIn(t) {
   return 1.0 - Math.sqrt(1.0 - t * t)
 }
 
 module.exports = circIn
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 function circOut(t) {
   return Math.sqrt(1 - ( --t * t ))
 }
 
 module.exports = circOut
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 function cubicInOut(t) {
   return t < 0.5
     ? 4.0 * t * t * t
@@ -4979,20 +5016,20 @@ function cubicInOut(t) {
 }
 
 module.exports = cubicInOut
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 function cubicIn(t) {
   return t * t * t
 }
 
 module.exports = cubicIn
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 function cubicOut(t) {
   var f = t - 1.0
   return f * f * f + 1.0
 }
 
 module.exports = cubicOut
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 function elasticInOut(t) {
   return t < 0.5
     ? 0.5 * Math.sin(+13.0 * Math.PI/2 * 2.0 * t) * Math.pow(2.0, 10.0 * (2.0 * t - 1.0))
@@ -5000,19 +5037,19 @@ function elasticInOut(t) {
 }
 
 module.exports = elasticInOut
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 function elasticIn(t) {
   return Math.sin(13.0 * t * Math.PI/2) * Math.pow(2.0, 10.0 * (t - 1.0))
 }
 
 module.exports = elasticIn
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 function elasticOut(t) {
   return Math.sin(-13.0 * (t + 1.0) * Math.PI/2) * Math.pow(2.0, -10.0 * t) + 1.0
 }
 
 module.exports = elasticOut
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 function expoInOut(t) {
   return (t === 0.0 || t === 1.0)
     ? t
@@ -5022,19 +5059,19 @@ function expoInOut(t) {
 }
 
 module.exports = expoInOut
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 function expoIn(t) {
   return t === 0.0 ? t : Math.pow(2.0, 10.0 * (t - 1.0))
 }
 
 module.exports = expoIn
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 function expoOut(t) {
   return t === 1.0 ? t : 1.0 - Math.pow(2.0, -10.0 * t)
 }
 
 module.exports = expoOut
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 module.exports = {
 	'backInOut': require('./back-in-out'),
 	'backIn': require('./back-in'),
@@ -5068,13 +5105,13 @@ module.exports = {
 	'sineIn': require('./sine-in'),
 	'sineOut': require('./sine-out')
 }
-},{"./back-in":22,"./back-in-out":21,"./back-out":23,"./bounce-in":25,"./bounce-in-out":24,"./bounce-out":26,"./circ-in":28,"./circ-in-out":27,"./circ-out":29,"./cubic-in":31,"./cubic-in-out":30,"./cubic-out":32,"./elastic-in":34,"./elastic-in-out":33,"./elastic-out":35,"./expo-in":37,"./expo-in-out":36,"./expo-out":38,"./linear":40,"./quad-in":42,"./quad-in-out":41,"./quad-out":43,"./quart-in":45,"./quart-in-out":44,"./quart-out":46,"./quint-in":48,"./quint-in-out":47,"./quint-out":49,"./sine-in":51,"./sine-in-out":50,"./sine-out":52}],40:[function(require,module,exports){
+},{"./back-in":23,"./back-in-out":22,"./back-out":24,"./bounce-in":26,"./bounce-in-out":25,"./bounce-out":27,"./circ-in":29,"./circ-in-out":28,"./circ-out":30,"./cubic-in":32,"./cubic-in-out":31,"./cubic-out":33,"./elastic-in":35,"./elastic-in-out":34,"./elastic-out":36,"./expo-in":38,"./expo-in-out":37,"./expo-out":39,"./linear":41,"./quad-in":43,"./quad-in-out":42,"./quad-out":44,"./quart-in":46,"./quart-in-out":45,"./quart-out":47,"./quint-in":49,"./quint-in-out":48,"./quint-out":50,"./sine-in":52,"./sine-in-out":51,"./sine-out":53}],41:[function(require,module,exports){
 function linear(t) {
   return t
 }
 
 module.exports = linear
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 function quadInOut(t) {
     t /= 0.5
     if (t < 1) return 0.5*t*t
@@ -5083,19 +5120,19 @@ function quadInOut(t) {
 }
 
 module.exports = quadInOut
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 function quadIn(t) {
   return t * t
 }
 
 module.exports = quadIn
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 function quadOut(t) {
   return -t * (t - 2.0)
 }
 
 module.exports = quadOut
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 function quarticInOut(t) {
   return t < 0.5
     ? +8.0 * Math.pow(t, 4.0)
@@ -5103,44 +5140,44 @@ function quarticInOut(t) {
 }
 
 module.exports = quarticInOut
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 function quarticIn(t) {
   return Math.pow(t, 4.0)
 }
 
 module.exports = quarticIn
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 function quarticOut(t) {
   return Math.pow(t - 1.0, 3.0) * (1.0 - t) + 1.0
 }
 
 module.exports = quarticOut
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 function qinticInOut(t) {
     if ( ( t *= 2 ) < 1 ) return 0.5 * t * t * t * t * t
     return 0.5 * ( ( t -= 2 ) * t * t * t * t + 2 )
 }
 
 module.exports = qinticInOut
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 function qinticIn(t) {
   return t * t * t * t * t
 }
 
 module.exports = qinticIn
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 function qinticOut(t) {
   return --t * t * t * t * t + 1
 }
 
 module.exports = qinticOut
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 function sineInOut(t) {
   return -0.5 * (Math.cos(Math.PI*t) - 1)
 }
 
 module.exports = sineInOut
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 function sineIn (t) {
   var v = Math.cos(t * Math.PI * 0.5)
   if (Math.abs(v) < 1e-14) return 1
@@ -5149,13 +5186,13 @@ function sineIn (t) {
 
 module.exports = sineIn
 
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 function sineOut(t) {
   return Math.sin(t * Math.PI/2)
 }
 
 module.exports = sineOut
-},{}],53:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 /* global module */
 
 (function () {
@@ -5201,7 +5238,7 @@ module.exports = sineOut
     
 }());
 
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 
 var Howl = require("howler").Howl;
 
@@ -5423,7 +5460,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"howler":18}],55:[function(require,module,exports){
+},{"howler":18}],56:[function(require,module,exports){
 //
 // # Highlighter Component
 //
@@ -5547,7 +5584,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../../utils/browser/getAbsoluteRect":70,"../../utils/browser/scrolling":75,"../../utils/browser/setStyle":76,"enjoy-core/compose":11,"transform-js":20}],56:[function(require,module,exports){
+},{"../../utils/browser/getAbsoluteRect":71,"../../utils/browser/scrolling":76,"../../utils/browser/setStyle":77,"enjoy-core/compose":11,"transform-js":21}],57:[function(require,module,exports){
 //
 // # Screens component
 //
@@ -6123,7 +6160,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../../utils/browser/confirm.js":69,"../../utils/evalScript.js":78,"enjoy-core/each":12,"transform-js":20,"vrep":53}],57:[function(require,module,exports){
+},{"../../utils/browser/confirm.js":70,"../../utils/evalScript.js":79,"enjoy-core/each":12,"transform-js":21,"vrep":54}],58:[function(require,module,exports){
 /* global __line */
 
 var format = require("vrep").format;
@@ -6233,6 +6270,8 @@ function create(context) {
         
         indicator.setAttribute("title", "Click or press space to continue");
         indicator.setAttribute("tabindex", "1");
+        
+        scrolling.hideScrollbar(text);
         
         ui.addEventListener("click", onUiClick);
         container.addEventListener("click", onContainerClick);
@@ -6768,7 +6807,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../../utils/browser/confirm.js":69,"../../utils/browser/getClickableParent":71,"../../utils/browser/notifications.js":72,"../../utils/browser/revealText.js":73,"../../utils/browser/scrolling.js":75,"class-manipulator":6,"vrep":53}],58:[function(require,module,exports){
+},{"../../utils/browser/confirm.js":70,"../../utils/browser/getClickableParent":72,"../../utils/browser/notifications.js":73,"../../utils/browser/revealText.js":74,"../../utils/browser/scrolling.js":76,"class-manipulator":6,"vrep":54}],59:[function(require,module,exports){
 //
 // # Script environment component
 //
@@ -6824,7 +6863,7 @@ function create(context) {
 
 module.exports = create;
 
-},{}],59:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 
 function create(context) {
     
@@ -6935,7 +6974,7 @@ function create(context) {
 
 module.exports = create;
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 /* eslint-disable no-console */
 
 var clone = require("clone");
@@ -7378,7 +7417,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/evalScript":78,"clone":7,"deepmerge":8}],61:[function(require,module,exports){
+},{"../utils/evalScript":79,"clone":7,"deepmerge":8}],62:[function(require,module,exports){
 
 var clone = require("clone");
 var createApi = require("../utils/node.js");
@@ -7495,7 +7534,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/node.js":79,"clone":7}],62:[function(require,module,exports){
+},{"../utils/node.js":80,"clone":7}],63:[function(require,module,exports){
 
 var clone = require("clone");
 
@@ -7599,7 +7638,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"clone":7}],63:[function(require,module,exports){
+},{"clone":7}],64:[function(require,module,exports){
 //
 // Module for storing the game state in local storage.
 //
@@ -7801,7 +7840,7 @@ function create(context) {
 
 module.exports = create;
 
-},{}],64:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 
 function create(context) {
     
@@ -7868,7 +7907,7 @@ function create(context) {
 
 module.exports = create;
 
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 
 var clone = require("clone");
 
@@ -8007,7 +8046,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"clone":7}],66:[function(require,module,exports){
+},{"clone":7}],67:[function(require,module,exports){
 
 function create(context) {
     
@@ -8070,12 +8109,12 @@ function create(context) {
 
 module.exports = create;
 
-},{}],67:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 /* global require */
 
 window.TOOTHROT = require("./runtimes/browser.js");
 
-},{"./runtimes/browser.js":68}],68:[function(require,module,exports){
+},{"./runtimes/browser.js":69}],69:[function(require,module,exports){
 /* global setInterval, clearInterval */
 /* eslint no-console: off */
 
@@ -8127,7 +8166,7 @@ module.exports = {
     decode: decodeResources
 };
 
-},{"../components/audio.js":54,"../components/browser-ui/highlighter.js":55,"../components/browser-ui/screens.js":56,"../components/browser-ui/ui.js":57,"../components/env.js":58,"../components/focus.js":59,"../components/interpreter.js":60,"../components/nodes.js":61,"../components/settings.js":62,"../components/storage.js":63,"../components/story.js":64,"../components/system.js":65,"../components/vars.js":66,"../utils/context.js":77,"smoothscroll-polyfill":19}],69:[function(require,module,exports){
+},{"../components/audio.js":55,"../components/browser-ui/highlighter.js":56,"../components/browser-ui/screens.js":57,"../components/browser-ui/ui.js":58,"../components/env.js":59,"../components/focus.js":60,"../components/interpreter.js":61,"../components/nodes.js":62,"../components/settings.js":63,"../components/storage.js":64,"../components/story.js":65,"../components/system.js":66,"../components/vars.js":67,"../utils/context.js":78,"smoothscroll-polyfill":20}],70:[function(require,module,exports){
 
 function create(context) {
     
@@ -8174,7 +8213,7 @@ function create(context) {
 
 module.exports = create;
 
-},{}],70:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 
 var scrollPosition = require("./scrollPosition");
 
@@ -8192,7 +8231,7 @@ function getAbsoluteRect(element) {
 
 module.exports = getAbsoluteRect;
 
-},{"./scrollPosition":74}],71:[function(require,module,exports){
+},{"./scrollPosition":75}],72:[function(require,module,exports){
 
 function getClickableParent(node) {
     
@@ -8213,7 +8252,7 @@ function getClickableParent(node) {
 
 module.exports = getClickableParent;
 
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 /* global require, module, setTimeout */
 
 var format = require("vrep").format;
@@ -8291,7 +8330,7 @@ module.exports = {
     create: create
 };
 
-},{"transform-js":20,"vrep":53}],73:[function(require,module,exports){
+},{"transform-js":21,"vrep":54}],74:[function(require,module,exports){
 
 var transform = require("transform-js").transform;
 
@@ -8418,7 +8457,7 @@ function setOpacity(element) {
 
 module.exports = create;
 
-},{"transform-js":20}],74:[function(require,module,exports){
+},{"transform-js":21}],75:[function(require,module,exports){
 
 function getScrollX() {
     return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
@@ -8433,24 +8472,51 @@ module.exports = {
     getY: getScrollY
 };
 
-},{}],75:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 
+var transform = require("transform-js").transform;
+var getScrollbarWidth = require("scrollbarwidth");
 var getAbsoluteRect = require("./getAbsoluteRect");
 var scrollPosition = require("./scrollPosition");
 
 var getScrollX = scrollPosition.getX;
 var getScrollY = scrollPosition.getY;
 
+var isLikeGecko = (/like Gecko/i).test(window.navigator.userAgent);
+var isGecko = !isLikeGecko && (/Gecko/i).test(window.navigator.userAgent);
+
+function hideScrollbar(element) {
+    
+    var scrollbarWidth = getScrollbarWidth(element);
+    
+    element.style.overflowY = "auto";
+    element.style.overflowX = "hidden";
+    element.style.transform = "translate(" + scrollbarWidth + "px, 0px)";
+}
+
 function scrollToBottom(element, instantly) {
+    
     if (instantly) {
         element.scroll(0, element.scrollHeight);
     }
     else {
-        element.scroll({
-            top: element.scrollHeight,
-            left: 0,
-            behavior: "smooth"
-        });
+        //
+        // Firefox stops smooth scrolling altogether when calling this function repeatedly.
+        // It has something to do with the 'behavior: "smooth"' part, so we use custom scrolling
+        // when the browser uses Gecko as rendering engine.
+        //
+        if (isGecko) {
+            transform(element.scrollTop, element.scrollHeight, function (v) {
+                element.scrollTop = v;
+            }, {duration: 200, easing: "sineInOut", fps: 60});
+        }
+        else {
+            element.scroll({
+                top: element.scrollHeight,
+                left: 0,
+                behavior: "smooth"
+            });
+        }
     }
 }
 
@@ -8484,12 +8550,13 @@ function isElementInView(element) {
 module.exports = {
     getX: getScrollX,
     getY: getScrollY,
+    hideScrollbar: hideScrollbar,
     scrollToBottom: scrollToBottom,
     scrollToElement: scrollToElement,
     isElementInView: isElementInView
 };
 
-},{"./getAbsoluteRect":70,"./scrollPosition":74}],76:[function(require,module,exports){
+},{"./getAbsoluteRect":71,"./scrollPosition":75,"scrollbarwidth":19,"transform-js":21}],77:[function(require,module,exports){
 
 var auto = require("enjoy-core/auto");
 
@@ -8500,7 +8567,7 @@ var setStyle = auto(function (element, key, unit, start, end, value) {
 
 module.exports = setStyle;
 
-},{"enjoy-core/auto":10}],77:[function(require,module,exports){
+},{"enjoy-core/auto":10}],78:[function(require,module,exports){
 /* eslint-disable no-console */
 
 var EventEmitter = require("events");
@@ -8659,7 +8726,7 @@ module.exports = {
     create: create
 };
 
-},{"events":5}],78:[function(require,module,exports){
+},{"events":5}],79:[function(require,module,exports){
 /* eslint-disable no-unused-vars, no-eval */
 
 function evalScript(__story, _, $, __body, __line) {
@@ -8675,7 +8742,7 @@ function evalScript(__story, _, $, __body, __line) {
 
 module.exports = evalScript;
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 
 function create(id, data, nodes) {
     
@@ -8871,4 +8938,4 @@ function contains(array, thing) {
 
 module.exports = create;
 
-},{}]},{},[67]);
+},{}]},{},[68]);

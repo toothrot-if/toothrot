@@ -44,5 +44,8 @@
   "homepage": "https://github.com/iiyo/toothrot#readme",
   "bin": {
     "toothrot": "./bin/cli.js"
+  },
+  "devDependencies": {
+    "scrollbarwidth": "^0.1.1"
   }
 }

@@ -108,6 +108,8 @@ function create(context) {
         indicator.setAttribute("title", "Click or press space to continue");
         indicator.setAttribute("tabindex", "1");
         
+        scrolling.hideScrollbar(text);
+        
         ui.addEventListener("click", onUiClick);
         container.addEventListener("click", onContainerClick);
         screenContainer.addEventListener("click", context.emit.bind(context, "screen_click"));
