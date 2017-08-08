@@ -294,8 +294,8 @@ function create(context) {
                 
                 var key = p1.trim();
                 
-                if (typeof vars[key] !== "undefined") {
-                    return vars[key];
+                if (vars.has(key)) {
+                    return "" + vars.get(key);
                 }
                 
                 console.warn("Undefined variable in node '" + node.id +
@@ -602,7 +602,7 @@ function create(context) {
         }
         else if (link.getAttribute("data-type") === "option") {
             
-            vars._choice = JSON.parse(window.atob(link.getAttribute("data-value")));
+            vars.set("_choice", JSON.parse(window.atob(link.getAttribute("data-value"))));
             
             if (link.getAttribute("data-target")) {
                 link.classList.add("clicked");
