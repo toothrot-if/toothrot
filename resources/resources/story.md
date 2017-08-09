@@ -9,12 +9,42 @@
 }
 ```
 
+```js @node_entry
+console.log("Head @node_entry: Entering node...", _.node().id);
+```
+
+```js @section_entry
+console.log("Head @section_entry");
+```
+
+```js @test
+"This is from the head."
+```
+
+## other_section
+
+### other_section_node
+
+This is a node in another section.
+
+Test: `@test`
+
+(<)
+
 
 ## default
+
+```js @entry
+console.log("Section @entry");
+```
 
 ### start
 
 (#) background: "url('images/muffin-dot-dat.png') center/cover"
+
+```js @entry
+$.foo = "bar"
+```
 
 ```js @where
 JSON.stringify($._lastNodes, null, 4);
@@ -22,7 +52,9 @@ JSON.stringify($._lastNodes, null, 4);
 
 Welcome to [Toothrot Engine](#toothrot_engine)!
 
-`@where`.
+`@where`. `$foo`
+
+[Go to other section](#other_section_node)
 
 From here, you can go to [the storage room](#storage_room).
 

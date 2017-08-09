@@ -47,6 +47,22 @@ function create(context) {
         return story.head.hierarchy;
     }
     
+    function getGlobalScripts() {
+        return story.head.scripts;
+    }
+    
+    function hasGlobalScript(name) {
+        return (name in story.head.scripts);
+    }
+    
+    function getGlobalScript(name) {
+        return story.head.scripts[name];
+    }
+    
+    function getHead() {
+        return story.head;
+    }
+    
     return {
         init: init,
         destroy: destroy,
@@ -58,7 +74,11 @@ function create(context) {
         hasMeta: hasMeta,
         getTitle: getTitle,
         getAll: getAll,
-        getHierarchy: getHierarchy
+        getHierarchy: getHierarchy,
+        getGlobalScripts: getGlobalScripts,
+        getGlobalScript: getGlobalScript,
+        hasGlobalScript: hasGlobalScript,
+        getHead: getHead
     };
 }
 

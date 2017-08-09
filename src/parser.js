@@ -2,6 +2,7 @@
 
 var each = require("enjoy-core/each");
 var bind = require("enjoy-core/bind");
+var clone = require("clone");
 var parseMarkdown = require("marked");
 
 var createError = require("./utils/createError");
@@ -65,13 +66,13 @@ function parse(text, then) {
     }
 }
 
-function parseScripts(node) {
+function parseScripts(node, oldContent) {
     
     var pattern = scriptPattern;
     
     node.content = node.content.replace(pattern, function (match, slot, body) {
         
-        var line = countNewLines(node.content.split(match[0])[0]) + node.line + 1;
+        var line = countNewLines(oldContent.split(match)[0]) + node.line + 1;
         
         slot = slot.trim();
         body = body.trim();
@@ -94,7 +95,7 @@ function parseNodeContent(handleError, node) {
     var linkPattern = /\[([^\)]+)\]\(#([a-zA-Z0-9_]+)\)/g;
     var oldContent = node.content;
     
-    parseScripts(node);
+    parseScripts(node, oldContent);
     
     node.content = node.content.replace(linkPattern, function (match, label, target) {
         
@@ -143,7 +144,8 @@ function parseStructure(text, handleError) {
             parseTime: Date.now()
         },
         head: {
-            content: ""
+            content: "",
+            scripts: {}
         },
         nodes: {},
         sections: {}
@@ -157,20 +159,29 @@ function parseStructure(text, handleError) {
                 ast.meta.title = line.replace(/^#/, "").trim();
             }
             else if (isSectionTitle(line)) {
-                setSection(line);
+                setSection(line, lineOffset);
             }
             else if (isNodeTitle(line)) {
                 addNode(line, lineOffset);
             }
             else if (section && isProperty(line)) {
                 parseProperty(line, lineOffset, true);
+                ast.sections[section].content += "\n";
+            }
+            else if (section) {
+                ast.sections[section].content += line + "\n";
             }
             else if (!foundFirstSection) {
+                
+                if (!ast.head.line) {
+                    ast.head.line = lineOffset;
+                }
+                
                 ast.head.content += line + "\n";
             }
         }
         else if (isSectionTitle(line)) {
-            setSection(line);
+            setSection(line, lineOffset);
             foundFirstSection = true;
             currentNode = null;
         }
@@ -201,9 +212,27 @@ function parseStructure(text, handleError) {
         }
     });
     
-    parseHierarchy();
+    parseSectionScripts();
+    parseHead();
     
     return ast;
+    
+    function parseSectionScripts() {
+        Object.keys(ast.sections).forEach(function (key) {
+            parseScripts(ast.sections[key], ast.sections[key].content);
+        });
+    }
+    
+    function parseHead() {
+        
+        var head = clone(ast.head);
+        
+        parseScripts(head, ast.head.content);
+        
+        ast.head.scripts = clone(head.scripts);
+        
+        parseHierarchy();
+    }
     
     function parseHierarchy() {
         
@@ -215,6 +244,9 @@ function parseStructure(text, handleError) {
         }
         
         ast.head.content.replace(hierarchyPattern, function (match, body) {
+            
+            var line = countNewLines(ast.head.content.split(match[0])[0]) + ast.head.line + 1;
+            
             try {
                 hierarchy = JSON.parse(body);
             }
@@ -223,18 +255,23 @@ function parseStructure(text, handleError) {
                     id: "HIERARCHY_JSON_ERROR"
                 }));
             }
+            
+            return (new Array(line - ast.head.line - 1)).join("\n");
         });
         
         ast.head.hierarchy = hierarchy;
     }
     
-    function setSection(line) {
+    function setSection(line, lineOffset) {
         
         section = line.replace(/^##/, "").trim();
         
         if (!ast.sections[section]) {
             ast.sections[section] = {
-                data: {}
+                content: "",
+                data: {},
+                scripts: {},
+                line: lineOffset + 1
             };
         }
         

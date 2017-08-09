@@ -13,6 +13,7 @@ var none = function () {};
 
 function create(context) {
     
+    var serialized, currentNextType, currentSection;
     var story, vars, env, nodes, storage, settings, focus, currentNode, nextClickTime, timeoutId;
     
     // A stack for remembering which node to return to.
@@ -54,10 +55,13 @@ function create(context) {
         
         var currentNodeId = currentNode ? currentNode.id : "start";
         
+        console.log("stack in serialize():", JSON.stringify(stack));
+        
         return JSON.stringify({
             vars: vars.getAll(),
             stack: stack.slice(),
             node: currentNodeId,
+            currentNextType: currentNextType,
             text: story.getNode(currentNodeId).content
         });
     }
@@ -70,14 +74,17 @@ function create(context) {
         
         data = JSON.parse(data);
         stack = data.stack.slice();
+        currentNextType = data.currentNextType;
         
         Object.keys(data.vars).forEach(function (key) {
             vars.set(key, data.vars[key]);
         });
         
+        stack.pop();
+        
         context.emit("resume_game", data);
         
-        runNode(story.getNode(data.node));
+        runNode(story.getNode(data.node), currentNextType);
     }
     
     function loadCurrentSlot() {
@@ -122,7 +129,7 @@ function create(context) {
         
         then = then || none;
         
-        storage.save(name, serialize(), function (error) {
+        storage.save(name, serialized, function (error) {
             
             if (error) {
                 return;
@@ -152,7 +159,14 @@ function create(context) {
         
         var skipTo;
         var data = nodes.get(node.id);
-        var copy = merge(clone(story.getSection(node.section)), clone(node));
+        var lastSection = currentSection;
+        var section = story.getSection(node.section);
+        var copy = merge(clone(section), clone(node));
+        
+        currentNextType = nextType;
+        currentSection = node.section;
+        
+        console.log(node.id, nextType, JSON.stringify(stack));
         
         copy.events = [];
         copy.items = [];
@@ -202,6 +216,21 @@ function create(context) {
             });
         });
         
+        if (lastSection !== currentSection) {
+            
+            if (story.hasGlobalScript("section_entry")) {
+                runScript(story.getGlobalScript("section_entry"));
+            }
+            
+            if (section.scripts.entry) {
+                runScript(section.scripts.entry);
+            }
+        }
+        
+        if (story.hasGlobalScript("node_entry")) {
+            runScript(story.getGlobalScript("node_entry"));
+        }
+        
         if (node.scripts.entry) {
             runScript(node.scripts.entry);
         }
@@ -211,12 +240,16 @@ function create(context) {
             var script;
             var result = "";
             
-            if (!(slot in node.scripts)) {
+            if (
+                !(slot in node.scripts) &&
+                !(slot in section.scripts) &&
+                !story.hasGlobalScript(slot)
+            ) {
                 console.warn("No script for slot '" + slot + "' at node '" + node.id + "'.");
                 return "";
             }
             
-            script = node.scripts[slot];
+            script = node.scripts[slot] || section.scripts[slot] || story.getGlobalScript(slot);
             
             result = runScript(script);
             
@@ -281,11 +314,10 @@ function create(context) {
             stack.push(currentNode.id);
         }
         
-        context.emit("run_node", copy);
-        
         currentNode = node;
-        
-        storage.save("current", serialize());
+        context.emit("run_node", copy);
+        serialized = serialize();
+        storage.save("current", serialized);
         
         if (typeof data.get("timeout") === "number") {
             startTimer(node);
@@ -325,7 +357,7 @@ function create(context) {
         }
         
         if (currentNode.next) {
-            console.log("Going to next node...");
+            console.log("Going to next node ('" + currentNode.next + "')...");
             runNode(story.getNode(currentNode.next), "next");
             nextClickTime = Date.now();
         }
@@ -334,12 +366,18 @@ function create(context) {
             lastNodes = vars.get("_lastNodes") || {};
             tag = currentNode.returnToLastTag;
             
-            if (currentNode.returnToLastTag && lastNodes[tag]) {
-                console.log("Returning to last node with tag '" + tag + "'...");
-                runNode(story.getNode(lastNodes[tag]));
+            if (tag && lastNodes[tag]) {
+                console.log(
+                    "Returning to last node with tag '" + tag +
+                    "' ('" + lastNodes[tag] + "')..."
+                );
+                runNode(story.getNode(lastNodes[tag]), "returnToLastTag");
             }
             else {
-                console.log("Returning to previous node...");
+                console.log(
+                    "Returning from node '" + currentNode.id + "' to previous node '" +
+                    stack[stack.length - 1] + "'..."
+                );
                 runNode(story.getNode(stack.pop()), "return");
             }
             
