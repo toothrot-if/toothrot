@@ -57,7 +57,22 @@ function pack(dir) {
         bundle.screens[name] = "" + fs.readFileSync(screenPath + file);
     });
     
+    pruneStory(story);
+    
     return JSON.stringify(bundle, null, 4);
+}
+
+function pruneStory(story) {
+    
+    Object.keys(story.nodes).forEach(function (key) {
+        delete story.nodes[key].raw;
+    });
+    
+    Object.keys(story.sections).forEach(function (key) {
+        delete story.sections[key].raw;
+    });
+    
+    delete story.head.content;
 }
 
 module.exports.pack = pack;
