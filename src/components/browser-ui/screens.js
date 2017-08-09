@@ -148,7 +148,10 @@ function create(context) {
     function update(then) {
         
         var container = context.get("screen_container");
-        var elements = Array.prototype.slice(container.querySelectorAll("*[data-type=setting]"));
+        
+        var elements = Array.prototype.slice.call(
+            container.querySelectorAll("[data-type='setting']")
+        );
         
         var values = {};
         
