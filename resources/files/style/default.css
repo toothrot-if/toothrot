@@ -83,16 +83,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {
-    font-size: 2em;
+    font-size: 1.6em;
     text-align: center;
 }
 
 h2 {
-    font-size: 1.6em;
+    font-size: 1.4em;
 }
 
 h3 {
-    font-size: 1.4em;
+    font-size: 1.2em;
 }
 
 em, i {
@@ -319,9 +319,8 @@ strong, b {
 
 .link, .link:visited {
     display: inline-block;
-    padding: 2px;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-left: 3px;
+    padding-right: 3px;
     border: 1px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.9);
@@ -741,9 +740,13 @@ strong, b {
 @media (max-width: 600px) {
 
 .Text {
-    width: 95%;
-    padding-left: 0;
-    padding-right: 0;
+    width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.Text p {
+    margin-top: 12px;
 }
 
 .MessageBox {
@@ -785,10 +788,6 @@ strong, b {
 
 .fullscreen-link {
     display: none !important;
-}
-
-.Text {
-    max-width: 90%;
 }
 
 .Toothrot {
@@ -862,7 +861,7 @@ strong, b {
 .TextItem {
     transition-duration: 0.5s;
     opacity: 0.6;
-    line-height: 1.5em;
+    line-height: 1.3em;
 }
 
 .TextItem.current {
