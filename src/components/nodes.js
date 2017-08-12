@@ -60,6 +60,10 @@ function create(context) {
         
         ancestors.forEach(function (ancestor) {
             
+            if (tags.indexOf(ancestor) >= 0) {
+                return;
+            }
+            
             tags.push(ancestor);
             
             resolveTagHierarchy(ancestor).forEach(function (otherTag) {

@@ -53,7 +53,10 @@ function validator(handleError) {
             resolveHierarchy(ancestor, hierarchy, resolving).forEach(function (otherTag) {
                 tags.push(otherTag);
             });
+            
         });
+        
+        resolving.splice(resolving.indexOf(tag), 1);
         
         return tags;
     }
