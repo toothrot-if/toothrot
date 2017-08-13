@@ -55,13 +55,24 @@ function create(context) {
         
         var currentNodeId = currentNode ? currentNode.id : "start";
         
-        return JSON.stringify({
+        var info = vars.get("_savegameInfo") || {
+            text: story.getNode(currentNodeId).content
+        };
+        
+        var data = {
             vars: vars.getAll(),
             stack: stack.slice(),
             node: currentNodeId,
-            currentNextType: currentNextType,
-            text: story.getNode(currentNodeId).content
-        });
+            currentNextType: currentNextType
+        };
+        
+        if (info && typeof info === "object") {
+            Object.keys(info).forEach(function (key) {
+                data[key] = info[key];
+            });
+        }
+        
+        return JSON.stringify(data);
     }
     
     function resume(data) {

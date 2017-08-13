@@ -11,6 +11,9 @@
 
 ```js @node_entry
 console.log("Head @node_entry: Entering node...", _.node().id);
+$._savegameInfo = {
+    text: "This is a custom savegame description!"
+};
 ```
 
 ```js @section_entry

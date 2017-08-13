@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Sun, 13 Aug 2017 15:34:41 GMT
+    Build time: Sun, 13 Aug 2017 15:49:05 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -7053,13 +7053,24 @@ function create(context) {
         
         var currentNodeId = currentNode ? currentNode.id : "start";
         
-        return JSON.stringify({
+        var info = vars.get("_savegameInfo") || {
+            text: story.getNode(currentNodeId).content
+        };
+        
+        var data = {
             vars: vars.getAll(),
             stack: stack.slice(),
             node: currentNodeId,
-            currentNextType: currentNextType,
-            text: story.getNode(currentNodeId).content
-        });
+            currentNextType: currentNextType
+        };
+        
+        if (info && typeof info === "object") {
+            Object.keys(info).forEach(function (key) {
+                data[key] = info[key];
+            });
+        }
+        
+        return JSON.stringify(data);
     }
     
     function resume(data) {
