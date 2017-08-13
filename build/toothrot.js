@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Wed, 09 Aug 2017 21:33:42 GMT
+    Build time: Sat, 12 Aug 2017 11:35:54 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -6432,6 +6432,8 @@ function create(context) {
             var content = node.content;
             var data = nodes.get(node.id);
             
+            updateUi();
+            
             currentNode = node;
             currentSection = node.section;
             
@@ -6729,6 +6731,9 @@ function create(context) {
         else if (action === "toggleFullscreen") {
             system.toggleFullscreen();
         }
+        else if (action === "runNode") {
+            interpreter.runNodeById(target.getAttribute("data-node-id"));
+        }
         else if (action === "quickSave") {
             interpreter.saveQuick(qsSlot, function () {
                 notify("Game saved in quick save slot.", "success", NOTIFICATION_DURATION);
@@ -6794,6 +6799,18 @@ function create(context) {
         }
     }
     
+    function updateUi() {
+        
+        var elements = Array.prototype.slice.call(ui.querySelectorAll("[data-key]"));
+        
+        elements.forEach(function (element) {
+            
+            var key = element.getAttribute("data-key");
+            var value = vars.get(key);
+            
+            element.innerHTML = value;
+        });
+    }
     
     function fitsInWindow(element) {
         
@@ -7196,6 +7213,49 @@ function create(context) {
             });
         });
         
+        env.set("execNodeScript", function (nodeName, slot) {
+            
+            var script = story.getNodeScript(nodeName, slot);
+            
+            if (script) {
+                return runScript(script);
+            }
+        });
+        
+        env.set("execSectionScript", function (sectionName, slot) {
+            
+            var script = story.getSectionScript(sectionName, slot);
+            
+            if (script) {
+                return runScript(script);
+            }
+        });
+        
+        env.set("execGlobalScript", function (slot) {
+            
+            var script = story.getGlobalScript(slot);
+            
+            if (script) {
+                return runScript(script);
+            }
+        });
+        
+        env.set("hasNodeScript", function (nodeName, slot) {
+            return story.hasNodeScript(nodeName, slot);
+        });
+        
+        env.set("hasSectionScript", function (sectionName, slot) {
+            return story.hasSectionScript(sectionName, slot);
+        });
+        
+        env.set("hasGlobalScript", function (slot) {
+            return story.hasGlobalScript(slot);
+        });
+        
+        env.set("removeLinks", function (text) {
+            return text.replace(/\{([^\}]+)\}/g, "$1");
+        });
+        
         if (lastSection !== currentSection) {
             
             if (story.hasGlobalScript("section_entry")) {
@@ -7520,6 +7580,10 @@ function create(context) {
         var ancestors = hierarchy[tag] || [];
         
         ancestors.forEach(function (ancestor) {
+            
+            if (tags.indexOf(ancestor) >= 0) {
+                return;
+            }
             
             tags.push(ancestor);
             
@@ -7943,6 +8007,32 @@ function create(context) {
         return story.head.scripts[name];
     }
     
+    function getNodeScript(node, slot) {
+        
+        if (!hasNodeScript(node, slot)) {
+            return;
+        }
+        
+        return getNode(node).scripts[slot];
+    }
+    
+    function hasNodeScript(node, slot) {
+        return hasNode(node) && (slot in getNode(node).scripts);
+    }
+    
+    function getSectionScript(section, slot) {
+        
+        if (!hasSectionScript(section, slot)) {
+            return;
+        }
+        
+        return getSection(section).scripts[slot];
+    }
+    
+    function hasSectionScript(section, slot) {
+        return hasSection(section) && (slot in getSection(section).scripts);
+    }
+    
     function getHead() {
         return story.head;
     }
@@ -7962,6 +8052,10 @@ function create(context) {
         getGlobalScripts: getGlobalScripts,
         getGlobalScript: getGlobalScript,
         hasGlobalScript: hasGlobalScript,
+        getNodeScript: getNodeScript,
+        hasNodeScript: hasNodeScript,
+        getSectionScript: getSectionScript,
+        hasSectionScript: hasSectionScript,
         getHead: getHead
     };
 }

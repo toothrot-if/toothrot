@@ -266,6 +266,8 @@ function create(context) {
             var content = node.content;
             var data = nodes.get(node.id);
             
+            updateUi();
+            
             currentNode = node;
             currentSection = node.section;
             
@@ -563,6 +565,9 @@ function create(context) {
         else if (action === "toggleFullscreen") {
             system.toggleFullscreen();
         }
+        else if (action === "runNode") {
+            interpreter.runNodeById(target.getAttribute("data-node-id"));
+        }
         else if (action === "quickSave") {
             interpreter.saveQuick(qsSlot, function () {
                 notify("Game saved in quick save slot.", "success", NOTIFICATION_DURATION);
@@ -628,6 +633,18 @@ function create(context) {
         }
     }
     
+    function updateUi() {
+        
+        var elements = Array.prototype.slice.call(ui.querySelectorAll("[data-key]"));
+        
+        elements.forEach(function (element) {
+            
+            var key = element.getAttribute("data-key");
+            var value = vars.get(key);
+            
+            element.innerHTML = value;
+        });
+    }
     
     function fitsInWindow(element) {
         
