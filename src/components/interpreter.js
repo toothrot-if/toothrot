@@ -216,6 +216,49 @@ function create(context) {
             });
         });
         
+        env.set("execNodeScript", function (nodeName, slot) {
+            
+            var script = story.getNodeScript(nodeName, slot);
+            
+            if (script) {
+                return runScript(script);
+            }
+        });
+        
+        env.set("execSectionScript", function (sectionName, slot) {
+            
+            var script = story.getSectionScript(sectionName, slot);
+            
+            if (script) {
+                return runScript(script);
+            }
+        });
+        
+        env.set("execGlobalScript", function (slot) {
+            
+            var script = story.getGlobalScript(slot);
+            
+            if (script) {
+                return runScript(script);
+            }
+        });
+        
+        env.set("hasNodeScript", function (nodeName, slot) {
+            return story.hasNodeScript(nodeName, slot);
+        });
+        
+        env.set("hasSectionScript", function (sectionName, slot) {
+            return story.hasSectionScript(sectionName, slot);
+        });
+        
+        env.set("hasGlobalScript", function (slot) {
+            return story.hasGlobalScript(slot);
+        });
+        
+        env.set("removeLinks", function (text) {
+            return text.replace(/\{([^\}]+)\}/g, "$1");
+        });
+        
         if (lastSection !== currentSection) {
             
             if (story.hasGlobalScript("section_entry")) {

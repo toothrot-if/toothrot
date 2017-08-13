@@ -59,6 +59,32 @@ function create(context) {
         return story.head.scripts[name];
     }
     
+    function getNodeScript(node, slot) {
+        
+        if (!hasNodeScript(node, slot)) {
+            return;
+        }
+        
+        return getNode(node).scripts[slot];
+    }
+    
+    function hasNodeScript(node, slot) {
+        return hasNode(node) && (slot in getNode(node).scripts);
+    }
+    
+    function getSectionScript(section, slot) {
+        
+        if (!hasSectionScript(section, slot)) {
+            return;
+        }
+        
+        return getSection(section).scripts[slot];
+    }
+    
+    function hasSectionScript(section, slot) {
+        return hasSection(section) && (slot in getSection(section).scripts);
+    }
+    
     function getHead() {
         return story.head;
     }
@@ -78,6 +104,10 @@ function create(context) {
         getGlobalScripts: getGlobalScripts,
         getGlobalScript: getGlobalScript,
         hasGlobalScript: hasGlobalScript,
+        getNodeScript: getNodeScript,
+        hasNodeScript: hasNodeScript,
+        getSectionScript: getSectionScript,
+        hasSectionScript: hasSectionScript,
         getHead: getHead
     };
 }
