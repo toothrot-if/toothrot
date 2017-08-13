@@ -75,7 +75,7 @@ function create(context) {
     function onResume() {
         
         if (vars.get("_currentSound")) {
-            playSound(unserializeAudioPath(vars._currentSound));
+            playSound(unserializeAudioPath(vars.get("_currentSound")));
         }
         
         if (vars.get("_currentAmbience")) {
@@ -99,7 +99,7 @@ function create(context) {
             currentSound.unload();
         }
         
-        vars._currentSound = undefined;
+        vars.remove("_currentSound");
         currentSound = undefined;
     }
     
@@ -109,7 +109,7 @@ function create(context) {
             currentAmbience.unload();
         }
         
-        vars._currentAmbience = undefined;
+        vars.remove("_currentAmbience");
         currentAmbience = undefined;
     }
     
@@ -119,7 +119,7 @@ function create(context) {
             currentMusic.unload();
         }
         
-        vars._currentMusic = undefined;
+        vars.remove("_currentMusic");
         currentMusic = undefined;
     }
     
@@ -147,11 +147,11 @@ function create(context) {
         
         var serialized = serializeAudioPath(path);
         
-        if (currentMusic && vars._currentMusic === serialized) {
+        if (currentMusic && vars.get("_currentMusic") === serialized) {
             return;
         }
         
-        vars._currentMusic = serialized;
+        vars.set("_currentMusic", serialized);
         currentMusic = playTrack(path, settings.get("musicVolume"), true, currentMusic);
     }
     

@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v2.0.0-beta.1)
-    Build time: Sun, 13 Aug 2017 18:38:30 GMT
+    Toothrot Engine (v2.0.0-beta.2)
+    Build time: Sun, 13 Aug 2017 19:02:59 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5316,7 +5316,7 @@ function create(context) {
     function onResume() {
         
         if (vars.get("_currentSound")) {
-            playSound(unserializeAudioPath(vars._currentSound));
+            playSound(unserializeAudioPath(vars.get("_currentSound")));
         }
         
         if (vars.get("_currentAmbience")) {
@@ -5340,7 +5340,7 @@ function create(context) {
             currentSound.unload();
         }
         
-        vars._currentSound = undefined;
+        vars.remove("_currentSound");
         currentSound = undefined;
     }
     
@@ -5350,7 +5350,7 @@ function create(context) {
             currentAmbience.unload();
         }
         
-        vars._currentAmbience = undefined;
+        vars.remove("_currentAmbience");
         currentAmbience = undefined;
     }
     
@@ -5360,7 +5360,7 @@ function create(context) {
             currentMusic.unload();
         }
         
-        vars._currentMusic = undefined;
+        vars.remove("_currentMusic");
         currentMusic = undefined;
     }
     
@@ -5388,11 +5388,11 @@ function create(context) {
         
         var serialized = serializeAudioPath(path);
         
-        if (currentMusic && vars._currentMusic === serialized) {
+        if (currentMusic && vars.get("_currentMusic") === serialized) {
             return;
         }
         
-        vars._currentMusic = serialized;
+        vars.set("_currentMusic", serialized);
         currentMusic = playTrack(path, settings.get("musicVolume"), true, currentMusic);
     }
     
@@ -8250,6 +8250,10 @@ function create(context) {
         return vars[key];
     }
     
+    function remove(key) {
+        delete vars[key];
+    }
+    
     function getAll() {
         return vars;
     }
@@ -8275,6 +8279,7 @@ function create(context) {
         destroy: destroy,
         get: get,
         getAll: getAll,
+        remove: remove,
         set: set,
         has: has,
         clear: clear

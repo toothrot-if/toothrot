@@ -27,6 +27,10 @@ function create(context) {
         return vars[key];
     }
     
+    function remove(key) {
+        delete vars[key];
+    }
+    
     function getAll() {
         return vars;
     }
@@ -52,6 +56,7 @@ function create(context) {
         destroy: destroy,
         get: get,
         getAll: getAll,
+        remove: remove,
         set: set,
         has: has,
         clear: clear
