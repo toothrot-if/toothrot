@@ -111,6 +111,7 @@ function create(context) {
         scrolling.hideScrollbar(text);
         
         ui.addEventListener("click", onUiClick);
+        bg3.addEventListener("click", onContainerClick);
         container.addEventListener("click", onContainerClick);
         screenContainer.addEventListener("click", context.emit.bind(context, "screen_click"));
         optionsParent.addEventListener("click", onOptionsParentClick);

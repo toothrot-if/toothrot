@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Sun, 13 Aug 2017 15:20:29 GMT
+    Build time: Sun, 13 Aug 2017 15:34:41 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -6277,6 +6277,7 @@ function create(context) {
         scrolling.hideScrollbar(text);
         
         ui.addEventListener("click", onUiClick);
+        bg3.addEventListener("click", onContainerClick);
         container.addEventListener("click", onContainerClick);
         screenContainer.addEventListener("click", context.emit.bind(context, "screen_click"));
         optionsParent.addEventListener("click", onOptionsParentClick);
