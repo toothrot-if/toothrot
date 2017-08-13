@@ -3,9 +3,18 @@ var clone = require("clone");
 
 function create(context) {
     
-    var fullscreenMode, features;
+    var features, runningElectron, remote;
     
     function init() {
+        
+        runningElectron = typeof window !== "undefined" &&
+            typeof window.process === "object" &&
+            window.process.type === "renderer";
+        
+        if (runningElectron) {
+            remote = window.require("electron").remote;
+        }
+        
         features = {
             fullscreen: hasFullscreen(),
             exit: canExit()
@@ -22,7 +31,7 @@ function create(context) {
     
     function toggleFullscreen() {
         
-        var fullscreenOn = fullscreenEnabled() || (typeof nw !== "undefined" && fullscreenMode);
+        var fullscreenOn = fullscreenEnabled();
         
         if (fullscreenOn) {
             exitFullscreen();
@@ -35,6 +44,11 @@ function create(context) {
     }
     
     function fullscreenEnabled() {
+        
+        if (runningElectron) {
+            return remote.getCurrentWindow().isFullScreen();
+        }
+        
         return document.fullscreenElement ||
             document.mozFullScreenElement ||
             document.msFullscreenElement ||
@@ -42,11 +56,8 @@ function create(context) {
     }
     
     function fullscreen() {
-        
-        fullscreenMode = true;
-        
-        if (typeof nw !== "undefined") {
-            nwEnterFullscreen();
+        if (runningElectron) {
+            remote.getCurrentWindow().setFullScreen(true);
         }
         else {
             requestFullscreen(document.body.parentNode);
@@ -54,23 +65,12 @@ function create(context) {
     }
     
     function exitFullscreen() {
-        
-        fullscreenMode = false;
-        
-        if (typeof nw !== "undefined") {
-            nwExitFullscreen();
+        if (runningElectron) {
+            remote.getCurrentWindow().setFullScreen(false);
         }
         else {
             exitBrowserFullscreen();
         }
-    }
-    
-    function nwEnterFullscreen() {
-        window.require('nw.gui').Window.get().enterKioskMode();
-    }
-    
-    function nwExitFullscreen() {
-        window.require('nw.gui').Window.get().leaveKioskMode();
     }
     
     function exitBrowserFullscreen() {
@@ -104,17 +104,17 @@ function create(context) {
     }
     
     function hasFullscreen() {
-        return typeof nw !== undefined;
+        return runningElectron;
     }
     
     function canExit() {
-        return typeof nw !== undefined;
+        return runningElectron;
     }
     
     function exit() {
+        
         try {
-            var gui = window.require("nw.gui");
-            gui.App.quit();
+            remote.getCurrentWindow().close();
         }
         catch (error) {
             console.error("Cannot exit: " + error);

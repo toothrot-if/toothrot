@@ -161,8 +161,6 @@ function buildDesktopApps(buildDir, config, then) {
     var desktopDir = normalize(buildDir + "/desktop/");
     var cacheDir = normalize(osenv.home() + "/toothrot-cache/");
     
-    console.log(options);
-    
     if (!Array.isArray(config.platform) || config.platform.length < 1) {
         then("no electron platforms specified");
         return;

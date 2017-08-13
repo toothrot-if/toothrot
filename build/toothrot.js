@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Sun, 13 Aug 2017 12:50:39 GMT
+    Build time: Sun, 13 Aug 2017 14:51:52 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -8071,9 +8071,18 @@ var clone = require("clone");
 
 function create(context) {
     
-    var fullscreenMode, features;
+    var features, runningElectron, remote;
     
     function init() {
+        
+        runningElectron = typeof window !== "undefined" &&
+            typeof window.process === "object" &&
+            window.process.type === "renderer";
+        
+        if (runningElectron) {
+            remote = window.require("electron").remote;
+        }
+        
         features = {
             fullscreen: hasFullscreen(),
             exit: canExit()
@@ -8090,7 +8099,7 @@ function create(context) {
     
     function toggleFullscreen() {
         
-        var fullscreenOn = fullscreenEnabled() || (typeof nw !== "undefined" && fullscreenMode);
+        var fullscreenOn = fullscreenEnabled();
         
         if (fullscreenOn) {
             exitFullscreen();
@@ -8103,6 +8112,11 @@ function create(context) {
     }
     
     function fullscreenEnabled() {
+        
+        if (runningElectron) {
+            return remote.getCurrentWindow().isFullScreen();
+        }
+        
         return document.fullscreenElement ||
             document.mozFullScreenElement ||
             document.msFullscreenElement ||
@@ -8110,11 +8124,8 @@ function create(context) {
     }
     
     function fullscreen() {
-        
-        fullscreenMode = true;
-        
-        if (typeof nw !== "undefined") {
-            nwEnterFullscreen();
+        if (runningElectron) {
+            remote.getCurrentWindow().setFullScreen(true);
         }
         else {
             requestFullscreen(document.body.parentNode);
@@ -8122,23 +8133,12 @@ function create(context) {
     }
     
     function exitFullscreen() {
-        
-        fullscreenMode = false;
-        
-        if (typeof nw !== "undefined") {
-            nwExitFullscreen();
+        if (runningElectron) {
+            remote.getCurrentWindow().setFullScreen(false);
         }
         else {
             exitBrowserFullscreen();
         }
-    }
-    
-    function nwEnterFullscreen() {
-        window.require('nw.gui').Window.get().enterKioskMode();
-    }
-    
-    function nwExitFullscreen() {
-        window.require('nw.gui').Window.get().leaveKioskMode();
     }
     
     function exitBrowserFullscreen() {
@@ -8172,17 +8172,17 @@ function create(context) {
     }
     
     function hasFullscreen() {
-        return typeof nw !== undefined;
+        return runningElectron;
     }
     
     function canExit() {
-        return typeof nw !== undefined;
+        return runningElectron;
     }
     
     function exit() {
+        
         try {
-            var gui = window.require("nw.gui");
-            gui.App.quit();
+            remote.getCurrentWindow().close();
         }
         catch (error) {
             console.error("Cannot exit: " + error);
