@@ -80,7 +80,8 @@ This will create the following files and folders in `my_project`:
     - confirm.html
     - notification.html
     - ui.html
-  - story.md
+  - extras.trot.ext.md
+  - story.trot.md
 - project.json
 ```
 

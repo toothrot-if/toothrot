@@ -21,16 +21,6 @@ console.log("Head @section_entry");
 "This is from the head."
 ```
 
-## other_section
-
-### other_section_node
-
-This is a node in another section.
-
-Test: `@test`
-
-(<)
-
 
 ## default
 
@@ -43,7 +33,7 @@ console.log("Section @entry");
 (#) background: "url('images/muffin-dot-dat.png') center/cover"
 
 ```js @entry
-$.foo = "bar"
+$.foo = navigator.userAgent;
 ```
 
 ```js @where

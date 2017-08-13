@@ -68,6 +68,7 @@ function validator(handleError) {
                 id: "UNKNOWN_NEXT_NODE",
                 next: node.next,
                 nodeLine: node.line,
+                nodeFile: node.file,
                 nodeId: node.id
             }));
         }
@@ -76,6 +77,7 @@ function validator(handleError) {
             handleError(createError({
                 id: "CONFLICT_NEXT_RETURN",
                 nodeId: node.id,
+                nodeFile: node.file,
                 nodeLine: node.line
             }));
         }
@@ -102,6 +104,8 @@ function validator(handleError) {
                 id: "OPTION_WITHOUT_TARGET_OR_VALUE",
                 nodeId: node.id,
                 nodeLine: node.line,
+                nodeFile: node.file,
+                optionFile: option.file,
                 optionLine: option.line
             }));
         }
@@ -113,6 +117,8 @@ function validator(handleError) {
                 target: option.target,
                 label: option.label,
                 nodeLine: node.line,
+                nodeFile: node.file,
+                optionFile: option.file,
                 optionLine: option.line
             }));
         }
@@ -143,6 +149,7 @@ function validator(handleError) {
                 id: "NO_LINK_TARGET",
                 nodeId: node.id,
                 nodeLine: node.line,
+                file: node.file,
                 linkLine: link.line,
                 label: link.label
             }));
@@ -152,6 +159,7 @@ function validator(handleError) {
                 id: "UNKNOWN_LINK_TARGET",
                 nodeId: node.id,
                 nodeLine: node.line,
+                file: node.file,
                 linkLine: link.line,
                 target: link.target,
                 label: link.label
@@ -166,6 +174,8 @@ function validator(handleError) {
                 id: "NO_OBJECT_LINK_TARGETS",
                 nodeId: node.id,
                 nodeLine: node.line,
+                nodeFile: node.file,
+                linkFile: link.file,
                 linkLine: link.line,
                 label: link.label
             }));
@@ -177,6 +187,8 @@ function validator(handleError) {
                         id: "UNKNOWN_LINK_TARGET",
                         nodeId: node.id,
                         nodeLine: node.line,
+                        nodeFile: node.file,
+                        linkFile: link.file,
                         linkLine: link.line,
                         target: target,
                         label: link.label

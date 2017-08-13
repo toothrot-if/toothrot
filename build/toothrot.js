@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Sat, 12 Aug 2017 11:35:54 GMT
+    Build time: Sun, 13 Aug 2017 11:28:58 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -6467,7 +6467,7 @@ function create(context) {
                 }
                 
                 console.warn("Undefined variable in node '" + node.id +
-                    "' (line " + node.line + "): " + key);
+                    "' (" + node.file + "@" + node.line + "): " + key);
                 
                 return "";
             });
@@ -7377,7 +7377,10 @@ function create(context) {
                 );
             }
             catch (error) {
-                console.error("Cannot execute script at line " + script.line + ":", error);
+                console.error(
+                    "Cannot execute script (<" + script.file + ">@" + script.line + "):",
+                    error
+                );
             }
             
             return result;
@@ -7470,7 +7473,7 @@ function create(context) {
                 
                 if (node.defaultOption < 0 || node.defaultOption >= options.length) {
                     throw new Error("Unknown default option '" + node.defaultOption +
-                        "' in node '" + node.id + "' (line " + node.line + ").");
+                        "' in node '" + node.id + "' (" + node.file + "@" + node.line + ").");
                 }
                 
                 vars.set("_choice", options[node.defaultOption].value);

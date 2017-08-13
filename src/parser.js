@@ -11,6 +11,9 @@ var validator = require("./validator");
 var scriptPattern = /```js @([a-zA-Z0-9_]+)((.|\n)*?)\n```/g;
 var hierarchyPattern = /```json @hierarchy((.|\n)*?)\n```/g;
 
+var currentFile;
+var currentFileLineOffset = 0;
+
 //
 // ## Function `parse(text[, then])`
 //
@@ -80,6 +83,7 @@ function parseScripts(node, oldContent) {
         node.scripts[slot] = {
             type: "script",
             slot: slot,
+            file: node.file,
             line: line,
             body: body
         };
@@ -101,7 +105,7 @@ function parseNodeContent(handleError, node) {
         
         var line = countNewLines(oldContent.split(match)[0]) + node.line + 1;
         
-        node.links.push(link("direct_link", label, target, line));
+        node.links.push(link("direct_link", label, target, line, node.file));
         
         return "(%l" + (node.links.length - 1) + "%)";
     });
@@ -153,19 +157,25 @@ function parseStructure(text, handleError) {
     
     lines.forEach(function (line, lineOffset) {
         
-        if (!currentNode) {
+        var currentLineOffset = lineOffset - currentFileLineOffset - 1;
+        
+        if (isFileTag(line)) {
+            currentFile = line.replace("<<<", "").replace(">>>", "");
+            currentFileLineOffset = lineOffset;
+        }
+        else if (!currentNode) {
             
             if (isTitle(line)) {
                 ast.meta.title = line.replace(/^#/, "").trim();
             }
             else if (isSectionTitle(line)) {
-                setSection(line, lineOffset);
+                setSection(line, currentLineOffset);
             }
             else if (isNodeTitle(line)) {
-                addNode(line, lineOffset);
+                addNode(line, currentLineOffset);
             }
             else if (section && isProperty(line)) {
-                parseProperty(line, lineOffset, true);
+                parseProperty(line, currentLineOffset, true);
                 ast.sections[section].content += "\n";
             }
             else if (section) {
@@ -174,37 +184,38 @@ function parseStructure(text, handleError) {
             else if (!foundFirstSection) {
                 
                 if (!ast.head.line) {
-                    ast.head.line = lineOffset;
+                    ast.head.line = currentLineOffset;
+                    ast.head.file = currentFile;
                 }
                 
                 ast.head.content += line + "\n";
             }
         }
         else if (isSectionTitle(line)) {
-            setSection(line, lineOffset);
+            setSection(line, currentLineOffset);
             foundFirstSection = true;
             currentNode = null;
         }
         else if (isNodeTitle(line)) {
-            addNode(line, lineOffset);
+            addNode(line, currentLineOffset);
         }
         else if (isNodeSeparator(line)) {
-            addAnonymousNode(line, lineOffset);
+            addAnonymousNode(line, currentLineOffset);
         }
         else if (isNextCommand(line)) {
-            parseNextCommand(line, lineOffset);
+            parseNextCommand(line, currentLineOffset);
             currentNode.content += "\n";
         }
         else if (isReturnToLast(line)) {
-            parseReturnToLast(line, lineOffset);
+            parseReturnToLast(line, currentLineOffset);
             currentNode.content += "\n";
         }
         else if (isOption(line)) {
-            parseOption(line, lineOffset);
+            parseOption(line, currentLineOffset);
             currentNode.content += "\n";
         }
         else if (isProperty(line)) {
-            parseProperty(line, lineOffset);
+            parseProperty(line, currentLineOffset);
             currentNode.content += "\n";
         }
         else {
@@ -271,6 +282,7 @@ function parseStructure(text, handleError) {
                 content: "",
                 data: {},
                 scripts: {},
+                file: currentFile,
                 line: lineOffset + 1
             };
         }
@@ -310,6 +322,7 @@ function parseStructure(text, handleError) {
                 id: "MULTIPLE_NEXT_NODES",
                 nodeId: currentNode.id,
                 nodeLine: currentNode.line,
+                file: currentNode.file,
                 lineOffset: lineOffset + 1
             }));
         }
@@ -343,6 +356,7 @@ function parseStructure(text, handleError) {
                 id: "MALFORMED_OPTION",
                 nodeId: currentNode.id,
                 nodeLine: currentNode.line,
+                file: currentNode.file,
                 lineOffset: lineOffset + 1
             }));
             return;
@@ -361,7 +375,9 @@ function parseStructure(text, handleError) {
         
         value = (valueParts[1] ? valueParts[1].trim() : "");
         
-        currentNode.options.push(option(label, target, value, condition, lineOffset));
+        currentNode.options.push(
+            option(label, target, value, condition, lineOffset, currentNode.file)
+        );
     }
     
     function parseProperty(line, lineOffset, isSection) {
@@ -383,6 +399,7 @@ function parseStructure(text, handleError) {
                     id: "INVALID_JSON_IN_SECTION_PROPERTY",
                     section: section,
                     sectionLine: currentSection.line,
+                    sectionFile: currentSection.file,
                     property: key,
                     errorMessage: error.message
                 }));
@@ -397,6 +414,7 @@ function parseStructure(text, handleError) {
                     id: "INVALID_JSON_IN_NODE_PROPERTY",
                     nodeId: currentNode.id,
                     nodeLine: currentNode.line,
+                    nodeFile: currentNode.file,
                     property: key,
                     errorMessage: error.message
                 }));
@@ -417,6 +435,7 @@ function node(line, lineOffset, section) {
         id: id,
         section: section,
         line: lineOffset + 1,
+        file: currentFile,
         content: "",
         links: [],
         scripts: {},
@@ -431,22 +450,24 @@ function node(line, lineOffset, section) {
     };
 }
 
-function option(label, target, value, condition, lineOffset) {
+function option(label, target, value, condition, lineOffset, file) {
     return {
         type: "option",
         value: value,
         line: lineOffset + 1,
+        file: file,
         label: label,
         target: target,
         condition: condition
     };
 }
 
-function link(type, label, target, line) {
+function link(type, label, target, line, file) {
     return {
         type: type,
         label: label,
         target: target,
+        file: file,
         line: line
     };
 }
@@ -477,6 +498,10 @@ function isNodeSeparator(line) {
 
 function isTitle(line) {
     return line.match(/^#[^#]+/);
+}
+
+function isFileTag(line) {
+    return (/^<<<[^>]+>>>$/).test(line);
 }
 
 function isSectionTitle(line) {

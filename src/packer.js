@@ -10,21 +10,23 @@ function pack(dir) {
     dir = normalize(dir + "/resources/");
     
     var story;
+    var storyFilesContent;
     var templatePath = normalize(dir + "/templates/");
     var screenPath = normalize(dir + "/screens/");
     var astFile = normalize(dir + "/ast.json");
     var templateFiles = fs.readdirSync(templatePath);
     var screenFiles = fs.readdirSync(screenPath);
     
-//
-// If there's an AST file in the resources folder (created by e.g. toothrot builder)
-// we use it instead of parsing the story file.
-//
+    //
+    // If there's an AST file in the resources folder (created by e.g. toothrot builder)
+    // we use it instead of parsing the story file.
+    //
     if (fs.existsSync(astFile)) {
         story = JSON.parse("" + fs.readFileSync(astFile));
     }
     else {
-        parse("" + fs.readFileSync(normalize(dir + "/story.md")), function (errors, ast) {
+        storyFilesContent = readStoryFile(dir);
+        parse("" + storyFilesContent, function (errors, ast) {
             
             if (errors) {
                 throw errors;
@@ -73,6 +75,34 @@ function pruneStory(story) {
     });
     
     delete story.head.content;
+}
+
+function readStoryFile(dir) {
+    
+    var mainFile = normalize(dir + "/story.trot.md");
+    var content = "<<<story.trot.md>>>\n";
+    var files = getAdditionalStoryFiles(dir);
+    
+    content += fs.readFileSync(mainFile);
+    
+    files.forEach(function (file) {
+        
+        var fileContent = fs.readFileSync(normalize(dir + "/" + file));
+        
+        content += "<<<" + file + ">>>\n";
+        content += fileContent;
+    });
+    
+    return content;
+}
+
+function getAdditionalStoryFiles(dir) {
+    
+    var allFiles = fs.readdirSync(dir);
+    
+    return allFiles.filter(function (file) {
+        return (/\.trot\.ext\.md/).test(file);
+    });
 }
 
 module.exports.pack = pack;

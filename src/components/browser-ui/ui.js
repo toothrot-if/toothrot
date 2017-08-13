@@ -301,7 +301,7 @@ function create(context) {
                 }
                 
                 console.warn("Undefined variable in node '" + node.id +
-                    "' (line " + node.line + "): " + key);
+                    "' (<" + node.file + ">@" + node.line + "): " + key);
                 
                 return "";
             });

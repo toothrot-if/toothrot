@@ -56,7 +56,7 @@ function init(dir, then) {
     
     function setStoryName() {
         
-        var file = path.normalize(dir + "/resources/story.md");
+        var file = path.normalize(dir + "/resources/story.trot.md");
         var story = "" + fs.readFileSync(file);
         
         story = story.replace(/^(\s*)#:([^\n]*)/g, "$1#: " + name);

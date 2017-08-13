@@ -380,7 +380,10 @@ function create(context) {
                 );
             }
             catch (error) {
-                console.error("Cannot execute script at line " + script.line + ":", error);
+                console.error(
+                    "Cannot execute script (<" + script.file + ">@" + script.line + "):",
+                    error
+                );
             }
             
             return result;
@@ -473,7 +476,7 @@ function create(context) {
                 
                 if (node.defaultOption < 0 || node.defaultOption >= options.length) {
                     throw new Error("Unknown default option '" + node.defaultOption +
-                        "' in node '" + node.id + "' (line " + node.line + ").");
+                        "' in node '" + node.id + "' (<" + node.file + ">@" + node.line + ").");
                 }
                 
                 vars.set("_choice", options[node.defaultOption].value);
