@@ -60,7 +60,7 @@ function create(context) {
             }
             
             if (!data) {
-                storage.save("settings", settings.getAll(), function () {
+                storage.save("settings", settings, function () {
                     then();
                 });
             }
