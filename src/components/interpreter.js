@@ -55,8 +55,6 @@ function create(context) {
         
         var currentNodeId = currentNode ? currentNode.id : "start";
         
-        console.log("stack in serialize():", JSON.stringify(stack));
-        
         return JSON.stringify({
             vars: vars.getAll(),
             stack: stack.slice(),
@@ -68,19 +66,22 @@ function create(context) {
     
     function resume(data) {
         
-        vars.clear();
+        var currentNodeId;
         
-        console.log("data in resume():", data);
+        vars.clear();
         
         data = JSON.parse(data);
         stack = data.stack.slice();
         currentNextType = data.currentNextType;
+        currentNodeId = stack.pop();
+        
+        if (currentNodeId) {
+            currentNode = story.getNode(currentNodeId);
+        }
         
         Object.keys(data.vars).forEach(function (key) {
             vars.set(key, data.vars[key]);
         });
-        
-        stack.pop();
         
         context.emit("resume_game", data);
         
@@ -165,8 +166,6 @@ function create(context) {
         
         currentNextType = nextType;
         currentSection = node.section;
-        
-        console.log(node.id, nextType, JSON.stringify(stack));
         
         copy.events = [];
         copy.items = [];
@@ -358,9 +357,10 @@ function create(context) {
         }
         
         currentNode = node;
-        context.emit("run_node", copy);
         serialized = serialize();
+        
         storage.save("current", serialized);
+        context.emit("run_node", copy);
         
         if (typeof data.get("timeout") === "number") {
             startTimer(node);

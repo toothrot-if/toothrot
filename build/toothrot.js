@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0)
-    Build time: Sun, 13 Aug 2017 11:28:58 GMT
+    Build time: Sun, 13 Aug 2017 12:50:39 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -6467,7 +6467,7 @@ function create(context) {
                 }
                 
                 console.warn("Undefined variable in node '" + node.id +
-                    "' (" + node.file + "@" + node.line + "): " + key);
+                    "' (<" + node.file + ">@" + node.line + "): " + key);
                 
                 return "";
             });
@@ -7052,8 +7052,6 @@ function create(context) {
         
         var currentNodeId = currentNode ? currentNode.id : "start";
         
-        console.log("stack in serialize():", JSON.stringify(stack));
-        
         return JSON.stringify({
             vars: vars.getAll(),
             stack: stack.slice(),
@@ -7065,19 +7063,22 @@ function create(context) {
     
     function resume(data) {
         
-        vars.clear();
+        var currentNodeId;
         
-        console.log("data in resume():", data);
+        vars.clear();
         
         data = JSON.parse(data);
         stack = data.stack.slice();
         currentNextType = data.currentNextType;
+        currentNodeId = stack.pop();
+        
+        if (currentNodeId) {
+            currentNode = story.getNode(currentNodeId);
+        }
         
         Object.keys(data.vars).forEach(function (key) {
             vars.set(key, data.vars[key]);
         });
-        
-        stack.pop();
         
         context.emit("resume_game", data);
         
@@ -7162,8 +7163,6 @@ function create(context) {
         
         currentNextType = nextType;
         currentSection = node.section;
-        
-        console.log(node.id, nextType, JSON.stringify(stack));
         
         copy.events = [];
         copy.items = [];
@@ -7355,9 +7354,10 @@ function create(context) {
         }
         
         currentNode = node;
-        context.emit("run_node", copy);
         serialized = serialize();
+        
         storage.save("current", serialized);
+        context.emit("run_node", copy);
         
         if (typeof data.get("timeout") === "number") {
             startTimer(node);
@@ -7473,7 +7473,7 @@ function create(context) {
                 
                 if (node.defaultOption < 0 || node.defaultOption >= options.length) {
                     throw new Error("Unknown default option '" + node.defaultOption +
-                        "' in node '" + node.id + "' (" + node.file + "@" + node.line + ").");
+                        "' in node '" + node.id + "' (<" + node.file + ">@" + node.line + ").");
                 }
                 
                 vars.set("_choice", options[node.defaultOption].value);
