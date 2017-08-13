@@ -378,20 +378,18 @@ Much of a node's behavior can be controlled using the node JavaScript API.
 
 Variables can be inserted into a node's text by using this notation:
 
-    The variable `foo` contains: ($ foo $)
+    The variable `foo` contains: `$foo`
 
-Variables can be set like this:
+Variables can be set in script blocks like this:
 
-    (-) (! $.foo = "bar" !)
-
-What this does is that it assigns the string `"bar"` to the variable `foo`. The
-`(-)` at the beginning of the link tells the engine that this line should not be
-shown in the node's text.
+    ```js @entry
+    $.foo = "bar";
+    ```
 
 
 ## JavaScript
 
-A node can contain JavaScript. The JavaScript inside a node gets executed right
+A node can contain blocks of JavaScript. The JavaScript inside a node gets executed right
 before the node is shown. JavaScript can be written in the node's text between
 `(!` and `!)`. The last value of the JavaScript snippet will be inserted into
 the text.
@@ -404,18 +402,13 @@ current variables.
 
 For example, the following snippets produce the same output:
 
-    Foo is: ($ foo $)
+    Foo is: `$foo`
 
     Foo is: (! $.foo !)
 
 #### Special variable: $._choice
 
 The `$._choice` variable contains the value of the last clicked option.
-
-#### Special variable: $._objects
-
-This is the variable that contains all of the game object's current states. It's probably
-best not to mess with this one.
 
 ### The function container: _
 
@@ -431,27 +424,11 @@ it is written and continue with the node `foo` instead:
 
     _.skipTo("foo")
 
-#### _.o(objectName)
-
-The `o(name)` function returns the API of a story object:
-
-    _.o("door").print()
-
-To find out more about objects, read the README section about it.
-
-
 #### _.link(label, target)
 
 Creates a direct link to another node:
 
     You can (! _.link("go to the other room", "other_room") !).
-
-#### _.objectLink(label, actions)
-
-Creates an object link:
-
-    There's a (! _.objectLink("bird", {"talk to": "talk_to_bird", examine: "examine_bird"}) !) here.
-
 
 #### _.addOption(label, target[, value])
 
@@ -462,31 +439,15 @@ options string value (see section about special variable `$._choice`).
 
 #### _.node()
 
-Returns the current node. Unless you really know what you're doing, it's probably best to treat
-the value returned here as read-only (although it *can* be mutated).
-
-#### _.dim(amount)
-
-Dims the background:
-
-    (-) (! _.dim(0.8) !)
-
-Dim values must be between `0` (not dimmed, background fully visible) and `1`
-(fully dimmed, all black).
+Returns the current node. 
 
 #### _.oneOf(a1, a2, ..., aN)
 
 Returns one of its arguments randomly:
 
-    (-) (! $.hairColor = _.oneOf("blond", "brown", "black", "red", "white", "gray") !)
-
-### Silencing script output
-
-You can also remove any script output from the node text by writing `(-)` on the
-line where the script starts:
-
-    (-) (! "foo" + "bar" !)
-
+    ```js @entry
+    $.hairColor = _.oneOf("blond", "brown", "black", "red", "white", "gray");
+    ```
 
 ## Node and section properties
 
@@ -506,12 +467,6 @@ to the node itself.
 
 If both a node and its section define the same property, then the node's property
 is used.
-
-**WARNING:** You can change a node's internal properties with this. It's a good
-idea to only change those properties mentioned in the documentation! At the time of
-this writing, the internal properties are: `id`, `line`, `options`, `links`, `next`
-and `returnToLast`. Never change these properties unless you really know what
-you're doing!
 
 ### Property: timeout [number]
 
