@@ -44,28 +44,30 @@ function create(context) {
     
     function onRunNode(node) {
         
-        if (node.audio === false) {
+        var data = node.data;
+        
+        if (data.audio === false) {
             stopAudio();
         }
         
-        if (node.sound) {
-            playSound(node.sound);
+        if (data.sound) {
+            playSound(data.sound);
         }
         else {
             stopSound();
         }
         
-        if (node.ambience) {
-            playAmbience(node.ambience);
+        if (data.ambience) {
+            playAmbience(data.ambience);
         }
-        else if (node.ambience === false) {
+        else if (data.ambience === false) {
             stopAmbience();
         }
         
-        if (node.music) {
-            playMusic(node.music);
+        if (data.music) {
+            playMusic(data.music);
         }
-        else if (node.music === false) {
+        else if (data.music === false) {
             stopMusic();
         }
     }
@@ -125,7 +127,7 @@ function create(context) {
         
         vars.set("_currentSound", serializeAudioPath(path));
         
-        currentSound = playTrack(path, settings.soundVolume, false, currentSound);
+        currentSound = playTrack(path, settings.get("soundVolume"), false, currentSound);
     }
     
     function playAmbience(path) {
@@ -138,7 +140,7 @@ function create(context) {
         
         vars.set("_currentAmbience", serialized);
         
-        currentAmbience = playTrack(path, settings.ambienceVolume, true, currentAmbience);
+        currentAmbience = playTrack(path, settings.get("ambienceVolume"), true, currentAmbience);
     }
     
     function playMusic(path) {
@@ -150,7 +152,7 @@ function create(context) {
         }
         
         vars._currentMusic = serialized;
-        currentMusic = playTrack(path, settings.musicVolume, true, currentMusic);
+        currentMusic = playTrack(path, settings.get("musicVolume"), true, currentMusic);
     }
     
     function playTrack(path, volume, loop, current) {

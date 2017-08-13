@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v2.0.0)
-    Build time: Sun, 13 Aug 2017 16:25:27 GMT
+    Toothrot Engine (v2.0.0-beta.1)
+    Build time: Sun, 13 Aug 2017 18:38:30 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -5285,28 +5285,30 @@ function create(context) {
     
     function onRunNode(node) {
         
-        if (node.audio === false) {
+        var data = node.data;
+        
+        if (data.audio === false) {
             stopAudio();
         }
         
-        if (node.sound) {
-            playSound(node.sound);
+        if (data.sound) {
+            playSound(data.sound);
         }
         else {
             stopSound();
         }
         
-        if (node.ambience) {
-            playAmbience(node.ambience);
+        if (data.ambience) {
+            playAmbience(data.ambience);
         }
-        else if (node.ambience === false) {
+        else if (data.ambience === false) {
             stopAmbience();
         }
         
-        if (node.music) {
-            playMusic(node.music);
+        if (data.music) {
+            playMusic(data.music);
         }
-        else if (node.music === false) {
+        else if (data.music === false) {
             stopMusic();
         }
     }
@@ -5366,7 +5368,7 @@ function create(context) {
         
         vars.set("_currentSound", serializeAudioPath(path));
         
-        currentSound = playTrack(path, settings.soundVolume, false, currentSound);
+        currentSound = playTrack(path, settings.get("soundVolume"), false, currentSound);
     }
     
     function playAmbience(path) {
@@ -5379,7 +5381,7 @@ function create(context) {
         
         vars.set("_currentAmbience", serialized);
         
-        currentAmbience = playTrack(path, settings.ambienceVolume, true, currentAmbience);
+        currentAmbience = playTrack(path, settings.get("ambienceVolume"), true, currentAmbience);
     }
     
     function playMusic(path) {
@@ -5391,7 +5393,7 @@ function create(context) {
         }
         
         vars._currentMusic = serialized;
-        currentMusic = playTrack(path, settings.musicVolume, true, currentMusic);
+        currentMusic = playTrack(path, settings.get("musicVolume"), true, currentMusic);
     }
     
     function playTrack(path, volume, loop, current) {
