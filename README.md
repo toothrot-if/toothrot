@@ -1,6 +1,6 @@
 # Toothrot Engine
 
-[![Join the chat at https://gitter.im/iiyo/toothrot](https://badges.gitter.im/iiyo/toothrot.svg)](https://gitter.im/iiyo/toothrot?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[Come chat with us on Discord!](https://discord.gg/DJ8SAr5)
 
 ![Toothrot Engine Logo](resources/files/images/logo.png?raw=true)
 
