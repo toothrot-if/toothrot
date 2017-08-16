@@ -237,6 +237,10 @@ strong, b {
     margin-top: 20px;
 }
 
+.Text img {
+    max-width: 100%;
+}
+
 .Text p:first-child {
     margin-top: 0;
 }

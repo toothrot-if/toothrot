@@ -43,6 +43,8 @@ $.foo = navigator.userAgent;
 JSON.stringify($._lastNodes, null, 4);
 ```
 
+![Toothrot Engine Logo](images/logo.png)
+
 Welcome to [Toothrot Engine](#toothrot_engine)!
 
 `@where`. `$foo`
