@@ -106,7 +106,9 @@ can also add new CSS files to your `files/index.html` file.
 The file `project.json` contains information about your project, e.g. for which desktop
 platforms you want to build your game.
 
-Finally, the `resources/story.md` file contains the actual story of your game.
+Finally, the `resources/story.trot.md` file contains the actual story of your game. Your story
+must have this file, but it can also have as many additional story files as you want to use.
+Additional story files must have the extension `.trot.ext.md`.
 
 You can change all of your project files to your liking, then build your project to run and test it.
 
@@ -131,11 +133,8 @@ you can go grab a coffee now. ;)
 With the default settings this will built for the following platforms:
 
  * win32: Windows (32-bit)
- * win64: Windows (64-bit)
- * linux32: Linux (32-bit)
- * linux64: Linux (64-bit)
- * osx32: Mac OS X (32-bit)
- * osx64: Max OS X (64-bit)
+ * linux: Linux (32-bit)
+ * darwin: Mac OS X (32-bit)
 
 You can change which platforms to build for by opening your project's `project.json` file and
 editing the `platforms` property.
@@ -150,7 +149,6 @@ Toothrot Engine comes with its own story format. It looks similar to
 to structure your story.
 
 A basic story file looks like this:
-
 
     # My Story
     
@@ -357,10 +355,14 @@ some special scripts that are executed even if they are not referenced in the te
 
 Currently, the engine recognizes these special script names:
 
-| Script name (`@[name]`) | Context    | Executed when?                |
-|:------------------------|:-----------|:------------------------------|
-| @entry                  | Node       | When entering the node        |
-| @brief                  | Node       | When parent node is displayed |
+| Script name (`@[name]`) | Context    | Executed when?                      |
+|:------------------------|:-----------|:------------------------------------|
+| @entry                  | Node       | When entering the node              |
+| @brief                  | Node       | When parent node is displayed       |
+| @entry                  | Section    | When entering the section           |
+| @node_entry             | Section    | When entering a node in the section |
+| @node_entry             | Global     | When entering a node                |
+| @section_entry          | Global     | When entering a section             |
 
 You can use `@entry` to ensure a script is executed each time before the node where it
 is written in gets displayed.
