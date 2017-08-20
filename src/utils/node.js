@@ -148,8 +148,6 @@ function create(id, data, nodes) {
             
         });
         
-        data.wasIn.push(otherId);
-        
         otherNode.insert(id);
         
         return api;
@@ -157,13 +155,22 @@ function create(id, data, nodes) {
     
     function insert(otherId) {
         
+        var otherNode;
+        
         if (!nodes.has(otherId)) {
             console.warn("No such node ID: " + otherId);
             return api;
         }
         
         if (!contains(otherId)) {
+            
             data.contains.push(otherId);
+            
+            otherNode = nodes.get(otherId);
+            
+            if (otherNode.get("wasIn").indexOf(id) < 0) {
+                otherNode.get("wasIn").push(id);
+            }
         }
         
         return api;
