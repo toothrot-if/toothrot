@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v2.0.0-beta.2)
-    Build time: Sun, 13 Aug 2017 19:02:59 GMT
+    Toothrot Engine (v2.0.0-beta.3)
+    Build time: Sun, 20 Aug 2017 20:02:14 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -6303,6 +6303,7 @@ function create(context) {
         context.on("start", onStart);
         
         env.set("link", insertLink);
+        env.set("linkify", linkify);
     
         window.addEventListener("keydown", function (event) {
             if (event.keyCode === KEY_CODE_UP || event.keyCode === KEY_CODE_DOWN) {
@@ -6483,9 +6484,7 @@ function create(context) {
                     return "";
                 }
                 
-                description = description.replace(/\{([^}]*)\}/g, function (match, label) {
-                    return insertLink(label, item.id);
-                });
+                description = linkify(description, item.id);
                 
                 return '<p class="itemDescription">' + description + '</p>';
                 
@@ -6523,7 +6522,7 @@ function create(context) {
                 node.options.length ||
                 node.data.timeout ||
                 node.links.length ||
-                node.reveal === false ||
+                node.data.reveal === false ||
                 data.children().length ||
                 settings.get("textSpeed") >= 100
             ) {
@@ -6694,6 +6693,12 @@ function create(context) {
         return '<span class="link direct_link" tabindex="1" data-target="' + target +
             '" data-type="link" title="Link" data-focus-mode="node" data-link-type="direct_link">' +
             label + '</span>';
+    }
+    
+    function linkify(text, target) {
+        return text.replace(/\{([^}]*)\}/g, function (match, label) {
+            return insertLink(label, target);
+        });
     }
     
     function reflowElements() {
@@ -7216,6 +7221,14 @@ function create(context) {
         
         env.set("self", getSelf);
         
+        env.set("eachNode", function (fn) {
+            story.getNodeIds().forEach(fn);
+        });
+        
+        env.set("eachSection", function (fn) {
+            story.getSectionIds().forEach(fn);
+        });
+        
         env.set("addOption", function (label, target, value) {
             copy.options.push({
                 type: "option",
@@ -7282,6 +7295,10 @@ function create(context) {
         
         if (story.hasGlobalScript("node_entry")) {
             runScript(story.getGlobalScript("node_entry"));
+        }
+        
+        if (story.hasSectionScript(node.section, "node_entry")) {
+            runScript(story.getSectionScript(node.section, "node_entry"));
         }
         
         if (node.scripts.entry) {
@@ -8056,6 +8073,14 @@ function create(context) {
         return story.head;
     }
     
+    function getNodeIds() {
+        return Object.keys(story.nodes);
+    }
+    
+    function getSectionIds() {
+        return Object.keys(story.sections);
+    }
+    
     return {
         init: init,
         destroy: destroy,
@@ -8067,6 +8092,8 @@ function create(context) {
         hasMeta: hasMeta,
         getTitle: getTitle,
         getAll: getAll,
+        getNodeIds: getNodeIds,
+        getSectionIds: getSectionIds,
         getHierarchy: getHierarchy,
         getGlobalScripts: getGlobalScripts,
         getGlobalScript: getGlobalScript,

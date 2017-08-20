@@ -135,6 +135,7 @@ function create(context) {
         context.on("start", onStart);
         
         env.set("link", insertLink);
+        env.set("linkify", linkify);
     
         window.addEventListener("keydown", function (event) {
             if (event.keyCode === KEY_CODE_UP || event.keyCode === KEY_CODE_DOWN) {
@@ -315,9 +316,7 @@ function create(context) {
                     return "";
                 }
                 
-                description = description.replace(/\{([^}]*)\}/g, function (match, label) {
-                    return insertLink(label, item.id);
-                });
+                description = linkify(description, item.id);
                 
                 return '<p class="itemDescription">' + description + '</p>';
                 
@@ -355,7 +354,7 @@ function create(context) {
                 node.options.length ||
                 node.data.timeout ||
                 node.links.length ||
-                node.reveal === false ||
+                node.data.reveal === false ||
                 data.children().length ||
                 settings.get("textSpeed") >= 100
             ) {
@@ -526,6 +525,12 @@ function create(context) {
         return '<span class="link direct_link" tabindex="1" data-target="' + target +
             '" data-type="link" title="Link" data-focus-mode="node" data-link-type="direct_link">' +
             label + '</span>';
+    }
+    
+    function linkify(text, target) {
+        return text.replace(/\{([^}]*)\}/g, function (match, label) {
+            return insertLink(label, target);
+        });
     }
     
     function reflowElements() {

@@ -89,6 +89,14 @@ function create(context) {
         return story.head;
     }
     
+    function getNodeIds() {
+        return Object.keys(story.nodes);
+    }
+    
+    function getSectionIds() {
+        return Object.keys(story.sections);
+    }
+    
     return {
         init: init,
         destroy: destroy,
@@ -100,6 +108,8 @@ function create(context) {
         hasMeta: hasMeta,
         getTitle: getTitle,
         getAll: getAll,
+        getNodeIds: getNodeIds,
+        getSectionIds: getSectionIds,
         getHierarchy: getHierarchy,
         getGlobalScripts: getGlobalScripts,
         getGlobalScript: getGlobalScript,

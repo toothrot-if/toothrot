@@ -216,6 +216,14 @@ function create(context) {
         
         env.set("self", getSelf);
         
+        env.set("eachNode", function (fn) {
+            story.getNodeIds().forEach(fn);
+        });
+        
+        env.set("eachSection", function (fn) {
+            story.getSectionIds().forEach(fn);
+        });
+        
         env.set("addOption", function (label, target, value) {
             copy.options.push({
                 type: "option",
@@ -282,6 +290,10 @@ function create(context) {
         
         if (story.hasGlobalScript("node_entry")) {
             runScript(story.getGlobalScript("node_entry"));
+        }
+        
+        if (story.hasSectionScript(node.section, "node_entry")) {
+            runScript(story.getSectionScript(node.section, "node_entry"));
         }
         
         if (node.scripts.entry) {
