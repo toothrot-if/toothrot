@@ -148,6 +148,8 @@ function create(id, data, nodes) {
             
         });
         
+        data.wasIn.push(otherId);
+        
         otherNode.insert(id);
         
         return api;
