@@ -276,8 +276,8 @@ function create(context) {
             container.setAttribute("data-node-id", currentNode.id);
             container.setAttribute("data-section", currentNode.section);
             
-            if (data.has("background")) {
-                bg = data.get("background");
+            if (data.has("background") || node.data.background) {
+                bg = data.get("background") || node.data.background;
             }
             else {
                 bg = vars.get("__current_bg");
