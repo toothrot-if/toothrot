@@ -82,7 +82,7 @@ function create(id, data, nodes) {
             return false;
         }
         
-        return nodes.get(id).contains(id);
+        return nodes.get(id).contains(api.id);
     }
     
     function isntIn(id) {
