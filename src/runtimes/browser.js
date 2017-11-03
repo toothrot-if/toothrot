@@ -19,6 +19,7 @@ var components = {
     highlighter: require("../components/browser-ui/highlighter.js"),
     interpreter: require("../components/interpreter.js"),
     screens: require("../components/browser-ui/screens.js"),
+    cartridges: require("../components/browser-ui/cartridges.js"),
     settings: require("../components/settings.js"),
     ui: require("../components/browser-ui/ui.js"),
     storage: require("../components/storage.js"),

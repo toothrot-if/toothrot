@@ -136,7 +136,7 @@ function create(context) {
         
         env.set("link", insertLink);
         env.set("linkify", linkify);
-    
+        
         window.addEventListener("keydown", function (event) {
             if (event.keyCode === KEY_CODE_UP || event.keyCode === KEY_CODE_DOWN) {
                 event.preventDefault();

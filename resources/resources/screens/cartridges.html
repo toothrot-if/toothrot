@@ -1,0 +1,56 @@
+<div class="Screen cartridge-screen" data-type="screen" data-screen-name="cartridges">
+    <div class="ScreenBackground"></div>
+    <div class="screen-content">
+        
+        <div class="current-cartridge">
+            <h2>Save</h2>
+            <p class="description">
+                Save the image below to your device. It contains the current state of your
+                game, your settings, and what's in your quicksave slot.
+            </p>
+            <a class="download-link" data-type="cartridge-link" href="{cartridge_url}" download="toothrot-datacard.png">
+                <img class="cartridge-image" data-type="cartridge-image" src="{cartridge_url}" alt="Click to download current datacard" />
+            </a>
+        </div>
+        <div class="load-cartridge">
+            <h2>Load</h2>
+            <div class="upload-container">
+                <input type="file" class="file" />
+                <div class="fake-file">
+                    <p class="description">
+                        To load a saved game, drop a datacard image here or click to select
+                        the datacard image from the files on your device.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <button
+            class="button"
+            data-focus-mode="screen"
+            data-type="menu-item"
+            data-target="back">Back</button>
+    </div>
+    <script>
+        (function () {
+            
+            var fake = document.querySelector(".fake-file-input");
+            var file = document.querySelector(".file");
+            var uploadContainer = document.querySelector(".upload-container");
+            var downloadLink = document.querySelector(".download-link");
+            
+            function onClick(event) {
+                event.stopPropagation();
+            }
+            
+            function onFileChange(event) {
+                engine.emit("cartridge_file_change", event);
+            }
+            
+            uploadContainer.addEventListener("click", onClick);
+            downloadLink.addEventListener("click", onClick);
+            file.addEventListener("change", onFileChange);
+            
+        }());
+    </script>
+</div>

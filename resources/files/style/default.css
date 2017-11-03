@@ -470,7 +470,7 @@ strong, b {
     margin: 0;
 }
 
-.SaveScreen .Menu, .SettingsScreen .Menu {
+.SaveScreen .Menu, .SettingsScreen .Menu, .top-menu {
     position: absolute;
     left: 0;
     top: auto;
@@ -920,6 +920,76 @@ strong, b {
 
 .event {
     font-style: italic;
+}
+
+
+.cartridge-screen .screen-content {
+    max-width: 600px;
+    margin: auto;
+    padding: 5px;
+}
+
+.top-menu {
+    position: absolute;
+    z-index: 10000;
+    top: 0;
+    left: 0;
+    right: 0;
+    transform: translate(0, 0);
+}
+
+.top-menu .button {
+    max-width: 100px;
+}
+
+.upload-container {
+    position: relative;
+    min-height: 80px;
+    text-align: center;
+    border: 1px solid black;
+    background: white;
+    color: black;
+}
+
+.upload-container .file, .upload-container .fake-file {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    cursor: pointer;
+}
+
+.upload-container .fake-file {
+    pointer-events: none;
+}
+
+.upload-container .fake-file .description {
+    position: absolute;
+    width: 100%;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.upload-container .file {
+    opacity: 0;
+}
+
+.global-drop-zone {
+    visibility: hidden;
+    opacity: 0;
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999999999999;
+    background: rgba(0, 0, 0, 0.3);
 }
 
 

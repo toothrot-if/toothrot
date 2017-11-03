@@ -58,6 +58,7 @@ function create(context) {
         context.on("screen_click", onScreenClick);
         context.on("show_screen", removeInactiveElements);
         context.on("change_focus_mode", onFocusModeChange);
+        context.on("resume_game", resumeGame);
         
         setTimeout(function () {
             interpreter.hasCurrentSlot(function () {
@@ -71,6 +72,7 @@ function create(context) {
         context.removeListener("screen_click", onScreenClick);
         context.removeListener("show_screen", removeInactiveElements);
         context.removeListener("change_focus_mode", onFocusModeChange);
+        context.removeListener("resume_game", resumeGame);
         
         storage = null;
         settings = null;
@@ -237,6 +239,7 @@ function create(context) {
             
             each(function (script) {
                 evalScript(
+                    context,
                     context.getResource("story"),
                     env.getAll(),
                     vars.getAll(),
@@ -245,7 +248,7 @@ function create(context) {
                 );
             }, screenContainer.querySelectorAll("script"));
             
-            context.emit("show_screen");
+            context.emit("show_screen", currentScreen);
             then();
         }
         
@@ -369,11 +372,11 @@ function create(context) {
             
             screenContainer.style.display = "";
             
-            context.emit("screen_entry");
+            context.emit("screen_entry", currentScreen);
             
             inBetween();
             hideCurtain(function () {
-                context.emit("show_screen");
+                context.emit("show_screen", currentScreen);
                 then();
             });
         });

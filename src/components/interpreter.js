@@ -19,6 +19,11 @@ function create(context) {
     // A stack for remembering which node to return to.
     var stack = [];
     
+    // We cache savegames here that have been generated during the current run
+    // so that they can be added without accessing the storage when all game data
+    // is exported.
+    var savegames = {};
+    
     function init() {
         
         env = context.getComponent("env");
@@ -49,6 +54,57 @@ function create(context) {
         stack = [];
         vars.clear();
         context.emit("clear_state");
+    }
+    
+    function getState() {
+        
+        var data = {
+            current: serialized,
+            savegames: clone(savegames),
+            settings: settings.getAll()
+        };
+        
+        return data;
+    }
+    
+    function updateState(data) {
+        
+        clearState();
+        
+        if (data.settings) {
+            console.log("Updating settings from saved state...");
+            settings.update(data.settings);
+        }
+        
+        if (data.savegames) {
+            overwriteStorageSlots(data.savegames);
+        }
+        
+        if (data.current) {
+            console.log("Resuming game from saved state...");
+            overwriteStorageSlot("current", data.current);
+            settings.set("current_slot_exists", true);
+            resume(data.current);
+        }
+    }
+    
+    function overwriteStorageSlots(data) {
+        Object.keys(data).forEach(function (name) {
+            overwriteStorageSlot(name, data[name]);
+        });
+    }
+    
+    function overwriteStorageSlot(name, data) {
+        
+        storage.save(name, data, function (error) {
+            
+            if (error) {
+                console.error("Couldn't replace slot '" + name + "' with import data.");
+                return;
+            }
+            
+            console.log("Slot '" + name + "' replaced with import data.");
+        });
     }
     
     function serialize() {
@@ -139,13 +195,17 @@ function create(context) {
     
     function save(name, then) {
         
+        var data = serialized;
+        
         then = then || none;
         
-        storage.save(name, serialized, function (error) {
+        storage.save(name, data, function (error) {
             
             if (error) {
                 return;
             }
+            
+            savegames[name] = data;
             
             then();
         });
@@ -395,6 +455,7 @@ function create(context) {
             
             try {
                 result = evalScript(
+                    context,
                     story.getAll(),
                     env.getAll(),
                     vars.getAll(),
@@ -539,7 +600,9 @@ function create(context) {
         hasQuickSlot: hasQuickSlot,
         loadQuick: loadQuick,
         saveQuick: saveQuick,
+        getState: getState,
         clearState: clearState,
+        updateState: updateState,
         getCurrentNodeId: getCurrentNodeId
     };
     

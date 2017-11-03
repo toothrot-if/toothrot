@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, no-eval */
 
-function evalScript(__story, _, $, __body, __line) {
+function evalScript(engine, __story, _, $, __body, __line) {
     
     var link = _.link;
     var nodes = __story.nodes;
