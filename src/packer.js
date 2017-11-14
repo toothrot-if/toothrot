@@ -1,8 +1,10 @@
 /* global require, process */
 
-var normalize = require("path").normalize;
-var parse = require("./parser").parse;
 var fs = require("fs");
+var toDataUri = require("datauri").sync;
+var normalize = require("path").normalize;
+
+var parse = require("./parser").parse;
 
 function pack(dir) {
     
@@ -13,9 +15,11 @@ function pack(dir) {
     var storyFilesContent;
     var templatePath = normalize(dir + "/templates/");
     var screenPath = normalize(dir + "/screens/");
+    var imagePath = normalize(dir + "/images/");
     var astFile = normalize(dir + "/ast.json");
     var templateFiles = fs.readdirSync(templatePath);
     var screenFiles = fs.readdirSync(screenPath);
+    var imageFiles = fs.readdirSync(imagePath);
     
     //
     // If there's an AST file in the resources folder (created by e.g. toothrot builder)
@@ -42,6 +46,7 @@ function pack(dir) {
         },
         templates: {},
         screens: {},
+        images: {},
         story: story
     };
     
@@ -57,6 +62,13 @@ function pack(dir) {
         var name = file.split(".")[0];
         
         bundle.screens[name] = "" + fs.readFileSync(screenPath + file);
+    });
+    
+    imageFiles.forEach(function (file) {
+        
+        var name = "images/" + file;
+        
+        bundle.images[name] = toDataUri(imagePath + file);
     });
     
     pruneStory(story);

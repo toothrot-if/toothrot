@@ -19,6 +19,7 @@
     "class-manipulator": "^1.0.0",
     "clone": "^1.0.2",
     "colors": "^1.1.2",
+    "datauri": "^1.0.5",
     "deepmerge": "^0.2.10",
     "electron-packager": "^8.4.0",
     "enjoy-core": "^1.2.0",

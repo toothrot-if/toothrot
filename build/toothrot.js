@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0-beta.7)
-    Build time: Fri, 03 Nov 2017 13:50:45 GMT
+    Build time: Tue, 14 Nov 2017 18:04:38 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -12488,6 +12488,8 @@ var IMAGE_TYPE = "cartridge-image";
 var LINK_QUERY = "[data-type='" + LINK_TYPE + "']";
 var IMAGE_QUERY = "[data-type='" + IMAGE_TYPE + "']";
 
+var SOURCE_IMAGE_ID = "images/datacard.png";
+
 function getImageElements() {
     return toArray(document.querySelectorAll(IMAGE_QUERY));
 }
@@ -12502,13 +12504,14 @@ function toArray(collection) {
 
 function create(context) {
     
-    var interpreter, dropZone, confirm;
+    var interpreter, dropZone, confirm, sourceImage;
     
     function init() {
         
         confirm = createConfirm(context);
         interpreter = context.getComponent("interpreter");
         dropZone = document.createElement("div");
+        sourceImage = getCartridgeSourceImage();
         
         dropZone.setAttribute("class", "global-drop-zone");
         document.body.appendChild(dropZone);
@@ -12546,7 +12549,7 @@ function create(context) {
     
     function generateCartridge() {
         
-        var cart = cartridge.save(interpreter.getState());
+        var cart = cartridge.save(interpreter.getState(), sourceImage);
         
         getImageElements().forEach(function (image) {
             image.src = cart.src;
@@ -12623,6 +12626,19 @@ function create(context) {
         };
         
         reader.readAsDataURL(file);
+    }
+    
+    function getCartridgeSourceImage() {
+        
+        var uri = context.getResource("images")[SOURCE_IMAGE_ID];
+        var image = new Image();
+        
+        image.src = uri;
+        image.style.opacity = "0";
+        
+        document.body.appendChild(image);
+        
+        return image;
     }
     
     return {

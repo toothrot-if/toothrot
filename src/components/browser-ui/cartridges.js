@@ -8,6 +8,8 @@ var IMAGE_TYPE = "cartridge-image";
 var LINK_QUERY = "[data-type='" + LINK_TYPE + "']";
 var IMAGE_QUERY = "[data-type='" + IMAGE_TYPE + "']";
 
+var SOURCE_IMAGE_ID = "images/datacard.png";
+
 function getImageElements() {
     return toArray(document.querySelectorAll(IMAGE_QUERY));
 }
@@ -22,13 +24,14 @@ function toArray(collection) {
 
 function create(context) {
     
-    var interpreter, dropZone, confirm;
+    var interpreter, dropZone, confirm, sourceImage;
     
     function init() {
         
         confirm = createConfirm(context);
         interpreter = context.getComponent("interpreter");
         dropZone = document.createElement("div");
+        sourceImage = getCartridgeSourceImage();
         
         dropZone.setAttribute("class", "global-drop-zone");
         document.body.appendChild(dropZone);
@@ -66,7 +69,7 @@ function create(context) {
     
     function generateCartridge() {
         
-        var cart = cartridge.save(interpreter.getState());
+        var cart = cartridge.save(interpreter.getState(), sourceImage);
         
         getImageElements().forEach(function (image) {
             image.src = cart.src;
@@ -143,6 +146,19 @@ function create(context) {
         };
         
         reader.readAsDataURL(file);
+    }
+    
+    function getCartridgeSourceImage() {
+        
+        var uri = context.getResource("images")[SOURCE_IMAGE_ID];
+        var image = new Image();
+        
+        image.src = uri;
+        image.style.opacity = "0";
+        
+        document.body.appendChild(image);
+        
+        return image;
     }
     
     return {
