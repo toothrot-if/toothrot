@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0-beta.7)
-    Build time: Tue, 14 Nov 2017 18:04:38 GMT
+    Build time: Tue, 14 Nov 2017 19:42:18 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -12675,7 +12675,7 @@ function create(context) {
         focus = context.getComponent("focus");
         highlighter = document.createElement("div");
         
-        highlighter.setAttribute("class", "Highlighter");
+        highlighter.setAttribute("class", "highlighter");
         highlighter.setAttribute("data-type", "highlighter");
         
         highlighter.addEventListener("click", onClick);
@@ -12795,7 +12795,6 @@ var transform = require("transform-js").transform;
 var evalScript = require("../../utils/evalScript.js");
 var createConfirm = require("../../utils/browser/confirm.js");
 
-var MAX_SLOTS = 20;
 var SCREEN_FADE_IN = 400;
 var SCREEN_FADE_OUT = 400;
 
@@ -12830,7 +12829,7 @@ function create(context) {
         // the section changes.
         curtain = document.createElement("div");
         
-        curtain.setAttribute("class", "Curtain");
+        curtain.setAttribute("class", "curtain");
         
         context.on("screen_click", onScreenClick);
         context.on("show_screen", removeInactiveElements);
@@ -12972,37 +12971,11 @@ function create(context) {
         
         focus.setMode("screen");
         
-        if (name === "save") {
-            showSaveScreen(isSameScreen);
+        if (isSameScreen) {
+            replace();
         }
         else {
-            if (isSameScreen) {
-                replace();
-            }
-            else {
-                animateScreenEntry(replace);
-            }
-        }
-        
-        function showSaveScreen(isSameScreen) {
-            storage.all(function (error, all) {
-                
-                if (error) {
-                    return;
-                }
-                
-                if (isSameScreen) {
-                    update();
-                }
-                else {
-                    animateScreenEntry(update);
-                }
-                
-                function update() {
-                    replace();
-                    populateSlots(all);
-                }
-            });
+            animateScreenEntry(replace);
         }
         
         function replace() {
@@ -13029,97 +13002,6 @@ function create(context) {
             then();
         }
         
-        function getDomNodeContent(dom) {
-            
-            var mockParent = document.createElement("div");
-            
-            mockParent.appendChild(dom.cloneNode(true));
-            
-            return mockParent.innerHTML;
-        }
-        
-        function populateSlots(slots) {
-            
-            var i, currentSlot, tpl, emptyTpl;
-            var container = context.get("screen_container");
-            var slotContainer = container.querySelector("*[data-type=slots]");
-            var template = container.querySelector("*[data-template-name=slot]");
-            var empty = container.querySelector("*[data-template-name=empty-slot]");
-            
-            template.parentNode.removeChild(template);
-            empty.parentNode.removeChild(empty);
-            
-            slotContainer.innerHTML = "";
-            
-            tpl = getDomNodeContent(template);
-            emptyTpl = getDomNodeContent(empty);
-            
-            for (i = 0; i < MAX_SLOTS; i += 1) {
-                
-                currentSlot = slots["slot_" + (i + 1)];
-                
-                if (currentSlot) {
-                    slotContainer.innerHTML += insertVars(tpl, currentSlot, i + 1);
-                }
-                else {
-                    slotContainer.innerHTML += insertVars(emptyTpl, null, i + 1);
-                }
-            }
-            
-            if (!interpreter.getCurrentNodeId()) {
-                removeSaveButtons();
-            }
-            
-            function removeSaveButtons() {
-                
-                var buttons = document.querySelectorAll("*[data-type=slot-button]");
-                
-                [].forEach.call(buttons, function (button) {
-                    
-                    if (button.getAttribute("data-action") !== "save") {
-                        return;
-                    }
-                    
-                    button.parentNode.removeChild(button);
-                });
-            }
-            
-            function insertVars(tpl, slot, i) {
-                
-                var data;
-                
-                tpl = tpl.replace(/\{id\}/g, "slot_" + i);
-                tpl = tpl.replace(/\{i\}/g, "" + i);
-                
-                if (!slot) {
-                    return tpl;
-                }
-                
-                data = JSON.parse(slot.data);
-                
-                tpl = tpl.replace(/\{name\}/g, slot.name);
-                tpl = tpl.replace(/\{text\}/g, trimText(data.text, 100) || "???");
-                tpl = tpl.replace(/\{time\}/g, formatTime(slot.time));
-                
-                return tpl;
-            }
-        }
-    }
-    
-    function trimText(text, length) {
-        return (text.length > length ? text.substring(0, length - 3) + "..." : text);
-    }
-    
-    function formatTime(time) {
-        
-        var date = new Date(time);
-        
-        return "" + date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate() +
-            " " + pad(date.getHours()) + ":" + pad(date.getMinutes());
-            
-        function pad(num) {
-            return (num < 10 ? "0": "") + num;
-        }
     }
     
     function back() {
@@ -13400,7 +13282,7 @@ function create(context) {
         notify = createNotification(templates.notification);
         confirm = createConfirm(context);
         
-        timerTemplate = '<div class="TimerBar" style="width: {remaining}%;"></div>';
+        timerTemplate = '<div class="timer-bar" style="width: {remaining}%;"></div>';
         
         bg1 = document.createElement("div");
         bg2 = document.createElement("div");
@@ -13420,7 +13302,7 @@ function create(context) {
             });
         }, 1000);
         
-        // Actions and options are put into a parent element
+        // Options are put into a parent element
         // so that clicks can be intercepted and to allow
         // more flexibility in styling the elements with CSS.
         optionsParent = document.createElement("div");
@@ -13433,21 +13315,21 @@ function create(context) {
         // styled completely differently for each section.
         container.setAttribute("data-section", story.getNode("start").section);
         
-        container.setAttribute("class", "Toothrot");
+        container.setAttribute("class", "toothrot");
         
         bg1.setAttribute("class", "toothrot-bg1");
         bg2.setAttribute("class", "toothrot-bg2");
         bg3.setAttribute("class", "toothrot-bg3");
         
-        text.setAttribute("class", "Text");
+        text.setAttribute("class", "text");
         text.setAttribute("aria-live", "polite");
         text.setAttribute("aria-atomic", "true");
         text.setAttribute("aria-relevant", "text");
         text.setAttribute("role", "main");
         
-        optionsParent.setAttribute("class", "OptionsCurtain");
-        optionsContainer.setAttribute("class", "OptionsContainer");
-        screenContainer.setAttribute("class", "ScreenContainer");
+        optionsParent.setAttribute("class", "options-curtain");
+        optionsContainer.setAttribute("class", "options-container");
+        screenContainer.setAttribute("class", "screen-container");
         
         optionsParent.appendChild(optionsContainer);
         container.appendChild(text);
@@ -13677,7 +13559,7 @@ function create(context) {
                 
                 description = linkify(description, item.id);
                 
-                return '<p class="itemDescription">' + description + '</p>';
+                return '<p class="item-description">' + description + '</p>';
                 
             }).join("");
             
@@ -13707,7 +13589,7 @@ function create(context) {
             disarmOldTextItems();
             
             text.innerHTML += '<div class="separator"></div>';
-            text.innerHTML += '<div class="TextItem current">' + content + "</div>";
+            text.innerHTML += '<div class="text-item current">' + content + "</div>";
             
             if (
                 node.options.length ||
@@ -13836,7 +13718,7 @@ function create(context) {
         
         var option = document.createElement("span");
         
-        option.setAttribute("class", "Option");
+        option.setAttribute("class", "option");
         option.setAttribute("data-type", "option");
         option.setAttribute("data-target", opt.target);
         option.setAttribute("data-focus-mode", "node");
@@ -13853,7 +13735,7 @@ function create(context) {
         
         var timeoutContainer = document.createElement("div");
         
-        timeoutContainer.setAttribute("class", "TimeoutContainer");
+        timeoutContainer.setAttribute("class", "timeout-container");
         timeoutContainer.setAttribute("data-type", "timeout");
         timeoutContainer.setAttribute("data-remaining", "100");
         timeoutContainer.setAttribute("data-progress", "0");
@@ -15641,7 +15523,7 @@ function create(context) {
         
         focus.setMode("messagebox");
         
-        boxContainer.setAttribute("class", "MessageBoxContainer");
+        boxContainer.setAttribute("class", "message-box-container");
         
         boxContainer.innerHTML = template.replace("{message}", text);
         
@@ -15729,7 +15611,7 @@ function create(template, fadeDuration) {
         var hidden = false;
         var shown = false;
         
-        container.setAttribute("class", "NotificationContainer");
+        container.setAttribute("class", "notification-container");
         
         type = type || "default";
         
@@ -15805,7 +15687,7 @@ function create(element, speed, then) {
     markCharacters(element);
     hideCharacters(element);
     
-    chars = element.querySelectorAll(".Char");
+    chars = element.querySelectorAll(".char");
     left = chars.length;
     
     then = then || function () {};
@@ -15869,7 +15751,7 @@ function create(element, speed, then) {
 
 function hideCharacters(element) {
     
-    var chars = element.querySelectorAll(".Char");
+    var chars = element.querySelectorAll(".char");
     
     [].forEach.call(chars, function (char) {
         char.style.opacity = 0;
@@ -15890,13 +15772,13 @@ function markCharacters(element, offset) {
         if (child.nodeType === TEXT_NODE) {
             
             [].forEach.call(child.textContent, function (char) {
-                text += '<span class="Char" data-char="' + offset + '">' + char + '</span>';
+                text += '<span class="char" data-char="' + offset + '">' + char + '</span>';
                 offset += 1;
             });
             
             newNode = document.createElement("span");
             
-            newNode.setAttribute("class", "CharContainer");
+            newNode.setAttribute("class", "char-container");
             
             newNode.innerHTML = text;
             

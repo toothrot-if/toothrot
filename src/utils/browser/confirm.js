@@ -11,7 +11,7 @@ function create(context) {
         
         focus.setMode("messagebox");
         
-        boxContainer.setAttribute("class", "MessageBoxContainer");
+        boxContainer.setAttribute("class", "message-box-container");
         
         boxContainer.innerHTML = template.replace("{message}", text);
         

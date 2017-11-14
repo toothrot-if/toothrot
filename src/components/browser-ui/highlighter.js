@@ -22,7 +22,7 @@ function create(context) {
         focus = context.getComponent("focus");
         highlighter = document.createElement("div");
         
-        highlighter.setAttribute("class", "Highlighter");
+        highlighter.setAttribute("class", "highlighter");
         highlighter.setAttribute("data-type", "highlighter");
         
         highlighter.addEventListener("click", onClick);

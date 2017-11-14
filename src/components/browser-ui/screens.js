@@ -18,7 +18,6 @@ var transform = require("transform-js").transform;
 var evalScript = require("../../utils/evalScript.js");
 var createConfirm = require("../../utils/browser/confirm.js");
 
-var MAX_SLOTS = 20;
 var SCREEN_FADE_IN = 400;
 var SCREEN_FADE_OUT = 400;
 
@@ -53,7 +52,7 @@ function create(context) {
         // the section changes.
         curtain = document.createElement("div");
         
-        curtain.setAttribute("class", "Curtain");
+        curtain.setAttribute("class", "curtain");
         
         context.on("screen_click", onScreenClick);
         context.on("show_screen", removeInactiveElements);
@@ -195,37 +194,11 @@ function create(context) {
         
         focus.setMode("screen");
         
-        if (name === "save") {
-            showSaveScreen(isSameScreen);
+        if (isSameScreen) {
+            replace();
         }
         else {
-            if (isSameScreen) {
-                replace();
-            }
-            else {
-                animateScreenEntry(replace);
-            }
-        }
-        
-        function showSaveScreen(isSameScreen) {
-            storage.all(function (error, all) {
-                
-                if (error) {
-                    return;
-                }
-                
-                if (isSameScreen) {
-                    update();
-                }
-                else {
-                    animateScreenEntry(update);
-                }
-                
-                function update() {
-                    replace();
-                    populateSlots(all);
-                }
-            });
+            animateScreenEntry(replace);
         }
         
         function replace() {
@@ -252,97 +225,6 @@ function create(context) {
             then();
         }
         
-        function getDomNodeContent(dom) {
-            
-            var mockParent = document.createElement("div");
-            
-            mockParent.appendChild(dom.cloneNode(true));
-            
-            return mockParent.innerHTML;
-        }
-        
-        function populateSlots(slots) {
-            
-            var i, currentSlot, tpl, emptyTpl;
-            var container = context.get("screen_container");
-            var slotContainer = container.querySelector("*[data-type=slots]");
-            var template = container.querySelector("*[data-template-name=slot]");
-            var empty = container.querySelector("*[data-template-name=empty-slot]");
-            
-            template.parentNode.removeChild(template);
-            empty.parentNode.removeChild(empty);
-            
-            slotContainer.innerHTML = "";
-            
-            tpl = getDomNodeContent(template);
-            emptyTpl = getDomNodeContent(empty);
-            
-            for (i = 0; i < MAX_SLOTS; i += 1) {
-                
-                currentSlot = slots["slot_" + (i + 1)];
-                
-                if (currentSlot) {
-                    slotContainer.innerHTML += insertVars(tpl, currentSlot, i + 1);
-                }
-                else {
-                    slotContainer.innerHTML += insertVars(emptyTpl, null, i + 1);
-                }
-            }
-            
-            if (!interpreter.getCurrentNodeId()) {
-                removeSaveButtons();
-            }
-            
-            function removeSaveButtons() {
-                
-                var buttons = document.querySelectorAll("*[data-type=slot-button]");
-                
-                [].forEach.call(buttons, function (button) {
-                    
-                    if (button.getAttribute("data-action") !== "save") {
-                        return;
-                    }
-                    
-                    button.parentNode.removeChild(button);
-                });
-            }
-            
-            function insertVars(tpl, slot, i) {
-                
-                var data;
-                
-                tpl = tpl.replace(/\{id\}/g, "slot_" + i);
-                tpl = tpl.replace(/\{i\}/g, "" + i);
-                
-                if (!slot) {
-                    return tpl;
-                }
-                
-                data = JSON.parse(slot.data);
-                
-                tpl = tpl.replace(/\{name\}/g, slot.name);
-                tpl = tpl.replace(/\{text\}/g, trimText(data.text, 100) || "???");
-                tpl = tpl.replace(/\{time\}/g, formatTime(slot.time));
-                
-                return tpl;
-            }
-        }
-    }
-    
-    function trimText(text, length) {
-        return (text.length > length ? text.substring(0, length - 3) + "..." : text);
-    }
-    
-    function formatTime(time) {
-        
-        var date = new Date(time);
-        
-        return "" + date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate() +
-            " " + pad(date.getHours()) + ":" + pad(date.getMinutes());
-            
-        function pad(num) {
-            return (num < 10 ? "0": "") + num;
-        }
     }
     
     function back() {

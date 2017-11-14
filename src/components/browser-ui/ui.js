@@ -41,7 +41,7 @@ function create(context) {
         notify = createNotification(templates.notification);
         confirm = createConfirm(context);
         
-        timerTemplate = '<div class="TimerBar" style="width: {remaining}%;"></div>';
+        timerTemplate = '<div class="timer-bar" style="width: {remaining}%;"></div>';
         
         bg1 = document.createElement("div");
         bg2 = document.createElement("div");
@@ -61,7 +61,7 @@ function create(context) {
             });
         }, 1000);
         
-        // Actions and options are put into a parent element
+        // Options are put into a parent element
         // so that clicks can be intercepted and to allow
         // more flexibility in styling the elements with CSS.
         optionsParent = document.createElement("div");
@@ -74,21 +74,21 @@ function create(context) {
         // styled completely differently for each section.
         container.setAttribute("data-section", story.getNode("start").section);
         
-        container.setAttribute("class", "Toothrot");
+        container.setAttribute("class", "toothrot");
         
         bg1.setAttribute("class", "toothrot-bg1");
         bg2.setAttribute("class", "toothrot-bg2");
         bg3.setAttribute("class", "toothrot-bg3");
         
-        text.setAttribute("class", "Text");
+        text.setAttribute("class", "text");
         text.setAttribute("aria-live", "polite");
         text.setAttribute("aria-atomic", "true");
         text.setAttribute("aria-relevant", "text");
         text.setAttribute("role", "main");
         
-        optionsParent.setAttribute("class", "OptionsCurtain");
-        optionsContainer.setAttribute("class", "OptionsContainer");
-        screenContainer.setAttribute("class", "ScreenContainer");
+        optionsParent.setAttribute("class", "options-curtain");
+        optionsContainer.setAttribute("class", "options-container");
+        screenContainer.setAttribute("class", "screen-container");
         
         optionsParent.appendChild(optionsContainer);
         container.appendChild(text);
@@ -318,7 +318,7 @@ function create(context) {
                 
                 description = linkify(description, item.id);
                 
-                return '<p class="itemDescription">' + description + '</p>';
+                return '<p class="item-description">' + description + '</p>';
                 
             }).join("");
             
@@ -348,7 +348,7 @@ function create(context) {
             disarmOldTextItems();
             
             text.innerHTML += '<div class="separator"></div>';
-            text.innerHTML += '<div class="TextItem current">' + content + "</div>";
+            text.innerHTML += '<div class="text-item current">' + content + "</div>";
             
             if (
                 node.options.length ||
@@ -477,7 +477,7 @@ function create(context) {
         
         var option = document.createElement("span");
         
-        option.setAttribute("class", "Option");
+        option.setAttribute("class", "option");
         option.setAttribute("data-type", "option");
         option.setAttribute("data-target", opt.target);
         option.setAttribute("data-focus-mode", "node");
@@ -494,7 +494,7 @@ function create(context) {
         
         var timeoutContainer = document.createElement("div");
         
-        timeoutContainer.setAttribute("class", "TimeoutContainer");
+        timeoutContainer.setAttribute("class", "timeout-container");
         timeoutContainer.setAttribute("data-type", "timeout");
         timeoutContainer.setAttribute("data-remaining", "100");
         timeoutContainer.setAttribute("data-progress", "0");

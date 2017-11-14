@@ -13,7 +13,7 @@ function create(template, fadeDuration) {
         var hidden = false;
         var shown = false;
         
-        container.setAttribute("class", "NotificationContainer");
+        container.setAttribute("class", "notification-container");
         
         type = type || "default";
         

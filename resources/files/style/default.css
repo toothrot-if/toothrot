@@ -61,11 +61,11 @@ body {
     background: rgba(0, 0, 0, 0.6);
 }
 
-html, body, .Toothrot {
+html, body, .toothrot {
     height: 100%;
 }
 
-.Toothrot {
+.toothrot {
     position: fixed;
     left: 0;
     right: 0;
@@ -125,7 +125,7 @@ strong, b {
     margin: auto;
 }
 
-.Highlighter {
+.highlighter {
     position: absolute;
     border-radius: 3px;
     border: 1px solid white;
@@ -134,79 +134,7 @@ strong, b {
     cursor: pointer;
 }
 
-.BackgroundDimmer {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    background: black;
-}
-
-.BackgroundDimmer {
-    opacity: 0.8;
-}
-
-@keyframes pulse {
-    
-    0% {
-        opacity: 1;
-    }
-    
-    50% {
-        opacity: 0;
-    }
-    
-    100% {
-        opacity: 1;
-    }
-}
-
-/*
-.NextIndicator {
-    width: 16px;
-    height: 16px;
-    position: absolute;
-    right: -30px;
-    bottom: -20px;
-    margin: 0;
-    padding: 0;
-    opacity: 0.8;
-    background: transparent url(progress-dots.gif) no-repeat center center;
-}
-*/
-
-.NextIndicator {
-    width: 20px;
-    height: 20px;
-    background-color: #fff;
-    border: 1px solid black;
-    border-radius: 100%;
-}
-
-@-webkit-keyframes sk-scaleout {
-    0% {
-        -webkit-transform: scale(0)
-    }
-    100% {
-        -webkit-transform: scale(1.0);
-        opacity: 0;
-    }
-}
-
-@keyframes sk-scaleout {
-    0% { 
-        -webkit-transform: scale(0);
-        transform: scale(0);
-    }
-    100% {
-        -webkit-transform: scale(1.0);
-        transform: scale(1.0);
-        opacity: 0;
-    }
-}
-
-.Text {
+.text {
     position: absolute;
     left: 0;
     top: 0;
@@ -233,26 +161,26 @@ strong, b {
     min-height: 100%;
 }
 
-.Text p {
+.text p {
     margin-top: 20px;
 }
 
-.Text img {
+.text img {
     max-width: 100%;
 }
 
-.Text p:first-child {
+.text p:first-child {
     margin-top: 0;
 }
 
-.OptionsContainer {
+.options-container {
     text-align: center;
     margin-top: 20px;
     border-radius: 5px;
     box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.3);
 }
 
-.Option {
+.option {
     display: block;
     padding: 5px;
     padding-left: 10px;
@@ -261,50 +189,22 @@ strong, b {
     border-top: 0;
 }
 
-.Option:first-child {
+.option:first-child {
     border-top: 1px solid rgba(255, 255, 255, 0.6);
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
 }
 
-.Option:last-child {
+.option:last-child {
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
 }
 
-/*
-.Option {
-    display: block;
-    padding: 10px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    margin-top: 10px;
-    background: rgba(50, 50, 50, 0.9);
-    border: 1px solid rgb(20, 20, 20);
-    box-shadow: 2px 2px 2px rgb(20, 20, 20);
-    border-radius: 5px;
-    cursor: pointer;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    font-size: 0.9em;
-    text-align: center;
-}
-
-.Option:hover {
-    background: rgba(70, 70, 70, 0.9);
-    border: 1px solid rgb(40, 40, 40);
-}
-*/
-
-.Option:first-child {
+.option:first-child {
     margin-top: 0;
 }
 
-.TimeoutContainer {
+.timeout-container {
     padding: 2px;
     background: rgba(255, 255, 255, 0.4);
     margin-top: 20px;
@@ -313,7 +213,7 @@ strong, b {
     box-shadow: inset 2px 2px 2px rgba(0, 0, 0, 0.5);
 }
 
-.TimeoutContainer .TimerBar {
+.timeout-container .timer-bar {
     border-radius: 10px;
     height: 5px;
     background: rgba(255, 255, 255, 0.6);
@@ -345,22 +245,6 @@ strong, b {
     fill: white;
 }
 
-/*
-.direct_link {
-    border-bottom: 1px dashed;
-}
-*/
-
-.object_link {
-    display: inline-block;
-    margin: 5px;
-    border-radius: 5px;
-    padding: 3px;
-    padding-left: 10px;
-    padding-right: 10px;
-}
-
-
 #footer {
     position: fixed;
     left: 0;
@@ -377,7 +261,7 @@ strong, b {
     text-align: center;
 }
 
-.Button, .Option {
+.button, .option {
     padding: 10px;
     color: rgba(255, 255, 255, 0.9);
     background: rgba(255, 255, 255, 0.2);
@@ -396,33 +280,33 @@ strong, b {
     transition-duration: 0.5s;
 }
 
-.Option {
+.option {
     border-top: 0;
 }
 
-.Button, .object_link {
+.button {
     padding: 5px;
     display: inline-block;
 }
 
-.Button:hover, .Option:hover, .Action:hover, .object_link:hover {
+.button:hover, .option:hover {
     opacity: 0.8;
 }
 
-.Button:active, .Option:active, .Action:active, .object_link:active {
+.button:active, .option:active {
     box-shadow: inset 1px 1px 2px black;
     border: 1px solid rgb(50, 50, 50);
     border-bottom: 1px solid rgb(80, 80, 80);
     border-right: 1px solid rgb(80, 80, 80);
 }
 
-.Button img {
+.button img {
     margin: 0;
     padding: 0;
     display: block;
 }
 
-.Menu .Button {
+.menu .button {
     background: rgba(0, 0, 0, 0.3);
     border: none;
     box-shadow: none;
@@ -430,11 +314,11 @@ strong, b {
     box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.6);
 }
 
-.Menu .Button:hover {
+.menu .button:hover {
     background: rgba(0, 0, 0, 0.5);
 }
 
-.Curtain {
+.curtain {
     position: fixed;
     left: 0;
     top: 0;
@@ -445,7 +329,7 @@ strong, b {
     z-index: 10000;
 }
 
-.Screen {
+.screen {
     color: white;
     position: fixed;
     left: 0;
@@ -456,7 +340,11 @@ strong, b {
     background: rgb(20, 20, 20);
 }
 
-.Screen .Menu {
+.screen img {
+    max-width: 100%;
+}
+
+.screen .menu {
     position: absolute;
     left: 50%;
     top: 50%;
@@ -464,13 +352,13 @@ strong, b {
     padding: 5px;
 }
 
-.Screen .Menu ul {
+.screen .menu ul {
     list-style-type: none;
     padding: 5px;
     margin: 0;
 }
 
-.SaveScreen .Menu, .SettingsScreen .Menu, .top-menu {
+.settings-screen .menu, .top-menu {
     position: absolute;
     left: 0;
     top: auto;
@@ -484,111 +372,12 @@ strong, b {
     padding: 10px;
 }
 
-.Screen .Menu *[data-type=menu-item] {
+.screen .menu *[data-type=menu-item] {
     display: block;
     margin-bottom: 10px;
 }
 
-.SaveScreen .Menu *[data-type=menu-item], .SettingsScreen .Menu *[data-type=menu-item] {
-    display: inline-block;
-    margin-bottom: 0;
-    min-width: 100px;
-}
-
-.SaveScreen {
-    overflow: hidden;
-}
-
-.SaveScreen .Slots {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: -30px;
-    bottom: 0;
-    overflow-y: scroll;
-    padding-top: 50px;
-    padding-bottom: 80px;
-}
-
-.SaveScreen .Slots *[data-type=slots] {
-    margin: auto;
-    max-width: 1250px;
-    text-align: center;
-}
-
-.SaveScreen .Slots .index {
-    border: 1px solid white;
-    border-radius: 5px;
-    padding: 5px;
-    width: 50px;
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-.SaveScreen .Slots ul {
-    list-style-type: none;
-    /*
-    float: right;
-    */
-}
-
-.SaveScreen .Slots ul ul {
-    float: right;
-}
-
-.SaveScreen *[data-type=slot-time] {
-    margin-bottom: 10px;
-}
-
-.SaveScreen li[data-type=slot] {
-    border-radius: 5px;
-    display: block;
-    float: left;
-    width: 580px;
-    height: 140px;
-    padding: 10px;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    margin-bottom: 20px;
-    text-align: left;
-}
-
-.SaveScreen li[data-type=slot-button] {
-    font-weight: bold;
-    padding: 5px;
-    margin: 5px;
-    text-align: center;
-    cursor: pointer;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    display: inline-block;
-}
-
-.SaveScreen *[data-template-name=slot] {
-    background: rgba(50, 50, 50, 0.8);
-    border: 1px solid white;
-}
-
-.SaveScreen *[data-template-name=empty-slot] {
-    background: rgba(50, 50, 50, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    opacity: 0.6;
-}
-
-.SaveScreen .disabled {
-    opacity: 0.3;
-    cursor: default !important;
-}
-
-.Screen *[data-type=menu-item] {
+.screen *[data-type=menu-item] {
     cursor: pointer;
     padding: 10px;
     margin: 0;
@@ -598,14 +387,13 @@ strong, b {
     text-align: center;
 }
 
-.Screen *[data-type=menu-item]:last-child {
+.screen *[data-type=menu-item]:last-child {
     margin-bottom: 0;
 }
 
 
 
-
-.Settings {
+.settings {
     width: 580px;
     position: absolute;
     left: 50%;
@@ -613,17 +401,17 @@ strong, b {
     transform: translate(-50%, -50%);
 }
 
-.Settings .Box {
+.settings .box {
     text-align: right;
     margin-bottom: 20px;
 }
 
-.Settings .Box label {
+.settings .box label {
     float: left;
     font-weight: bold;
 }
 
-.Settings .Box input[type=range] {
+.settings .box input[type=range] {
     min-width: 300px;
 }
 
@@ -631,7 +419,7 @@ strong, b {
 
 
 
-.MessageBoxContainer {
+.message-box-container {
     position: absolute;
     left: 0;
     top: 0;
@@ -641,7 +429,7 @@ strong, b {
     background: rgba(0, 0, 0, 0.8);
 }
 
-.MessageBox {
+.message-box {
     position: absolute;
     left: 50%;
     top: 50%;
@@ -654,24 +442,25 @@ strong, b {
     padding: 20px;
 }
 
-.MessageBox .Message {
+.message-box .message {
     font-size: 1.2em;
     font-weight: bold;
     margin-bottom: 20px;
 }
 
-.MessageBox .ButtonBar {
+.message-box .button-bar {
     text-align: right;
 }
 
-.MessageBox .Button {
+.message-box .button {
     font-size: 1.2em;
     font-weight: bold;
     min-width: 80px;
 }
 
 
-.UIBar {
+
+.ui-bar {
     position: fixed;
     left: 0;
     right: 0;
@@ -681,7 +470,7 @@ strong, b {
     background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%,rgba(0,0,0,0) 100%);
 }
 
-.UIBar a {
+.ui-bar a {
     display: inline-block;
     padding: 3px;
     cursor: pointer;
@@ -690,30 +479,16 @@ strong, b {
     border: none;
 }
 
-.UIBar .right {
+.ui-bar .right {
     float: right;
 }
 
-.UIButton {
-    padding: 8px;
-    display: inline-block;
-    margin-left: 3px;
-}
-
-.ImageButton {
-    margin-bottom: -3px;
-}
-
-.UIButton:first-child {
-    margin-left: 0;
-}
-
-.UIBar .left {
+.ui-bar .left {
     margin-left: 0;
 }
 
 
-.Notification {
+.notification {
     position: fixed;
     top: 20px;
     right: 20px;
@@ -743,17 +518,17 @@ strong, b {
 
 @media (max-width: 600px) {
 
-.Text {
+.text {
     width: 100%;
     padding-left: 10px;
     padding-right: 10px;
 }
 
-.Text p {
+.text p {
     margin-top: 12px;
 }
 
-.MessageBox {
+.message-box {
     min-width: 0;
     width: 90%;
     position: relative;
@@ -761,26 +536,20 @@ strong, b {
     transform: translate(0, 0);
 }
 
-.SaveScreen li[data-type=slot] {
-    width: 90%;
-    float: none;
-    margin: auto;
-}
-
-.Settings {
+.settings {
     width: 90%;
 }
 
-.Settings .Label {
+.settings .Label {
     display: block;
 }
 
-.OptionsContainer {
+.options-container {
     text-align: left;
     margin-bottom: 10px;
 }
 
-.Option {
+.option {
     text-align: left;
     margin: 0;
     display: block;
@@ -794,46 +563,23 @@ strong, b {
     display: none !important;
 }
 
-.Toothrot {
+.toothrot {
     padding-bottom: 80px;
-}
-
-.SaveScreen .Slots {
-    padding-top: 20px;
-    margin-left: 0;
 }
 
 }
 
 @media (min-width: 1000px) {
 
-#content .Text {
+#content .text {
     max-width: 900px;
-}
-
-}
-
-@media (max-width: 1220px) {
-
-.SaveScreen li[data-type=slot] {
-    border-radius: 5px;
-    display: block;
-    float: none;
-    width: 90%;
-    height: auto;
-    margin: auto;
-    margin-bottom: 20px;
-}
-
-.SaveScreen .Slots {
-    left: -20px;
 }
 
 }
 
 @media (min-width: 1600px) {
 
-#content .Text {
+#content .text {
     max-width: 1200px;
 }
 
@@ -862,13 +608,13 @@ strong, b {
     transform: translate(0, -100%);
 }
 
-.TextItem {
+.text-item {
     transition-duration: 0.5s;
     opacity: 0.6;
     line-height: 1.3em;
 }
 
-.TextItem.current {
+.text-item.current {
     margin-bottom: 60px;
     opacity: 1;
 }
@@ -883,11 +629,11 @@ strong, b {
     opacity: 0.8;
 }
 
-.Option.disarmed {
+.option.disarmed {
     color: rgba(255, 255, 255, 0.6);
 }
 
-.Option.disarmed.clicked {
+.option.disarmed.clicked {
     color: rgba(255, 255, 255, 1);
     background: rgba(255, 255, 255, 0.5);
 }
@@ -946,9 +692,10 @@ strong, b {
     position: relative;
     min-height: 80px;
     text-align: center;
-    border: 1px solid black;
-    background: white;
-    color: black;
+    border: 1px solid white;
+    border-radius: 5px;
+    background: black;
+    color: white;
 }
 
 .upload-container .file, .upload-container .fake-file {

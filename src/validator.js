@@ -137,9 +137,6 @@ function validator(handleError) {
         if (link.type === "direct_link") {
             validateDirectLink(link, node, nodes);
         }
-        else if (link.type === "object_link") {
-            validateObjectLink(link, node, nodes);
-        }
     }
     
     function validateDirectLink(link, node, nodes) {

@@ -11,7 +11,7 @@ function create(element, speed, then) {
     markCharacters(element);
     hideCharacters(element);
     
-    chars = element.querySelectorAll(".Char");
+    chars = element.querySelectorAll(".char");
     left = chars.length;
     
     then = then || function () {};
@@ -75,7 +75,7 @@ function create(element, speed, then) {
 
 function hideCharacters(element) {
     
-    var chars = element.querySelectorAll(".Char");
+    var chars = element.querySelectorAll(".char");
     
     [].forEach.call(chars, function (char) {
         char.style.opacity = 0;
@@ -96,13 +96,13 @@ function markCharacters(element, offset) {
         if (child.nodeType === TEXT_NODE) {
             
             [].forEach.call(child.textContent, function (char) {
-                text += '<span class="Char" data-char="' + offset + '">' + char + '</span>';
+                text += '<span class="char" data-char="' + offset + '">' + char + '</span>';
                 offset += 1;
             });
             
             newNode = document.createElement("span");
             
-            newNode.setAttribute("class", "CharContainer");
+            newNode.setAttribute("class", "char-container");
             
             newNode.innerHTML = text;
             
