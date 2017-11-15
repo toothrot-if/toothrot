@@ -2,7 +2,7 @@
     <div class="screen-background"></div>
     <div class="screen-content">
         
-        <div class="current-cartridge">
+        <div class="box current-cartridge">
             <h2>Save</h2>
             <p class="description">
                 Save the image below to your device. It contains the current state of your
@@ -12,24 +12,26 @@
                 <img class="cartridge-image" data-type="cartridge-image" src="{cartridge_url}" alt="Click to download current datacard" />
             </a>
         </div>
-        <div class="load-cartridge">
+        <div class="box load-cartridge">
             <h2>Load</h2>
             <div class="upload-container">
                 <input type="file" class="file" />
                 <div class="fake-file">
                     <p class="description">
-                        To load a saved game, drop a datacard image here or click to select
-                        the datacard image from the files on your device.
+                        Click to select a datacard image to load
                     </p>
                 </div>
             </div>
         </div>
         
-        <button
-            class="button"
-            data-focus-mode="screen"
-            data-type="menu-item"
-            data-target="back">Back</button>
+        <div class="screen-buttons">
+            <button class="button"
+                    data-focus-mode="screen"
+                    data-type="menu-item"
+                    data-target="back">
+                Back
+            </button>
+        </div>
     </div>
     <script>
         (function () {

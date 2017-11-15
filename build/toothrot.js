@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0-beta.7)
-    Build time: Tue, 14 Nov 2017 19:42:18 GMT
+    Build time: Wed, 15 Nov 2017 19:09:18 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -12804,7 +12804,7 @@ function none() {
 
 function create(context) {
     
-    var storage, settings, system, interpreter, vars, env, focus;
+    var storage, settings, system, interpreter, vars, story, env, focus;
     var screens, currentScreen, screenStack, curtain, confirm;
     var curtainVisible = false;
     
@@ -12812,6 +12812,7 @@ function create(context) {
         
         env = context.getComponent("env");
         vars = context.getComponent("vars");
+        story = context.getComponent("story");
         focus = context.getComponent("focus");
         system = context.getComponent("system");
         storage = context.getComponent("storage");
@@ -12982,6 +12983,8 @@ function create(context) {
             
             var screenContainer = context.get("screen_container");
             var content = format(screen, settings.getAll());
+            
+            vars.set("storyTitle", story.getTitle());
             
             content = formatter("{$", "}")(content, vars.getAll());
             
@@ -13723,7 +13726,6 @@ function create(context) {
         option.setAttribute("data-target", opt.target);
         option.setAttribute("data-focus-mode", "node");
         option.setAttribute("tabindex", "1");
-        option.setAttribute("title", "Option");
         option.setAttribute("data-value", window.btoa(JSON.stringify(opt.value)));
         
         option.innerHTML = opt.label;

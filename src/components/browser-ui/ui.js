@@ -482,7 +482,6 @@ function create(context) {
         option.setAttribute("data-target", opt.target);
         option.setAttribute("data-focus-mode", "node");
         option.setAttribute("tabindex", "1");
-        option.setAttribute("title", "Option");
         option.setAttribute("data-value", window.btoa(JSON.stringify(opt.value)));
         
         option.innerHTML = opt.label;

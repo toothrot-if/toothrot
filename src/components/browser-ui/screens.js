@@ -27,7 +27,7 @@ function none() {
 
 function create(context) {
     
-    var storage, settings, system, interpreter, vars, env, focus;
+    var storage, settings, system, interpreter, vars, story, env, focus;
     var screens, currentScreen, screenStack, curtain, confirm;
     var curtainVisible = false;
     
@@ -35,6 +35,7 @@ function create(context) {
         
         env = context.getComponent("env");
         vars = context.getComponent("vars");
+        story = context.getComponent("story");
         focus = context.getComponent("focus");
         system = context.getComponent("system");
         storage = context.getComponent("storage");
@@ -205,6 +206,8 @@ function create(context) {
             
             var screenContainer = context.get("screen_container");
             var content = format(screen, settings.getAll());
+            
+            vars.set("storyTitle", story.getTitle());
             
             content = formatter("{$", "}")(content, vars.getAll());
             

@@ -27,27 +27,17 @@ console.log("Head @section_entry");
 
 ## default
 
+(#) background: "linear-gradient(to bottom, rgba(122, 188, 255, 1) 40%, rgba(96, 171, 248, 1) 60%, rgba(64, 150, 238, 1) 100%)"
+
 ```js @entry
 console.log("Section @entry");
 ```
 
 ### start
 
-(#) background: "url('images/muffin-dot-dat.png') center/cover"
-
-```js @entry
-$.foo = navigator.userAgent;
-```
-
-```js @where
-JSON.stringify($._lastNodes, null, 4);
-```
-
 ![Toothrot Engine Logo](images/logo.png)
 
 Welcome to [Toothrot Engine](#toothrot_engine)!
-
-`@where`. `$foo`
 
 [Go to other section](#other_section_node)
 
@@ -134,8 +124,6 @@ A man wearing the cliché attire of a private detective, a long coat and a black
 
 ### toothrot_engine
 
-(#) background: "url('images/coldmountain.png') center/cover"
-
 An engine for developing text-based games. It has a weird name.
 
 (@) Explain name   => explain_toothrot
@@ -189,20 +177,13 @@ You drop the sword.
 
 ### storage_room
 
-```js @where
-JSON.stringify($._lastNodes, null, 4);
-```
-
 Storage Room
 ------------
 
 (#) tags: ["room"]
 (#) contains: ["chest"]
-(#) background: "url('images/cloudsinthedesert.png') center/cover"
 
 Just some boring storage room. A door leads to the [kitchen](#kitchen).
-
-`@where`
 
 (@) Use an item => inventory
 
