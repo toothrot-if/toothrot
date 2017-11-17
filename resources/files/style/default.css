@@ -176,7 +176,9 @@ strong, b {
 .options-container {
     text-align: center;
     margin-top: 20px;
-    border-radius: 5px;
+    border-radius: 10px;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
     box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.3);
 }
 
@@ -191,13 +193,11 @@ strong, b {
 
 .option:first-child {
     border-top: 1px solid rgba(255, 255, 255, 0.6);
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
+    border-top-left-radius: 10px;
 }
 
 .option:last-child {
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
+    border-bottom-right-radius: 10px;
 }
 
 .option:first-child {
@@ -231,13 +231,14 @@ strong, b {
     text-decoration: none;
     font-weight: bold;
     cursor: pointer;
-    transition-duration: 1s;
+    transition-duration: 0.5s;
     border-radius: 5px;
 }
 
 .link:hover {
     background: rgba(0, 0, 0, 0.8);
     color: rgba(255, 255, 255, 1);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
 }
 
 .link .icon {
@@ -284,21 +285,23 @@ strong, b {
 
 .option {
     background: rgba(0, 0, 0, 0.6);
-    background: linear-gradient(to bottom, rgba(50, 50, 50, 0.6) 0%, rgba(0, 0, 0, 0.4) 100%);
+    background: linear-gradient(to bottom, rgba(50, 50, 50, 0.9) 0%, rgba(0, 0, 0, 0.8) 100%);
     border-top: 0;
 }
 
 .button {
     padding: 5px;
     display: inline-block;
-    border-radius: 5px;
+    border-radius: 10px;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
     background: rgba(0, 0, 0, 0.6);
-    background: linear-gradient(to bottom, rgba(69, 72, 77, 0.8) 0%, rgba(0, 0, 0, 0.6) 100%);
+    background: linear-gradient(to bottom, rgba(69, 72, 77, 0.9) 0%, rgba(0, 0, 0, 0.8) 100%);
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
 }
 
 .button:hover, .option:hover {
-    border-right-width: 10px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
 }
 
 .button:active, .option:active {
@@ -354,6 +357,7 @@ strong, b {
     font-weight: bold;
     text-align: center;
     margin-bottom: 20px;
+    text-shadow: 1px 1px 3px black;
 }
 
 .screen .menu {
@@ -390,6 +394,10 @@ strong, b {
     text-align: right;
 }
 
+.screen-buttons *[data-type=menu-item] {
+    margin-left: 10px;
+}
+
 
 
 .box {
@@ -397,7 +405,9 @@ strong, b {
     margin-bottom: 15px;
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 5px;
+    border-radius: 10px;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
 }
 
@@ -455,7 +465,9 @@ strong, b {
     transform: translate(-50%, -50%);
     background: rgba(0, 0, 0, 0.8);
     border: 1px solid white;
-    border-radius: 5px;
+    border-radius: 10px;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
     min-width: 500px;
     min-height: 100px;
     padding: 20px;
@@ -486,7 +498,7 @@ strong, b {
     top: 0;
     z-index: 1000;
     padding: 10px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%,rgba(0,0,0,0) 100%);
+    background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%,rgba(0,0,0,0) 100%);
 }
 
 .ui-bar a {
@@ -520,7 +532,9 @@ strong, b {
     color: rgb(240, 240, 220);
     box-shadow: 2px 2px 3px black;
     border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: 5px;
+    border-radius: 10px;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
     font-weight: bold;
 }
 
@@ -578,6 +592,14 @@ strong, b {
     min-width: 0;
     width: 100%;
     margin-bottom: 10px;
+}
+
+.screen {
+    padding: 10px;
+}
+
+.screen-buttons *[data-type=menu-item] {
+    margin-left: 0;
 }
 
 }
@@ -644,7 +666,7 @@ strong, b {
 
 .text-item {
     transition-duration: 0.5s;
-    opacity: 0.6;
+    opacity: 0.3;
     line-height: 1.3em;
 }
 
@@ -654,7 +676,7 @@ strong, b {
 }
 
 .disarmed {
-    opacity: 0.6;
+    opacity: 0.3;
     pointer-events: none;
     cursor: default;
 }
@@ -670,7 +692,6 @@ strong, b {
 .option.disarmed.clicked {
     color: rgba(255, 255, 255, 1);
     background: linear-gradient(to bottom, rgba(50, 50, 50, 1) 0%, rgba(0, 0, 0, 1) 100%);
-    border-right-width: 10px;
 }
 
 .link.clicked {
@@ -704,7 +725,7 @@ strong, b {
 }
 
 
-.cartridge-screen .screen-content {
+.screen-content {
     max-width: 600px;
     margin: auto;
     padding: 5px;
@@ -758,6 +779,10 @@ strong, b {
 
 .upload-container .file {
     opacity: 0;
+}
+
+.description {
+    font-size: 0.8em;
 }
 
 .global-drop-zone {

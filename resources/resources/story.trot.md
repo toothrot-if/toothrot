@@ -27,7 +27,7 @@ console.log("Head @section_entry");
 
 ## default
 
-(#) background: "linear-gradient(to bottom, rgba(122, 188, 255, 1) 40%, rgba(96, 171, 248, 1) 60%, rgba(64, 150, 238, 1) 100%)"
+(#) background: "linear-gradient(to bottom, rgba(230, 230, 230, 1) 0, rgba(140, 140, 140, 1) 30%, rgba(0, 0, 0, 1) 95%)"
 
 ```js @entry
 console.log("Section @entry");
@@ -47,6 +47,8 @@ From here, you can go to [the storage room](#storage_room).
 
 
 ### street
+
+(#) background: "url(images/coldmountain.png) center/cover"
 
 In front of your house
 ---------------------------------
