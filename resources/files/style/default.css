@@ -165,12 +165,22 @@ strong, b {
     margin-top: 20px;
 }
 
-.text img {
-    max-width: 100%;
-}
-
 .text p:first-child {
     margin-top: 0;
+}
+
+.text pre {
+    padding: 5px;
+    margin-top: 20px;
+    background: black;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 3px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
+}
+
+.text img {
+    max-width: 100%;
 }
 
 .options-container {
@@ -413,6 +423,7 @@ strong, b {
 
 .box h2 {
     margin-bottom: 10px;
+    font-size: 1.1em;
 }
 
 .box p {
@@ -744,9 +755,18 @@ strong, b {
     max-width: 100px;
 }
 
+.download-link {
+    display: block;
+    text-align: center;
+}
+
+.download-link img {
+    max-height: 200px;
+}
+
 .upload-container {
     position: relative;
-    min-height: 80px;
+    min-height: 60px;
     text-align: center;
     border: 1px solid white;
     border-radius: 5px;
