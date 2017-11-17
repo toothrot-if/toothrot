@@ -59,6 +59,8 @@ function create(context) {
         context.on("show_screen", removeInactiveElements);
         context.on("change_focus_mode", onFocusModeChange);
         context.on("resume_game", resumeGame);
+        context.on("clear_state", onClearState);
+        context.on("update_state", onUpdateState);
         
         setTimeout(function () {
             interpreter.hasCurrentSlot(function () {
@@ -73,6 +75,8 @@ function create(context) {
         context.removeListener("show_screen", removeInactiveElements);
         context.removeListener("change_focus_mode", onFocusModeChange);
         context.removeListener("resume_game", resumeGame);
+        context.removeListener("clear_state", onClearState);
+        context.removeListener("update_state", onUpdateState);
         
         storage = null;
         settings = null;
@@ -82,6 +86,14 @@ function create(context) {
         if (mode === "screen" && !currentScreen) {
             run("main");
         }
+    }
+    
+    function onClearState() {
+        clearStack();
+    }
+    
+    function onUpdateState() {
+        run("main", clearStack);
     }
     
     function onScreenClick(event) {
@@ -234,8 +246,12 @@ function create(context) {
         
         var lastScreen;
         
-        if (screenStack.length < 1) {
+        if (screenStack.length < 1 && interpreter.isStarted()) {
             return resumeGame();
+        }
+        
+        if (!screenStack.length) {
+            return;
         }
         
         lastScreen = screenStack.pop();
@@ -436,8 +452,7 @@ function create(context) {
         currentScreen = undefined;
         
         focus.setMode("node");
-        
-        screenStack.splice(0, screenStack.length);
+        clearStack();
         
         animateScreenExit(function () {
             
@@ -445,6 +460,10 @@ function create(context) {
                 inBetween();
             }
         }, then);
+    }
+    
+    function clearStack() {
+        screenStack.splice(0, screenStack.length);
     }
     
     function setOpacity(element) {

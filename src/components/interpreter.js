@@ -13,7 +13,7 @@ var none = function () {};
 
 function create(context) {
     
-    var serialized, currentNextType, currentSection;
+    var serialized, currentNextType, currentSection, started;
     var story, vars, env, nodes, storage, settings, focus, currentNode, nextClickTime, timeoutId;
     
     // A stack for remembering which node to return to.
@@ -46,12 +46,21 @@ function create(context) {
     }
     
     function start() {
+        
         clearState();
+        
+        started = true;
+        
         runNode(story.getNode("start"));
+    }
+    
+    function isStarted() {
+        return !!started;
     }
     
     function clearState() {
         stack = [];
+        started = false;
         vars.clear();
         context.emit("clear_state");
     }
@@ -80,11 +89,13 @@ function create(context) {
             overwriteStorageSlots(data.savegames);
         }
         
+        context.emit("update_state");
+        
         if (data.current) {
             console.log("Resuming game from saved state...");
             overwriteStorageSlot("current", data.current);
             settings.set("current_slot_exists", true);
-            resume(data.current);
+            //resume(data.current);
         }
     }
     
@@ -149,6 +160,8 @@ function create(context) {
         Object.keys(data.vars).forEach(function (key) {
             vars.set(key, data.vars[key]);
         });
+        
+        started = true;
         
         context.emit("resume_game", data);
         
@@ -589,6 +602,7 @@ function create(context) {
         init: init,
         destroy: destroy,
         start: start,
+        isStarted: isStarted,
         runNode: runNode,
         runNodeById: runNodeById,
         next: next,

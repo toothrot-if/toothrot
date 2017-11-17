@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0-beta.7)
-    Build time: Wed, 15 Nov 2017 19:09:18 GMT
+    Build time: Fri, 17 Nov 2017 17:54:32 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -12836,6 +12836,8 @@ function create(context) {
         context.on("show_screen", removeInactiveElements);
         context.on("change_focus_mode", onFocusModeChange);
         context.on("resume_game", resumeGame);
+        context.on("clear_state", onClearState);
+        context.on("update_state", onUpdateState);
         
         setTimeout(function () {
             interpreter.hasCurrentSlot(function () {
@@ -12850,6 +12852,8 @@ function create(context) {
         context.removeListener("show_screen", removeInactiveElements);
         context.removeListener("change_focus_mode", onFocusModeChange);
         context.removeListener("resume_game", resumeGame);
+        context.removeListener("clear_state", onClearState);
+        context.removeListener("update_state", onUpdateState);
         
         storage = null;
         settings = null;
@@ -12859,6 +12863,14 @@ function create(context) {
         if (mode === "screen" && !currentScreen) {
             run("main");
         }
+    }
+    
+    function onClearState() {
+        clearStack();
+    }
+    
+    function onUpdateState() {
+        run("main", clearStack);
     }
     
     function onScreenClick(event) {
@@ -13011,8 +13023,12 @@ function create(context) {
         
         var lastScreen;
         
-        if (screenStack.length < 1) {
+        if (screenStack.length < 1 && interpreter.isStarted()) {
             return resumeGame();
+        }
+        
+        if (!screenStack.length) {
+            return;
         }
         
         lastScreen = screenStack.pop();
@@ -13213,8 +13229,7 @@ function create(context) {
         currentScreen = undefined;
         
         focus.setMode("node");
-        
-        screenStack.splice(0, screenStack.length);
+        clearStack();
         
         animateScreenExit(function () {
             
@@ -13222,6 +13237,10 @@ function create(context) {
                 inBetween();
             }
         }, then);
+    }
+    
+    function clearStack() {
+        screenStack.splice(0, screenStack.length);
     }
     
     function setOpacity(element) {
@@ -14093,7 +14112,7 @@ var none = function () {};
 
 function create(context) {
     
-    var serialized, currentNextType, currentSection;
+    var serialized, currentNextType, currentSection, started;
     var story, vars, env, nodes, storage, settings, focus, currentNode, nextClickTime, timeoutId;
     
     // A stack for remembering which node to return to.
@@ -14126,12 +14145,21 @@ function create(context) {
     }
     
     function start() {
+        
         clearState();
+        
+        started = true;
+        
         runNode(story.getNode("start"));
+    }
+    
+    function isStarted() {
+        return !!started;
     }
     
     function clearState() {
         stack = [];
+        started = false;
         vars.clear();
         context.emit("clear_state");
     }
@@ -14160,11 +14188,13 @@ function create(context) {
             overwriteStorageSlots(data.savegames);
         }
         
+        context.emit("update_state");
+        
         if (data.current) {
             console.log("Resuming game from saved state...");
             overwriteStorageSlot("current", data.current);
             settings.set("current_slot_exists", true);
-            resume(data.current);
+            //resume(data.current);
         }
     }
     
@@ -14229,6 +14259,8 @@ function create(context) {
         Object.keys(data.vars).forEach(function (key) {
             vars.set(key, data.vars[key]);
         });
+        
+        started = true;
         
         context.emit("resume_game", data);
         
@@ -14669,6 +14701,7 @@ function create(context) {
         init: init,
         destroy: destroy,
         start: start,
+        isStarted: isStarted,
         runNode: runNode,
         runNodeById: runNodeById,
         next: next,
