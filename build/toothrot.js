@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0-beta.7)
-    Build time: Fri, 17 Nov 2017 17:54:32 GMT
+    Build time: Fri, 17 Nov 2017 19:25:34 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -12981,6 +12981,10 @@ function create(context) {
         }
         
         currentScreen = name;
+        
+        if (currentScreen === "main") {
+            clearStack();
+        }
         
         focus.setMode("screen");
         
