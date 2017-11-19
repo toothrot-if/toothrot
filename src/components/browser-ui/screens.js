@@ -205,6 +205,10 @@ function create(context) {
         
         currentScreen = name;
         
+        if (currentScreen === "main") {
+            clearStack();
+        }
+        
         focus.setMode("screen");
         
         if (isSameScreen) {
