@@ -2,7 +2,7 @@
 
 [Come chat with us on Discord!](https://discord.gg/DJ8SAr5)
 
-![Toothrot Engine Logo](resources/files/images/logo.png?raw=true)
+![Toothrot Engine Logo](resources/files/images/logo.png)
 
 An engine for creating text-based games.
 
@@ -12,10 +12,6 @@ and allow writing your game logic in JavaScript.
 
 To develop games with this engine, basic knowledge of JavaScript and HTML is recommended,
 though not required for simple choice-based or hypertext games.
-
-## Screenshots
-
-![Default theme](docs/images/default-theme.png)
 
 ## Features
 
@@ -41,106 +37,6 @@ though not required for simple choice-based or hypertext games.
  * Extensible JavaScript API
  * Speed-adjustable reveal effect for text (like in visual novels)
  * Browser builds support application cache (offline mode) out of the box
-
-## Installation
-
-You need Node.js to run the engine. If you don't have it installed, download it here:
-[https://nodejs.org/en/download/](https://nodejs.org/en/download/)
-
-Once you have Node.js up and running, installing toothrot is as simple as opening
-a terminal window and typing the following:
-
-    npm install -g toothrot
-
-## Creating a new project
-
-You can now create a new project in the terminal like this:
-
-```
-mkdir my_project
-cd my_project
-toothrot init
-```
-
-This will create the following files and folders in `my_project`:
-
-```
-+ files
-  + style
-    - default.css
-    - custom.css
-  - index.html
-+ resources
-  + screens
-    - main.html
-    - pause.html
-    - save.html
-    - settings.html
-  + templates
-    - confirm.html
-    - notification.html
-    - ui.html
-  - extras.trot.ext.md
-  - story.trot.md
-- project.json
-```
-
-The `files/` folder contains all the files that are copied as is when you build your project.
-
-The `resources/` folder contains files that will be packed into a `resources.js` file when
-you build your project.
-
-The folder `resources/screens/` contains HTML template files for screens. You can customize
-the templates to better fit the style of your projects, or add new files here to add new
-screens to your game.
-
-The `resources/templates/` folder contains non-screen templates. Currently only `confirm.html`
-is used. You can change this file to customize the appearance of confirm dialogs.
-
-The `files/index.html` file is the main file of the project. When you build your projects for
-the browser, you can double-click on this file to start the game.
-
-You can customize your game's appearance by changing `files/style/custom.css`. Of course, you
-can also add new CSS files to your `files/index.html` file.
-
-The file `project.json` contains information about your project, e.g. for which desktop
-platforms you want to build your game.
-
-Finally, the `resources/story.trot.md` file contains the actual story of your game. Your story
-must have this file, but it can also have as many additional story files as you want to use.
-Additional story files must have the extension `.trot.ext.md`.
-
-You can change all of your project files to your liking, then build your project to run and test it.
-
-## Building your project
-
-To create a working game from your project, you need to build it. This can be done by writing
-the following in the terminal:
-
-    toothrot build
-
-This will package all the resources and create a folder `my_project/build/browser/`.
-To run your game, just double-click on the `index.html` file or open that file in
-your browser (drag and drop usually works, too).
-
-You can also build desktop applications from your project for Linux, Windows and Mac OS X like so:
-
-    toothrot build-desktop
-
-This will download a whole lot of stuff the first time you run it. If you have a slow connection,
-you can go grab a coffee now. ;)
-
-With the default settings this will built for the following platforms:
-
- * win32: Windows (32-bit)
- * linux: Linux (32-bit)
- * darwin: Mac OS X (32-bit)
-
-You can change which platforms to build for by opening your project's `project.json` file and
-editing the `platforms` property.
-
-You can find the finished desktop builds in `my_project/build/desktop/`.
-
 
 ## The Story Format
 

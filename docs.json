@@ -1,0 +1,60 @@
+{
+    "name": "Toothrot",
+    "output": "dist/docs/",
+    "themeDir": "docs/theme/",
+    "ignore": [
+        "dist/",
+        "node_modules/",
+        "resources/",
+        "src/",
+        "bin/",
+        "build/",
+        "\\.js$",
+        "docs/theme/"
+    ],
+    "navigation": {
+        "</svg><svg class='fill-white' xmlns='http://www.w3.org/2000/svg' width='16' height='16'><use xlink:href='#icon-home'></use></svg>": "index.md",
+        "Docs": "docs/user/index.md",
+        "Community": "docs/community.md"
+    },
+    "paths": {
+        "userDir": "docs/user/",
+        "devDir": "docs/dev/"
+    },
+    "code": [
+        {
+            "extension": "js",
+            "language": "javascript",
+            "comments": [
+                {
+                    "type": "single",
+                    "start": "^//[ ]{0,1}"
+                }
+            ]
+        },
+        {
+            "extension": "scss",
+            "language": "scss",
+            "comments": [
+                {
+                    "type": "single",
+                    "start": "^//[ ]{0,1}"
+                }
+            ]
+        },
+        {
+            "extension": "php",
+            "language": "php",
+            "comments": [
+                {
+                    "type": "single",
+                    "start": "^//[ ]{0,1}"
+                },
+                {
+                    "type": "single",
+                    "start": "^#[ ]{0,1}"
+                }
+            ]
+        }
+    ]
+}

@@ -249,10 +249,10 @@ You close the chest.
 
 ### explain_toothrot
 
-The name "Toothrot" is a homage to the character Herman Toothrot from the famous
+The name "Toothrot" is an homage to the character Herman Toothrot from the famous
 adventure game "Monkey Island."
 ***
-Wait - you've played that game, right?
+Wait -- you've played that game, right?
 ***
 Surely you have.
 ***

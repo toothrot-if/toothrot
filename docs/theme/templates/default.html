@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{title} - {projectName}</title>
+        
+        <meta charset="utf-8" />
+        
+        <!-- Disable scaling on mobile: -->
+        <meta name="viewport" content="width=device-width" />
+        <meta name="viewport" content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, height=device-height, width=device-width" />
+        
+        <link rel="stylesheet" type="text/css" href="{resourceDir}style/default.css" />
+        <link rel="stylesheet" type="text/css" href="{resourceDir}style/highlight.css" />
+    </head>
+    <body>
+        <div class="navbar" data-module="navbar">
+            <div class="content">
+                <div class="links">
+                    <a class="project-name" href="{rootDir}index.html">
+                        <img src="{resourceDir}images/logo.png" alt="{projectName}" />
+                    </a>
+                </div>
+            </div>
+            {navigation}
+        </div>
+        <div id="content">
+            <div id="page">
+                {content}
+            </div>
+        </div>
+        <div class="hidden">
+            <svg xmlns="http://www.w3.org/2000/svg">
+                
+                <symbol id="fa-file" viewBox="-200 -400 2200 2400">
+                    <path d="M1152 512v-472q22 14 36 28l408 408q14 14 28 36h-472zm-128 32q0 40 28 68t68 28h544v1056q0 40-28 68t-68 28h-1344q-40 0-68-28t-28-68v-1600q0-40 28-68t68-28h800v544z" />
+                </symbol>
+                
+                <symbol id="icon-folder" viewBox="0 0 14 16">
+                    <path d="M13 4H7V3c0-.66-.31-1-1-1H1c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V5c0-.55-.45-1-1-1zM6 4H1V3h5v1z" />
+                </symbol>
+                
+                <symbol id="fa-close" viewBox="-500 -200 2600 2200">
+                    <path d="M1490 1322q0 40-28 68l-136 136q-28 28-68 28t-68-28l-294-294-294 294q-28 28-68 28t-68-28l-136-136q-28-28-28-68t28-68l294-294-294-294q-28-28-28-68t28-68l136-136q28-28 68-28t68 28l294 294 294-294q28-28 68-28t68 28l136 136q28 28 28 68t-28 68l-294 294 294 294q28 28 28 68z" />
+                </symbol>
+                
+                <symbol id="icon-home" viewBox="0 0 16 16">
+                    <path d="M16 9l-3-3V2h-2v2L8 1 0 9h2l1 5c0 .55.45 1 1 1h8c.55 0 1-.45 1-1l1-5h2zm-4 5H9v-4H7v4H4L2.81 7.69 8 2.5l5.19 5.19L12 14z" />
+                </symbol>
+                
+            </svg>
+        </div>
+        <script src="{resourceDir}index.js"></script>
+    </body>
+</html>
