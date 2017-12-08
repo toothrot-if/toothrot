@@ -5,6 +5,7 @@ var toDataUri = require("datauri").sync;
 var normalize = require("path").normalize;
 
 var parse = require("./parser").parse;
+var readStoryFiles = require("./utils/readStoryFiles");
 
 function pack(dir) {
     
@@ -29,7 +30,7 @@ function pack(dir) {
         story = JSON.parse("" + fs.readFileSync(astFile));
     }
     else {
-        storyFilesContent = readStoryFile(dir);
+        storyFilesContent = readStoryFiles(dir);
         parse("" + storyFilesContent, function (errors, ast) {
             
             if (errors) {
@@ -87,34 +88,6 @@ function pruneStory(story) {
     });
     
     delete story.head.content;
-}
-
-function readStoryFile(dir) {
-    
-    var mainFile = normalize(dir + "/story.trot.md");
-    var content = "<<<story.trot.md>>>\n";
-    var files = getAdditionalStoryFiles(dir);
-    
-    content += fs.readFileSync(mainFile);
-    
-    files.forEach(function (file) {
-        
-        var fileContent = fs.readFileSync(normalize(dir + "/" + file));
-        
-        content += "<<<" + file + ">>>\n";
-        content += fileContent;
-    });
-    
-    return content;
-}
-
-function getAdditionalStoryFiles(dir) {
-    
-    var allFiles = fs.readdirSync(dir);
-    
-    return allFiles.filter(function (file) {
-        return (/\.trot\.ext\.md/).test(file);
-    });
 }
 
 module.exports.pack = pack;
