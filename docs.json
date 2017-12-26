@@ -1,7 +1,7 @@
 {
     "name": "Toothrot",
     "output": "dist/docs/",
-    "themeDir": "docs/theme/",
+    "themeDir": "node_modules/toothrot-allthedocs/theme/",
     "ignore": [
         "dist/",
         "node_modules/",
