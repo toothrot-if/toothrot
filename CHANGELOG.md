@@ -1,5 +1,46 @@
 # Changelog
 
+## 2.0.0 (TBD)
+
+* Changes to text stream interface (think *Lifeline* series)
+* The `objects.json` file and corresponding API removed
+* Tags, flags and properties added to nodes
+* Nodes can now contain other nodes
+* Internal JS code switched to a component architecture, improving maintainability
+* Introduces scripts and slots
+* Object links have been removed
+* Improved default theme
+* Savegame slots removed, using PNG images as "datacards" instead
+* Introduces a hierarchy for node tags
+* Screens can now have embedded scripts
+* Desktop builds now use electron instead of NW.js
+
+Story format now uses markdown-like syntax where appropriate:
+
+| v1 Syntax             | v2 Syntax           | Description                           |
+|:----------------------|:--------------------|:--------------------------------------|
+| `#: My Story`         | `# My Story`        | Story title.                          |
+| `##: Section`         | `## Section`        | Section ID.                           |
+| `###: Node`           | `### Node`          | Node ID.                              |
+| `(~~~)`               | `***`               | Creates anonymous text nodes.         |
+| `(: foo => bar :)`    | `[foo](#bar)`       | Links to node `bar` using text `foo`. |
+| `(! doSomething() !)` | ``` `@slot` ```     | Executes JS code, inserts result.     |
+| `($ foo $)`           | ``` `$foo` ```      | Inserts a variable `foo`.             |
+
+Various new methods have been added to the env object (`_`) or were changed:
+
+* `_.event(textOrObject)`: Adds an event.
+* `_.last([tag])`: Returns the name of the last node, or if `tag` is given, the last node with
+  the tag.
+* `_.dim()`: Has been removed.
+
+The following new global variables are now available in scripts:
+
+* `engine`: The toothrot engine context. Can be used to use components directly or to send events
+  or to listen to them.
+* `__file`: The file name of the current script (story file or screen file).
+
+
 ## 1.5.0 (2016-12-09)
 
 Adds some new methods to the env ("_") object given to a node's JavaScript snippets:
