@@ -236,7 +236,8 @@ function create(context) {
                     env.getAll(),
                     vars.getAll(),
                     script.innerHTML,
-                    0
+                    0,
+                    "screens/" + name
                 );
             }, screenContainer.querySelectorAll("script"));
             

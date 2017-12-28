@@ -95,7 +95,6 @@ function create(context) {
             console.log("Resuming game from saved state...");
             overwriteStorageSlot("current", data.current);
             settings.set("current_slot_exists", true);
-            //resume(data.current);
         }
     }
     
@@ -473,7 +472,8 @@ function create(context) {
                     env.getAll(),
                     vars.getAll(),
                     script.body,
-                    script.line
+                    script.line,
+                    script.file
                 );
             }
             catch (error) {
