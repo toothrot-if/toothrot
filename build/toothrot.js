@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v2.0.0-beta.7)
-    Build time: Fri, 17 Nov 2017 19:25:34 GMT
+    Toothrot Engine (v2.0.0-beta.9)
+    Build time: Thu, 28 Dec 2017 20:38:25 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -42,7 +42,155 @@
 }(window));
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":2}],2:[function(require,module,exports){
+},{"buffer":4}],2:[function(require,module,exports){
+var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+;(function (exports) {
+	'use strict';
+
+  var Arr = (typeof Uint8Array !== 'undefined')
+    ? Uint8Array
+    : Array
+
+	var PLUS   = '+'.charCodeAt(0)
+	var SLASH  = '/'.charCodeAt(0)
+	var NUMBER = '0'.charCodeAt(0)
+	var LOWER  = 'a'.charCodeAt(0)
+	var UPPER  = 'A'.charCodeAt(0)
+	var PLUS_URL_SAFE = '-'.charCodeAt(0)
+	var SLASH_URL_SAFE = '_'.charCodeAt(0)
+
+	function decode (elt) {
+		var code = elt.charCodeAt(0)
+		if (code === PLUS ||
+		    code === PLUS_URL_SAFE)
+			return 62 // '+'
+		if (code === SLASH ||
+		    code === SLASH_URL_SAFE)
+			return 63 // '/'
+		if (code < NUMBER)
+			return -1 //no match
+		if (code < NUMBER + 10)
+			return code - NUMBER + 26 + 26
+		if (code < UPPER + 26)
+			return code - UPPER
+		if (code < LOWER + 26)
+			return code - LOWER + 26
+	}
+
+	function b64ToByteArray (b64) {
+		var i, j, l, tmp, placeHolders, arr
+
+		if (b64.length % 4 > 0) {
+			throw new Error('Invalid string. Length must be a multiple of 4')
+		}
+
+		// the number of equal signs (place holders)
+		// if there are two placeholders, than the two characters before it
+		// represent one byte
+		// if there is only one, then the three characters before it represent 2 bytes
+		// this is just a cheap hack to not do indexOf twice
+		var len = b64.length
+		placeHolders = '=' === b64.charAt(len - 2) ? 2 : '=' === b64.charAt(len - 1) ? 1 : 0
+
+		// base64 is 4/3 + up to two characters of the original data
+		arr = new Arr(b64.length * 3 / 4 - placeHolders)
+
+		// if there are placeholders, only get up to the last complete 4 chars
+		l = placeHolders > 0 ? b64.length - 4 : b64.length
+
+		var L = 0
+
+		function push (v) {
+			arr[L++] = v
+		}
+
+		for (i = 0, j = 0; i < l; i += 4, j += 3) {
+			tmp = (decode(b64.charAt(i)) << 18) | (decode(b64.charAt(i + 1)) << 12) | (decode(b64.charAt(i + 2)) << 6) | decode(b64.charAt(i + 3))
+			push((tmp & 0xFF0000) >> 16)
+			push((tmp & 0xFF00) >> 8)
+			push(tmp & 0xFF)
+		}
+
+		if (placeHolders === 2) {
+			tmp = (decode(b64.charAt(i)) << 2) | (decode(b64.charAt(i + 1)) >> 4)
+			push(tmp & 0xFF)
+		} else if (placeHolders === 1) {
+			tmp = (decode(b64.charAt(i)) << 10) | (decode(b64.charAt(i + 1)) << 4) | (decode(b64.charAt(i + 2)) >> 2)
+			push((tmp >> 8) & 0xFF)
+			push(tmp & 0xFF)
+		}
+
+		return arr
+	}
+
+	function uint8ToBase64 (uint8) {
+		var i,
+			extraBytes = uint8.length % 3, // if we have 1 byte left, pad 2 bytes
+			output = "",
+			temp, length
+
+		function encode (num) {
+			return lookup.charAt(num)
+		}
+
+		function tripletToBase64 (num) {
+			return encode(num >> 18 & 0x3F) + encode(num >> 12 & 0x3F) + encode(num >> 6 & 0x3F) + encode(num & 0x3F)
+		}
+
+		// go through the array every three bytes, we'll deal with trailing stuff later
+		for (i = 0, length = uint8.length - extraBytes; i < length; i += 3) {
+			temp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2])
+			output += tripletToBase64(temp)
+		}
+
+		// pad the end with zeros, but make sure to not forget the extra bytes
+		switch (extraBytes) {
+			case 1:
+				temp = uint8[uint8.length - 1]
+				output += encode(temp >> 2)
+				output += encode((temp << 4) & 0x3F)
+				output += '=='
+				break
+			case 2:
+				temp = (uint8[uint8.length - 2] << 8) + (uint8[uint8.length - 1])
+				output += encode(temp >> 10)
+				output += encode((temp >> 4) & 0x3F)
+				output += encode((temp << 2) & 0x3F)
+				output += '='
+				break
+		}
+
+		return output
+	}
+
+	exports.toByteArray = b64ToByteArray
+	exports.fromByteArray = uint8ToBase64
+}(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
+
+},{}],3:[function(require,module,exports){
+(function (Buffer){
+(function () {
+  "use strict";
+
+  function btoa(str) {
+    var buffer
+      ;
+
+    if (str instanceof Buffer) {
+      buffer = str;
+    } else {
+      buffer = new Buffer(str.toString(), 'binary');
+    }
+
+    return buffer.toString('base64');
+  }
+
+  module.exports = btoa;
+}());
+
+}).call(this,require("buffer").Buffer)
+},{"buffer":4}],4:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -51,6 +199,8 @@
  * @license  MIT
  */
 /* eslint-disable no-proto */
+
+'use strict'
 
 var base64 = require('base64-js')
 var ieee754 = require('ieee754')
@@ -134,8 +284,10 @@ function Buffer (arg) {
     return new Buffer(arg)
   }
 
-  this.length = 0
-  this.parent = undefined
+  if (!Buffer.TYPED_ARRAY_SUPPORT) {
+    this.length = 0
+    this.parent = undefined
+  }
 
   // Common case.
   if (typeof arg === 'number') {
@@ -266,6 +418,10 @@ function fromJsonObject (that, object) {
 if (Buffer.TYPED_ARRAY_SUPPORT) {
   Buffer.prototype.__proto__ = Uint8Array.prototype
   Buffer.__proto__ = Uint8Array
+} else {
+  // pre-set for values that may exist in the future
+  Buffer.prototype.length = undefined
+  Buffer.prototype.parent = undefined
 }
 
 function allocate (that, length) {
@@ -415,10 +571,6 @@ function byteLength (string, encoding) {
   }
 }
 Buffer.byteLength = byteLength
-
-// pre-set for values that may exist in the future
-Buffer.prototype.length = undefined
-Buffer.prototype.parent = undefined
 
 function slowToString (encoding, start, end) {
   var loweredCase = false
@@ -1590,219 +1742,7 @@ function blitBuffer (src, dst, offset, length) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":3,"ieee754":4,"isarray":5}],3:[function(require,module,exports){
-var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-
-;(function (exports) {
-	'use strict';
-
-  var Arr = (typeof Uint8Array !== 'undefined')
-    ? Uint8Array
-    : Array
-
-	var PLUS   = '+'.charCodeAt(0)
-	var SLASH  = '/'.charCodeAt(0)
-	var NUMBER = '0'.charCodeAt(0)
-	var LOWER  = 'a'.charCodeAt(0)
-	var UPPER  = 'A'.charCodeAt(0)
-	var PLUS_URL_SAFE = '-'.charCodeAt(0)
-	var SLASH_URL_SAFE = '_'.charCodeAt(0)
-
-	function decode (elt) {
-		var code = elt.charCodeAt(0)
-		if (code === PLUS ||
-		    code === PLUS_URL_SAFE)
-			return 62 // '+'
-		if (code === SLASH ||
-		    code === SLASH_URL_SAFE)
-			return 63 // '/'
-		if (code < NUMBER)
-			return -1 //no match
-		if (code < NUMBER + 10)
-			return code - NUMBER + 26 + 26
-		if (code < UPPER + 26)
-			return code - UPPER
-		if (code < LOWER + 26)
-			return code - LOWER + 26
-	}
-
-	function b64ToByteArray (b64) {
-		var i, j, l, tmp, placeHolders, arr
-
-		if (b64.length % 4 > 0) {
-			throw new Error('Invalid string. Length must be a multiple of 4')
-		}
-
-		// the number of equal signs (place holders)
-		// if there are two placeholders, than the two characters before it
-		// represent one byte
-		// if there is only one, then the three characters before it represent 2 bytes
-		// this is just a cheap hack to not do indexOf twice
-		var len = b64.length
-		placeHolders = '=' === b64.charAt(len - 2) ? 2 : '=' === b64.charAt(len - 1) ? 1 : 0
-
-		// base64 is 4/3 + up to two characters of the original data
-		arr = new Arr(b64.length * 3 / 4 - placeHolders)
-
-		// if there are placeholders, only get up to the last complete 4 chars
-		l = placeHolders > 0 ? b64.length - 4 : b64.length
-
-		var L = 0
-
-		function push (v) {
-			arr[L++] = v
-		}
-
-		for (i = 0, j = 0; i < l; i += 4, j += 3) {
-			tmp = (decode(b64.charAt(i)) << 18) | (decode(b64.charAt(i + 1)) << 12) | (decode(b64.charAt(i + 2)) << 6) | decode(b64.charAt(i + 3))
-			push((tmp & 0xFF0000) >> 16)
-			push((tmp & 0xFF00) >> 8)
-			push(tmp & 0xFF)
-		}
-
-		if (placeHolders === 2) {
-			tmp = (decode(b64.charAt(i)) << 2) | (decode(b64.charAt(i + 1)) >> 4)
-			push(tmp & 0xFF)
-		} else if (placeHolders === 1) {
-			tmp = (decode(b64.charAt(i)) << 10) | (decode(b64.charAt(i + 1)) << 4) | (decode(b64.charAt(i + 2)) >> 2)
-			push((tmp >> 8) & 0xFF)
-			push(tmp & 0xFF)
-		}
-
-		return arr
-	}
-
-	function uint8ToBase64 (uint8) {
-		var i,
-			extraBytes = uint8.length % 3, // if we have 1 byte left, pad 2 bytes
-			output = "",
-			temp, length
-
-		function encode (num) {
-			return lookup.charAt(num)
-		}
-
-		function tripletToBase64 (num) {
-			return encode(num >> 18 & 0x3F) + encode(num >> 12 & 0x3F) + encode(num >> 6 & 0x3F) + encode(num & 0x3F)
-		}
-
-		// go through the array every three bytes, we'll deal with trailing stuff later
-		for (i = 0, length = uint8.length - extraBytes; i < length; i += 3) {
-			temp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2])
-			output += tripletToBase64(temp)
-		}
-
-		// pad the end with zeros, but make sure to not forget the extra bytes
-		switch (extraBytes) {
-			case 1:
-				temp = uint8[uint8.length - 1]
-				output += encode(temp >> 2)
-				output += encode((temp << 4) & 0x3F)
-				output += '=='
-				break
-			case 2:
-				temp = (uint8[uint8.length - 2] << 8) + (uint8[uint8.length - 1])
-				output += encode(temp >> 10)
-				output += encode((temp >> 4) & 0x3F)
-				output += encode((temp << 2) & 0x3F)
-				output += '='
-				break
-		}
-
-		return output
-	}
-
-	exports.toByteArray = b64ToByteArray
-	exports.fromByteArray = uint8ToBase64
-}(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
-
-},{}],4:[function(require,module,exports){
-exports.read = function (buffer, offset, isLE, mLen, nBytes) {
-  var e, m
-  var eLen = nBytes * 8 - mLen - 1
-  var eMax = (1 << eLen) - 1
-  var eBias = eMax >> 1
-  var nBits = -7
-  var i = isLE ? (nBytes - 1) : 0
-  var d = isLE ? -1 : 1
-  var s = buffer[offset + i]
-
-  i += d
-
-  e = s & ((1 << (-nBits)) - 1)
-  s >>= (-nBits)
-  nBits += eLen
-  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {}
-
-  m = e & ((1 << (-nBits)) - 1)
-  e >>= (-nBits)
-  nBits += mLen
-  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {}
-
-  if (e === 0) {
-    e = 1 - eBias
-  } else if (e === eMax) {
-    return m ? NaN : ((s ? -1 : 1) * Infinity)
-  } else {
-    m = m + Math.pow(2, mLen)
-    e = e - eBias
-  }
-  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
-}
-
-exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
-  var e, m, c
-  var eLen = nBytes * 8 - mLen - 1
-  var eMax = (1 << eLen) - 1
-  var eBias = eMax >> 1
-  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
-  var i = isLE ? 0 : (nBytes - 1)
-  var d = isLE ? 1 : -1
-  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
-
-  value = Math.abs(value)
-
-  if (isNaN(value) || value === Infinity) {
-    m = isNaN(value) ? 1 : 0
-    e = eMax
-  } else {
-    e = Math.floor(Math.log(value) / Math.LN2)
-    if (value * (c = Math.pow(2, -e)) < 1) {
-      e--
-      c *= 2
-    }
-    if (e + eBias >= 1) {
-      value += rt / c
-    } else {
-      value += rt * Math.pow(2, 1 - eBias)
-    }
-    if (value * c >= 2) {
-      e++
-      c /= 2
-    }
-
-    if (e + eBias >= eMax) {
-      m = 0
-      e = eMax
-    } else if (e + eBias >= 1) {
-      m = (value * c - 1) * Math.pow(2, mLen)
-      e = e + eBias
-    } else {
-      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
-      e = 0
-    }
-  }
-
-  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
-
-  e = (e << mLen) | m
-  eLen += mLen
-  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
-
-  buffer[offset + i - d] |= s * 128
-}
-
-},{}],5:[function(require,module,exports){
+},{"base64-js":2,"ieee754":52,"isarray":5}],5:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
@@ -1810,328 +1750,6 @@ module.exports = Array.isArray || function (arr) {
 };
 
 },{}],6:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-function EventEmitter() {
-  this._events = this._events || {};
-  this._maxListeners = this._maxListeners || undefined;
-}
-module.exports = EventEmitter;
-
-// Backwards-compat with node 0.10.x
-EventEmitter.EventEmitter = EventEmitter;
-
-EventEmitter.prototype._events = undefined;
-EventEmitter.prototype._maxListeners = undefined;
-
-// By default EventEmitters will print a warning if more than 10 listeners are
-// added to it. This is a useful default which helps finding memory leaks.
-EventEmitter.defaultMaxListeners = 10;
-
-// Obviously not all Emitters should be limited to 10. This function allows
-// that to be increased. Set to zero for unlimited.
-EventEmitter.prototype.setMaxListeners = function(n) {
-  if (!isNumber(n) || n < 0 || isNaN(n))
-    throw TypeError('n must be a positive number');
-  this._maxListeners = n;
-  return this;
-};
-
-EventEmitter.prototype.emit = function(type) {
-  var er, handler, len, args, i, listeners;
-
-  if (!this._events)
-    this._events = {};
-
-  // If there is no 'error' event listener then throw.
-  if (type === 'error') {
-    if (!this._events.error ||
-        (isObject(this._events.error) && !this._events.error.length)) {
-      er = arguments[1];
-      if (er instanceof Error) {
-        throw er; // Unhandled 'error' event
-      }
-      throw TypeError('Uncaught, unspecified "error" event.');
-    }
-  }
-
-  handler = this._events[type];
-
-  if (isUndefined(handler))
-    return false;
-
-  if (isFunction(handler)) {
-    switch (arguments.length) {
-      // fast cases
-      case 1:
-        handler.call(this);
-        break;
-      case 2:
-        handler.call(this, arguments[1]);
-        break;
-      case 3:
-        handler.call(this, arguments[1], arguments[2]);
-        break;
-      // slower
-      default:
-        args = Array.prototype.slice.call(arguments, 1);
-        handler.apply(this, args);
-    }
-  } else if (isObject(handler)) {
-    args = Array.prototype.slice.call(arguments, 1);
-    listeners = handler.slice();
-    len = listeners.length;
-    for (i = 0; i < len; i++)
-      listeners[i].apply(this, args);
-  }
-
-  return true;
-};
-
-EventEmitter.prototype.addListener = function(type, listener) {
-  var m;
-
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  if (!this._events)
-    this._events = {};
-
-  // To avoid recursion in the case that type === "newListener"! Before
-  // adding it to the listeners, first emit "newListener".
-  if (this._events.newListener)
-    this.emit('newListener', type,
-              isFunction(listener.listener) ?
-              listener.listener : listener);
-
-  if (!this._events[type])
-    // Optimize the case of one listener. Don't need the extra array object.
-    this._events[type] = listener;
-  else if (isObject(this._events[type]))
-    // If we've already got an array, just append.
-    this._events[type].push(listener);
-  else
-    // Adding the second element, need to change to array.
-    this._events[type] = [this._events[type], listener];
-
-  // Check for listener leak
-  if (isObject(this._events[type]) && !this._events[type].warned) {
-    if (!isUndefined(this._maxListeners)) {
-      m = this._maxListeners;
-    } else {
-      m = EventEmitter.defaultMaxListeners;
-    }
-
-    if (m && m > 0 && this._events[type].length > m) {
-      this._events[type].warned = true;
-      console.error('(node) warning: possible EventEmitter memory ' +
-                    'leak detected. %d listeners added. ' +
-                    'Use emitter.setMaxListeners() to increase limit.',
-                    this._events[type].length);
-      if (typeof console.trace === 'function') {
-        // not supported in IE 10
-        console.trace();
-      }
-    }
-  }
-
-  return this;
-};
-
-EventEmitter.prototype.on = EventEmitter.prototype.addListener;
-
-EventEmitter.prototype.once = function(type, listener) {
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  var fired = false;
-
-  function g() {
-    this.removeListener(type, g);
-
-    if (!fired) {
-      fired = true;
-      listener.apply(this, arguments);
-    }
-  }
-
-  g.listener = listener;
-  this.on(type, g);
-
-  return this;
-};
-
-// emits a 'removeListener' event iff the listener was removed
-EventEmitter.prototype.removeListener = function(type, listener) {
-  var list, position, length, i;
-
-  if (!isFunction(listener))
-    throw TypeError('listener must be a function');
-
-  if (!this._events || !this._events[type])
-    return this;
-
-  list = this._events[type];
-  length = list.length;
-  position = -1;
-
-  if (list === listener ||
-      (isFunction(list.listener) && list.listener === listener)) {
-    delete this._events[type];
-    if (this._events.removeListener)
-      this.emit('removeListener', type, listener);
-
-  } else if (isObject(list)) {
-    for (i = length; i-- > 0;) {
-      if (list[i] === listener ||
-          (list[i].listener && list[i].listener === listener)) {
-        position = i;
-        break;
-      }
-    }
-
-    if (position < 0)
-      return this;
-
-    if (list.length === 1) {
-      list.length = 0;
-      delete this._events[type];
-    } else {
-      list.splice(position, 1);
-    }
-
-    if (this._events.removeListener)
-      this.emit('removeListener', type, listener);
-  }
-
-  return this;
-};
-
-EventEmitter.prototype.removeAllListeners = function(type) {
-  var key, listeners;
-
-  if (!this._events)
-    return this;
-
-  // not listening for removeListener, no need to emit
-  if (!this._events.removeListener) {
-    if (arguments.length === 0)
-      this._events = {};
-    else if (this._events[type])
-      delete this._events[type];
-    return this;
-  }
-
-  // emit removeListener for all listeners on all events
-  if (arguments.length === 0) {
-    for (key in this._events) {
-      if (key === 'removeListener') continue;
-      this.removeAllListeners(key);
-    }
-    this.removeAllListeners('removeListener');
-    this._events = {};
-    return this;
-  }
-
-  listeners = this._events[type];
-
-  if (isFunction(listeners)) {
-    this.removeListener(type, listeners);
-  } else if (listeners) {
-    // LIFO order
-    while (listeners.length)
-      this.removeListener(type, listeners[listeners.length - 1]);
-  }
-  delete this._events[type];
-
-  return this;
-};
-
-EventEmitter.prototype.listeners = function(type) {
-  var ret;
-  if (!this._events || !this._events[type])
-    ret = [];
-  else if (isFunction(this._events[type]))
-    ret = [this._events[type]];
-  else
-    ret = this._events[type].slice();
-  return ret;
-};
-
-EventEmitter.prototype.listenerCount = function(type) {
-  if (this._events) {
-    var evlistener = this._events[type];
-
-    if (isFunction(evlistener))
-      return 1;
-    else if (evlistener)
-      return evlistener.length;
-  }
-  return 0;
-};
-
-EventEmitter.listenerCount = function(emitter, type) {
-  return emitter.listenerCount(type);
-};
-
-function isFunction(arg) {
-  return typeof arg === 'function';
-}
-
-function isNumber(arg) {
-  return typeof arg === 'number';
-}
-
-function isObject(arg) {
-  return typeof arg === 'object' && arg !== null;
-}
-
-function isUndefined(arg) {
-  return arg === void 0;
-}
-
-},{}],7:[function(require,module,exports){
-(function (Buffer){
-(function () {
-  "use strict";
-
-  function btoa(str) {
-    var buffer
-      ;
-
-    if (str instanceof Buffer) {
-      buffer = str;
-    } else {
-      buffer = new Buffer(str.toString(), 'binary');
-    }
-
-    return buffer.toString('base64');
-  }
-
-  module.exports = btoa;
-}());
-
-}).call(this,require("buffer").Buffer)
-},{"buffer":2}],8:[function(require,module,exports){
 //
 // # class-manipulator
 //
@@ -2569,7 +2187,7 @@ function dummy (classList) {
     };
 }
 
-},{}],9:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function (Buffer){
 var clone = (function() {
 'use strict';
@@ -2733,7 +2351,7 @@ if (typeof module === 'object' && module.exports) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":2}],10:[function(require,module,exports){
+},{"buffer":4}],8:[function(require,module,exports){
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
         define(factory);
@@ -2787,7 +2405,273 @@ return function deepmerge(target, src) {
 
 }));
 
+},{}],9:[function(require,module,exports){
+function backInOut(t) {
+  var s = 1.70158 * 1.525
+  if ((t *= 2) < 1)
+    return 0.5 * (t * t * ((s + 1) * t - s))
+  return 0.5 * ((t -= 2) * t * ((s + 1) * t + s) + 2)
+}
+
+module.exports = backInOut
+},{}],10:[function(require,module,exports){
+function backIn(t) {
+  var s = 1.70158
+  return t * t * ((s + 1) * t - s)
+}
+
+module.exports = backIn
 },{}],11:[function(require,module,exports){
+function backOut(t) {
+  var s = 1.70158
+  return --t * t * ((s + 1) * t + s) + 1
+}
+
+module.exports = backOut
+},{}],12:[function(require,module,exports){
+var bounceOut = require('./bounce-out')
+
+function bounceInOut(t) {
+  return t < 0.5
+    ? 0.5 * (1.0 - bounceOut(1.0 - t * 2.0))
+    : 0.5 * bounceOut(t * 2.0 - 1.0) + 0.5
+}
+
+module.exports = bounceInOut
+},{"./bounce-out":14}],13:[function(require,module,exports){
+var bounceOut = require('./bounce-out')
+
+function bounceIn(t) {
+  return 1.0 - bounceOut(1.0 - t)
+}
+
+module.exports = bounceIn
+},{"./bounce-out":14}],14:[function(require,module,exports){
+function bounceOut(t) {
+  var a = 4.0 / 11.0
+  var b = 8.0 / 11.0
+  var c = 9.0 / 10.0
+
+  var ca = 4356.0 / 361.0
+  var cb = 35442.0 / 1805.0
+  var cc = 16061.0 / 1805.0
+
+  var t2 = t * t
+
+  return t < a
+    ? 7.5625 * t2
+    : t < b
+      ? 9.075 * t2 - 9.9 * t + 3.4
+      : t < c
+        ? ca * t2 - cb * t + cc
+        : 10.8 * t * t - 20.52 * t + 10.72
+}
+
+module.exports = bounceOut
+},{}],15:[function(require,module,exports){
+function circInOut(t) {
+  if ((t *= 2) < 1) return -0.5 * (Math.sqrt(1 - t * t) - 1)
+  return 0.5 * (Math.sqrt(1 - (t -= 2) * t) + 1)
+}
+
+module.exports = circInOut
+},{}],16:[function(require,module,exports){
+function circIn(t) {
+  return 1.0 - Math.sqrt(1.0 - t * t)
+}
+
+module.exports = circIn
+},{}],17:[function(require,module,exports){
+function circOut(t) {
+  return Math.sqrt(1 - ( --t * t ))
+}
+
+module.exports = circOut
+},{}],18:[function(require,module,exports){
+function cubicInOut(t) {
+  return t < 0.5
+    ? 4.0 * t * t * t
+    : 0.5 * Math.pow(2.0 * t - 2.0, 3.0) + 1.0
+}
+
+module.exports = cubicInOut
+},{}],19:[function(require,module,exports){
+function cubicIn(t) {
+  return t * t * t
+}
+
+module.exports = cubicIn
+},{}],20:[function(require,module,exports){
+function cubicOut(t) {
+  var f = t - 1.0
+  return f * f * f + 1.0
+}
+
+module.exports = cubicOut
+},{}],21:[function(require,module,exports){
+function elasticInOut(t) {
+  return t < 0.5
+    ? 0.5 * Math.sin(+13.0 * Math.PI/2 * 2.0 * t) * Math.pow(2.0, 10.0 * (2.0 * t - 1.0))
+    : 0.5 * Math.sin(-13.0 * Math.PI/2 * ((2.0 * t - 1.0) + 1.0)) * Math.pow(2.0, -10.0 * (2.0 * t - 1.0)) + 1.0
+}
+
+module.exports = elasticInOut
+},{}],22:[function(require,module,exports){
+function elasticIn(t) {
+  return Math.sin(13.0 * t * Math.PI/2) * Math.pow(2.0, 10.0 * (t - 1.0))
+}
+
+module.exports = elasticIn
+},{}],23:[function(require,module,exports){
+function elasticOut(t) {
+  return Math.sin(-13.0 * (t + 1.0) * Math.PI/2) * Math.pow(2.0, -10.0 * t) + 1.0
+}
+
+module.exports = elasticOut
+},{}],24:[function(require,module,exports){
+function expoInOut(t) {
+  return (t === 0.0 || t === 1.0)
+    ? t
+    : t < 0.5
+      ? +0.5 * Math.pow(2.0, (20.0 * t) - 10.0)
+      : -0.5 * Math.pow(2.0, 10.0 - (t * 20.0)) + 1.0
+}
+
+module.exports = expoInOut
+},{}],25:[function(require,module,exports){
+function expoIn(t) {
+  return t === 0.0 ? t : Math.pow(2.0, 10.0 * (t - 1.0))
+}
+
+module.exports = expoIn
+},{}],26:[function(require,module,exports){
+function expoOut(t) {
+  return t === 1.0 ? t : 1.0 - Math.pow(2.0, -10.0 * t)
+}
+
+module.exports = expoOut
+},{}],27:[function(require,module,exports){
+module.exports = {
+	'backInOut': require('./back-in-out'),
+	'backIn': require('./back-in'),
+	'backOut': require('./back-out'),
+	'bounceInOut': require('./bounce-in-out'),
+	'bounceIn': require('./bounce-in'),
+	'bounceOut': require('./bounce-out'),
+	'circInOut': require('./circ-in-out'),
+	'circIn': require('./circ-in'),
+	'circOut': require('./circ-out'),
+	'cubicInOut': require('./cubic-in-out'),
+	'cubicIn': require('./cubic-in'),
+	'cubicOut': require('./cubic-out'),
+	'elasticInOut': require('./elastic-in-out'),
+	'elasticIn': require('./elastic-in'),
+	'elasticOut': require('./elastic-out'),
+	'expoInOut': require('./expo-in-out'),
+	'expoIn': require('./expo-in'),
+	'expoOut': require('./expo-out'),
+	'linear': require('./linear'),
+	'quadInOut': require('./quad-in-out'),
+	'quadIn': require('./quad-in'),
+	'quadOut': require('./quad-out'),
+	'quartInOut': require('./quart-in-out'),
+	'quartIn': require('./quart-in'),
+	'quartOut': require('./quart-out'),
+	'quintInOut': require('./quint-in-out'),
+	'quintIn': require('./quint-in'),
+	'quintOut': require('./quint-out'),
+	'sineInOut': require('./sine-in-out'),
+	'sineIn': require('./sine-in'),
+	'sineOut': require('./sine-out')
+}
+},{"./back-in":10,"./back-in-out":9,"./back-out":11,"./bounce-in":13,"./bounce-in-out":12,"./bounce-out":14,"./circ-in":16,"./circ-in-out":15,"./circ-out":17,"./cubic-in":19,"./cubic-in-out":18,"./cubic-out":20,"./elastic-in":22,"./elastic-in-out":21,"./elastic-out":23,"./expo-in":25,"./expo-in-out":24,"./expo-out":26,"./linear":28,"./quad-in":30,"./quad-in-out":29,"./quad-out":31,"./quart-in":33,"./quart-in-out":32,"./quart-out":34,"./quint-in":36,"./quint-in-out":35,"./quint-out":37,"./sine-in":39,"./sine-in-out":38,"./sine-out":40}],28:[function(require,module,exports){
+function linear(t) {
+  return t
+}
+
+module.exports = linear
+},{}],29:[function(require,module,exports){
+function quadInOut(t) {
+    t /= 0.5
+    if (t < 1) return 0.5*t*t
+    t--
+    return -0.5 * (t*(t-2) - 1)
+}
+
+module.exports = quadInOut
+},{}],30:[function(require,module,exports){
+function quadIn(t) {
+  return t * t
+}
+
+module.exports = quadIn
+},{}],31:[function(require,module,exports){
+function quadOut(t) {
+  return -t * (t - 2.0)
+}
+
+module.exports = quadOut
+},{}],32:[function(require,module,exports){
+function quarticInOut(t) {
+  return t < 0.5
+    ? +8.0 * Math.pow(t, 4.0)
+    : -8.0 * Math.pow(t - 1.0, 4.0) + 1.0
+}
+
+module.exports = quarticInOut
+},{}],33:[function(require,module,exports){
+function quarticIn(t) {
+  return Math.pow(t, 4.0)
+}
+
+module.exports = quarticIn
+},{}],34:[function(require,module,exports){
+function quarticOut(t) {
+  return Math.pow(t - 1.0, 3.0) * (1.0 - t) + 1.0
+}
+
+module.exports = quarticOut
+},{}],35:[function(require,module,exports){
+function qinticInOut(t) {
+    if ( ( t *= 2 ) < 1 ) return 0.5 * t * t * t * t * t
+    return 0.5 * ( ( t -= 2 ) * t * t * t * t + 2 )
+}
+
+module.exports = qinticInOut
+},{}],36:[function(require,module,exports){
+function qinticIn(t) {
+  return t * t * t * t * t
+}
+
+module.exports = qinticIn
+},{}],37:[function(require,module,exports){
+function qinticOut(t) {
+  return --t * t * t * t * t + 1
+}
+
+module.exports = qinticOut
+},{}],38:[function(require,module,exports){
+function sineInOut(t) {
+  return -0.5 * (Math.cos(Math.PI*t) - 1)
+}
+
+module.exports = sineInOut
+},{}],39:[function(require,module,exports){
+function sineIn (t) {
+  var v = Math.cos(t * Math.PI * 0.5)
+  if (Math.abs(v) < 1e-14) return 1
+  else return 1 - v
+}
+
+module.exports = sineIn
+
+},{}],40:[function(require,module,exports){
+function sineOut(t) {
+  return Math.sin(t * Math.PI/2)
+}
+
+module.exports = sineOut
+},{}],41:[function(require,module,exports){
 
 function apply (fn, args) {
     
@@ -2800,7 +2684,7 @@ function apply (fn, args) {
 
 module.exports = apply;
 
-},{}],12:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 
 var slice = require("./slice");
 var apply = require("./apply");
@@ -2838,7 +2722,7 @@ function auto (fn, arity) {
 
 module.exports = auto;
 
-},{"./apply":11,"./slice":18}],13:[function(require,module,exports){
+},{"./apply":41,"./slice":47}],43:[function(require,module,exports){
 
 var apply = require("./apply");
 var pipe = require("./pipe");
@@ -2860,7 +2744,7 @@ function compose () {
 
 module.exports = compose;
 
-},{"./apply":11,"./pipe":17,"./toArray":19}],14:[function(require,module,exports){
+},{"./apply":41,"./pipe":46,"./toArray":48}],44:[function(require,module,exports){
 
 var types = require("enjoy-typechecks");
 var auto = require("./auto");
@@ -2883,7 +2767,7 @@ function each (fn, collection) {
 
 module.exports = auto(each);
 
-},{"./auto":12,"enjoy-typechecks":16}],15:[function(require,module,exports){
+},{"./auto":42,"enjoy-typechecks":49}],45:[function(require,module,exports){
 
 function free (method) {
     return Function.prototype.call.bind(method);
@@ -2891,7 +2775,39 @@ function free (method) {
 
 module.exports = free;
 
-},{}],16:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
+
+var each = require("./each");
+var auto = require("./auto");
+
+function pipe (value) {
+    
+    each(function (fn, index) {
+        if (index > 0) {
+            value = fn(value);
+        }
+    }, arguments);
+    
+    return value;
+}
+
+module.exports = auto(pipe, 2);
+
+},{"./auto":42,"./each":44}],47:[function(require,module,exports){
+
+var free = require("./free");
+
+module.exports = free(Array.prototype.slice);
+
+},{"./free":45}],48:[function(require,module,exports){
+
+function toArray (thing) {
+    return Array.prototype.slice.call(thing);
+}
+
+module.exports = toArray;
+
+},{}],49:[function(require,module,exports){
 /* eslint no-self-compare: off */
 
 function isNull (a) {
@@ -3047,44 +2963,316 @@ module.exports = {
     isUndefined: isUndefined
 };
 
-},{}],17:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var each = require("./each");
-var auto = require("./auto");
+function EventEmitter() {
+  this._events = this._events || {};
+  this._maxListeners = this._maxListeners || undefined;
+}
+module.exports = EventEmitter;
 
-function pipe (value) {
-    
-    each(function (fn, index) {
-        if (index > 0) {
-            value = fn(value);
-        }
-    }, arguments);
-    
-    return value;
+// Backwards-compat with node 0.10.x
+EventEmitter.EventEmitter = EventEmitter;
+
+EventEmitter.prototype._events = undefined;
+EventEmitter.prototype._maxListeners = undefined;
+
+// By default EventEmitters will print a warning if more than 10 listeners are
+// added to it. This is a useful default which helps finding memory leaks.
+EventEmitter.defaultMaxListeners = 10;
+
+// Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+EventEmitter.prototype.setMaxListeners = function(n) {
+  if (!isNumber(n) || n < 0 || isNaN(n))
+    throw TypeError('n must be a positive number');
+  this._maxListeners = n;
+  return this;
+};
+
+EventEmitter.prototype.emit = function(type) {
+  var er, handler, len, args, i, listeners;
+
+  if (!this._events)
+    this._events = {};
+
+  // If there is no 'error' event listener then throw.
+  if (type === 'error') {
+    if (!this._events.error ||
+        (isObject(this._events.error) && !this._events.error.length)) {
+      er = arguments[1];
+      if (er instanceof Error) {
+        throw er; // Unhandled 'error' event
+      } else {
+        // At least give some kind of context to the user
+        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
+        err.context = er;
+        throw err;
+      }
+    }
+  }
+
+  handler = this._events[type];
+
+  if (isUndefined(handler))
+    return false;
+
+  if (isFunction(handler)) {
+    switch (arguments.length) {
+      // fast cases
+      case 1:
+        handler.call(this);
+        break;
+      case 2:
+        handler.call(this, arguments[1]);
+        break;
+      case 3:
+        handler.call(this, arguments[1], arguments[2]);
+        break;
+      // slower
+      default:
+        args = Array.prototype.slice.call(arguments, 1);
+        handler.apply(this, args);
+    }
+  } else if (isObject(handler)) {
+    args = Array.prototype.slice.call(arguments, 1);
+    listeners = handler.slice();
+    len = listeners.length;
+    for (i = 0; i < len; i++)
+      listeners[i].apply(this, args);
+  }
+
+  return true;
+};
+
+EventEmitter.prototype.addListener = function(type, listener) {
+  var m;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events)
+    this._events = {};
+
+  // To avoid recursion in the case that type === "newListener"! Before
+  // adding it to the listeners, first emit "newListener".
+  if (this._events.newListener)
+    this.emit('newListener', type,
+              isFunction(listener.listener) ?
+              listener.listener : listener);
+
+  if (!this._events[type])
+    // Optimize the case of one listener. Don't need the extra array object.
+    this._events[type] = listener;
+  else if (isObject(this._events[type]))
+    // If we've already got an array, just append.
+    this._events[type].push(listener);
+  else
+    // Adding the second element, need to change to array.
+    this._events[type] = [this._events[type], listener];
+
+  // Check for listener leak
+  if (isObject(this._events[type]) && !this._events[type].warned) {
+    if (!isUndefined(this._maxListeners)) {
+      m = this._maxListeners;
+    } else {
+      m = EventEmitter.defaultMaxListeners;
+    }
+
+    if (m && m > 0 && this._events[type].length > m) {
+      this._events[type].warned = true;
+      console.error('(node) warning: possible EventEmitter memory ' +
+                    'leak detected. %d listeners added. ' +
+                    'Use emitter.setMaxListeners() to increase limit.',
+                    this._events[type].length);
+      if (typeof console.trace === 'function') {
+        // not supported in IE 10
+        console.trace();
+      }
+    }
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.once = function(type, listener) {
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  var fired = false;
+
+  function g() {
+    this.removeListener(type, g);
+
+    if (!fired) {
+      fired = true;
+      listener.apply(this, arguments);
+    }
+  }
+
+  g.listener = listener;
+  this.on(type, g);
+
+  return this;
+};
+
+// emits a 'removeListener' event iff the listener was removed
+EventEmitter.prototype.removeListener = function(type, listener) {
+  var list, position, length, i;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events || !this._events[type])
+    return this;
+
+  list = this._events[type];
+  length = list.length;
+  position = -1;
+
+  if (list === listener ||
+      (isFunction(list.listener) && list.listener === listener)) {
+    delete this._events[type];
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+
+  } else if (isObject(list)) {
+    for (i = length; i-- > 0;) {
+      if (list[i] === listener ||
+          (list[i].listener && list[i].listener === listener)) {
+        position = i;
+        break;
+      }
+    }
+
+    if (position < 0)
+      return this;
+
+    if (list.length === 1) {
+      list.length = 0;
+      delete this._events[type];
+    } else {
+      list.splice(position, 1);
+    }
+
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.removeAllListeners = function(type) {
+  var key, listeners;
+
+  if (!this._events)
+    return this;
+
+  // not listening for removeListener, no need to emit
+  if (!this._events.removeListener) {
+    if (arguments.length === 0)
+      this._events = {};
+    else if (this._events[type])
+      delete this._events[type];
+    return this;
+  }
+
+  // emit removeListener for all listeners on all events
+  if (arguments.length === 0) {
+    for (key in this._events) {
+      if (key === 'removeListener') continue;
+      this.removeAllListeners(key);
+    }
+    this.removeAllListeners('removeListener');
+    this._events = {};
+    return this;
+  }
+
+  listeners = this._events[type];
+
+  if (isFunction(listeners)) {
+    this.removeListener(type, listeners);
+  } else if (listeners) {
+    // LIFO order
+    while (listeners.length)
+      this.removeListener(type, listeners[listeners.length - 1]);
+  }
+  delete this._events[type];
+
+  return this;
+};
+
+EventEmitter.prototype.listeners = function(type) {
+  var ret;
+  if (!this._events || !this._events[type])
+    ret = [];
+  else if (isFunction(this._events[type]))
+    ret = [this._events[type]];
+  else
+    ret = this._events[type].slice();
+  return ret;
+};
+
+EventEmitter.prototype.listenerCount = function(type) {
+  if (this._events) {
+    var evlistener = this._events[type];
+
+    if (isFunction(evlistener))
+      return 1;
+    else if (evlistener)
+      return evlistener.length;
+  }
+  return 0;
+};
+
+EventEmitter.listenerCount = function(emitter, type) {
+  return emitter.listenerCount(type);
+};
+
+function isFunction(arg) {
+  return typeof arg === 'function';
 }
 
-module.exports = auto(pipe, 2);
-
-},{"./auto":12,"./each":14}],18:[function(require,module,exports){
-
-var free = require("./free");
-
-module.exports = free(Array.prototype.slice);
-
-},{"./free":15}],19:[function(require,module,exports){
-
-function toArray (thing) {
-    return Array.prototype.slice.call(thing);
+function isNumber(arg) {
+  return typeof arg === 'number';
 }
 
-module.exports = toArray;
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
 
-},{}],20:[function(require,module,exports){
+function isUndefined(arg) {
+  return arg === void 0;
+}
+
+},{}],51:[function(require,module,exports){
 /*!
- *  howler.js v1.1.28
+ *  howler.js v1.1.29
  *  howlerjs.com
  *
- *  (c) 2013-2015, James Simpson of GoldFire Studios
+ *  (c) 2013-2016, James Simpson of GoldFire Studios
  *  goldfirestudios.com
  *
  *  MIT License
@@ -3221,7 +3409,7 @@ module.exports = toArray;
 
     /**
      * Check for codec support.
-     * @param  {String} ext Audio file extention.
+     * @param  {String} ext Audio file extension.
      * @return {Boolean}
      */
     codecs: function(ext) {
@@ -3366,7 +3554,7 @@ module.exports = toArray;
 
       // if no audio is available, quit immediately
       if (noAudio) {
-        self.on('loaderror');
+        self.on('loaderror', new Error('No audio support.'));
         return;
       }
 
@@ -3388,7 +3576,7 @@ module.exports = toArray;
           if (ext) {
             ext = ext[1].toLowerCase();
           } else {
-            self.on('loaderror');
+            self.on('loaderror', new Error('Could not extract format from passed URLs, please add format parameter.'));
             return;
           }
         }
@@ -3400,7 +3588,7 @@ module.exports = toArray;
       }
 
       if (!url) {
-        self.on('loaderror');
+        self.on('loaderror', new Error('No codec support for selected audio sources.'));
         return;
       }
 
@@ -3565,7 +3753,7 @@ module.exports = toArray;
 
             // fire ended event
             self.on('end', soundId);
-          }, duration * 1000);
+          }, (duration / self._rate) * 1000);
 
           // store the reference to the timer
           self._onendTimer.push({timer: timerId, id: data.id});
@@ -4142,7 +4330,7 @@ module.exports = toArray;
      */
     _clearEndTimer: function(soundId) {
       var self = this,
-        index = 0;
+        index = -1;
 
       // loop through the timers to find the one associated with this sound
       for (var i=0; i<self._onendTimer.length; i++) {
@@ -4218,13 +4406,12 @@ module.exports = toArray;
      */
     off: function(event, fn) {
       var self = this,
-        events = self['_on' + event],
-        fnString = fn ? fn.toString() : null;
+        events = self['_on' + event];
 
-      if (fnString) {
+      if (fn) {
         // loop through functions in the event for comparison
         for (var i=0; i<events.length; i++) {
-          if (fnString === events[i].toString()) {
+          if (fn === events[i]) {
             events.splice(i, 1);
             break;
           }
@@ -4351,7 +4538,7 @@ module.exports = toArray;
           }
         },
         function(err) {
-          obj.on('loaderror');
+          obj.on('loaderror', err);
         }
       );
     };
@@ -4434,7 +4621,242 @@ module.exports = toArray;
 
 })();
 
-},{}],21:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
+exports.read = function (buffer, offset, isLE, mLen, nBytes) {
+  var e, m
+  var eLen = nBytes * 8 - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var nBits = -7
+  var i = isLE ? (nBytes - 1) : 0
+  var d = isLE ? -1 : 1
+  var s = buffer[offset + i]
+
+  i += d
+
+  e = s & ((1 << (-nBits)) - 1)
+  s >>= (-nBits)
+  nBits += eLen
+  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {}
+
+  m = e & ((1 << (-nBits)) - 1)
+  e >>= (-nBits)
+  nBits += mLen
+  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {}
+
+  if (e === 0) {
+    e = 1 - eBias
+  } else if (e === eMax) {
+    return m ? NaN : ((s ? -1 : 1) * Infinity)
+  } else {
+    m = m + Math.pow(2, mLen)
+    e = e - eBias
+  }
+  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
+}
+
+exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
+  var e, m, c
+  var eLen = nBytes * 8 - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
+  var i = isLE ? 0 : (nBytes - 1)
+  var d = isLE ? 1 : -1
+  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
+
+  value = Math.abs(value)
+
+  if (isNaN(value) || value === Infinity) {
+    m = isNaN(value) ? 1 : 0
+    e = eMax
+  } else {
+    e = Math.floor(Math.log(value) / Math.LN2)
+    if (value * (c = Math.pow(2, -e)) < 1) {
+      e--
+      c *= 2
+    }
+    if (e + eBias >= 1) {
+      value += rt / c
+    } else {
+      value += rt * Math.pow(2, 1 - eBias)
+    }
+    if (value * c >= 2) {
+      e++
+      c /= 2
+    }
+
+    if (e + eBias >= eMax) {
+      m = 0
+      e = eMax
+    } else if (e + eBias >= 1) {
+      m = (value * c - 1) * Math.pow(2, mLen)
+      e = e + eBias
+    } else {
+      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
+      e = 0
+    }
+  }
+
+  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
+
+  e = (e << mLen) | m
+  eLen += mLen
+  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
+
+  buffer[offset + i - d] |= s * 128
+}
+
+},{}],53:[function(require,module,exports){
+
+var pako = require("pako");
+var atob = require("atob");
+var btoa = require("btoa");
+
+var CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".split("");
+
+function isDataPixel(color) {
+    return color[3] === 255;
+}
+
+function dataToImage(data, sourceImage) {
+    
+    var result, pixels, imageData;
+    var stringified = JSON.stringify(data);
+    var compressed = pako.deflate(stringified, {to: "string"});
+    var encoded = btoa(encodeURIComponent(compressed)).split("");
+    var canvas = document.createElement("canvas");
+    var context = canvas.getContext("2d");
+    var imageSize = Math.ceil(Math.sqrt(encoded.length / 3));
+    var drawn = 0;
+    var width = imageSize;
+    var height = imageSize;
+    
+    document.body.appendChild(canvas);
+    
+    if (sourceImage) {
+        width = sourceImage.width;
+        height = sourceImage.height;
+        context.canvas.width = width;
+        context.canvas.height = height;
+        context.drawImage(sourceImage, 0, 0, width, height);
+    }
+    else {
+        context.canvas.width = width;
+        context.canvas.height = height;
+        context.fillStyle = "black";
+        context.fillRect(0, 0, width, height);
+    }
+    
+    imageData = context.getImageData(0, 0, width, height);
+    context.canvas.width = width;
+    context.canvas.height = height;
+    pixels = imageData.data;
+    
+    eachColor(pixels, function (color, offset) {
+        
+        var red, green, blue;
+        
+        if (isDataPixel(color)) {
+            if (drawn < encoded.length) {
+                
+                red = 1 + CHARACTERS.indexOf(encoded[drawn]);
+                green = 1 + CHARACTERS.indexOf(encoded[drawn + 1]);
+                blue = 1 + CHARACTERS.indexOf(encoded[drawn + 2]);
+                
+                pixels[offset] = red;
+                pixels[offset + 1] = green;
+                pixels[offset + 2] = blue;
+                
+                drawn += 3;
+            }
+            else {
+                pixels[offset + 3] = 254;
+            }
+        }
+    });
+    
+    if (drawn < encoded.length) {
+        cleanUp();
+        throw new Error("Could not fit data inside image!");
+    }
+    
+    context.putImageData(imageData, 0, 0);
+    
+    result = new Image();
+    
+    result.src = canvas.toDataURL("image/png");
+    
+    cleanUp();
+    
+    return result;
+    
+    function cleanUp() {
+        canvas.parentNode.removeChild(canvas);
+    }
+}
+
+function imageToData(image) {
+    
+    var imageData;
+    var data = [];
+    var canvas = document.createElement("canvas");
+    var context = canvas.getContext("2d");
+    var width = image.width;
+    var height = image.height;
+    
+    context.canvas.width = width;
+    context.canvas.height = height;
+    
+    document.body.appendChild(canvas);
+    
+    context.drawImage(image, 0, 0);
+    
+    imageData = context.getImageData(0, 0, width, height);
+    
+    eachColor(imageData.data, function (color) {
+        
+        var char, i;
+        
+        if (isDataPixel(color)) {
+            
+            for (i = 0; i < 3; i += 1) {
+                
+                char = CHARACTERS[color[i] - 1];
+                
+                if (char) {
+                    data.push(char);
+                }
+            }
+        }
+    });
+    
+    canvas.parentNode.removeChild(canvas);
+    
+    data = decodeURIComponent(atob(data.join("")));
+    data = pako.inflate(data, {to: "string"});
+    data = JSON.parse(data);
+    
+    return data;
+}
+
+function eachColor(data, fn) {
+    
+    var i, length;
+    
+    for (i = 0, length = data.length; i < length; i += 4) {
+        fn([data[i], data[i + 1], data[i + 2], data[i + 3]], i);
+    }
+    
+    return data;
+}
+
+module.exports = {
+    save: dataToImage,
+    load: imageToData
+};
+
+},{"atob":1,"btoa":3,"pako":54}],54:[function(require,module,exports){
 // Top level file is just a mixin of submodules & constants
 'use strict';
 
@@ -4450,7 +4872,7 @@ assign(pako, deflate, inflate, constants);
 
 module.exports = pako;
 
-},{"./lib/deflate":22,"./lib/inflate":23,"./lib/utils/common":24,"./lib/zlib/constants":27}],22:[function(require,module,exports){
+},{"./lib/deflate":55,"./lib/inflate":56,"./lib/utils/common":57,"./lib/zlib/constants":60}],55:[function(require,module,exports){
 'use strict';
 
 
@@ -4492,7 +4914,7 @@ var Z_DEFLATED  = 8;
 /* internal
  * Deflate.chunks -> Array
  *
- * Chunks of output data, if [[Deflate#onData]] not overriden.
+ * Chunks of output data, if [[Deflate#onData]] not overridden.
  **/
 
 /**
@@ -4645,7 +5067,7 @@ function Deflate(options) {
  * - data (Uint8Array|Array|ArrayBuffer|String): input data. Strings will be
  *   converted to utf8 byte sequence.
  * - mode (Number|Boolean): 0..6 for corresponding Z_NO_FLUSH..Z_TREE modes.
- *   See constants. Skipped or `false` means Z_NO_FLUSH, `true` meansh Z_FINISH.
+ *   See constants. Skipped or `false` means Z_NO_FLUSH, `true` means Z_FINISH.
  *
  * Sends input data to deflate pipe, generating [[Deflate#onData]] calls with
  * new compressed chunks. Returns `true` on success. The last data block must have
@@ -4734,7 +5156,7 @@ Deflate.prototype.push = function (data, mode) {
 
 /**
  * Deflate#onData(chunk) -> Void
- * - chunk (Uint8Array|Array|String): ouput data. Type of array depends
+ * - chunk (Uint8Array|Array|String): output data. Type of array depends
  *   on js engine support. When string output requested, each chunk
  *   will be string.
  *
@@ -4852,7 +5274,7 @@ exports.deflate = deflate;
 exports.deflateRaw = deflateRaw;
 exports.gzip = gzip;
 
-},{"./utils/common":24,"./utils/strings":25,"./zlib/deflate":29,"./zlib/messages":34,"./zlib/zstream":36}],23:[function(require,module,exports){
+},{"./utils/common":57,"./utils/strings":58,"./zlib/deflate":62,"./zlib/messages":67,"./zlib/zstream":69}],56:[function(require,module,exports){
 'use strict';
 
 
@@ -4877,7 +5299,7 @@ var toString = Object.prototype.toString;
 /* internal
  * inflate.chunks -> Array
  *
- * Chunks of output data, if [[Inflate#onData]] not overriden.
+ * Chunks of output data, if [[Inflate#onData]] not overridden.
  **/
 
 /**
@@ -5005,7 +5427,7 @@ function Inflate(options) {
  * Inflate#push(data[, mode]) -> Boolean
  * - data (Uint8Array|Array|ArrayBuffer|String): input data
  * - mode (Number|Boolean): 0..6 for corresponding Z_NO_FLUSH..Z_TREE modes.
- *   See constants. Skipped or `false` means Z_NO_FLUSH, `true` meansh Z_FINISH.
+ *   See constants. Skipped or `false` means Z_NO_FLUSH, `true` means Z_FINISH.
  *
  * Sends input data to inflate pipe, generating [[Inflate#onData]] calls with
  * new output chunks. Returns `true` on success. The last data block must have
@@ -5152,7 +5574,7 @@ Inflate.prototype.push = function (data, mode) {
 
 /**
  * Inflate#onData(chunk) -> Void
- * - chunk (Uint8Array|Array|String): ouput data. Type of array depends
+ * - chunk (Uint8Array|Array|String): output data. Type of array depends
  *   on js engine support. When string output requested, each chunk
  *   will be string.
  *
@@ -5179,7 +5601,7 @@ Inflate.prototype.onEnd = function (status) {
   if (status === c.Z_OK) {
     if (this.options.to === 'string') {
       // Glue & convert here, until we teach pako to send
-      // utf8 alligned strings to onData
+      // utf8 aligned strings to onData
       this.result = this.chunks.join('');
     } else {
       this.result = utils.flattenChunks(this.chunks);
@@ -5272,7 +5694,7 @@ exports.inflate = inflate;
 exports.inflateRaw = inflateRaw;
 exports.ungzip  = inflate;
 
-},{"./utils/common":24,"./utils/strings":25,"./zlib/constants":27,"./zlib/gzheader":30,"./zlib/inflate":32,"./zlib/messages":34,"./zlib/zstream":36}],24:[function(require,module,exports){
+},{"./utils/common":57,"./utils/strings":58,"./zlib/constants":60,"./zlib/gzheader":63,"./zlib/inflate":65,"./zlib/messages":67,"./zlib/zstream":69}],57:[function(require,module,exports){
 'use strict';
 
 
@@ -5280,6 +5702,9 @@ var TYPED_OK =  (typeof Uint8Array !== 'undefined') &&
                 (typeof Uint16Array !== 'undefined') &&
                 (typeof Int32Array !== 'undefined');
 
+function _has(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
 
 exports.assign = function (obj /*from1, from2, from3, ...*/) {
   var sources = Array.prototype.slice.call(arguments, 1);
@@ -5292,7 +5717,7 @@ exports.assign = function (obj /*from1, from2, from3, ...*/) {
     }
 
     for (var p in source) {
-      if (source.hasOwnProperty(p)) {
+      if (_has(source, p)) {
         obj[p] = source[p];
       }
     }
@@ -5376,7 +5801,7 @@ exports.setTyped = function (on) {
 
 exports.setTyped(TYPED_OK);
 
-},{}],25:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 // String encode/decode helpers
 'use strict';
 
@@ -5387,7 +5812,7 @@ var utils = require('./common');
 // Quick check if we can use fast array to bin string conversion
 //
 // - apply(Array) can fail on Android 2.2
-// - apply(Uint8Array) can fail on iOS 5.1 Safary
+// - apply(Uint8Array) can fail on iOS 5.1 Safari
 //
 var STR_APPLY_OK = true;
 var STR_APPLY_UIA_OK = true;
@@ -5552,22 +5977,22 @@ exports.utf8border = function (buf, max) {
   pos = max - 1;
   while (pos >= 0 && (buf[pos] & 0xC0) === 0x80) { pos--; }
 
-  // Fuckup - very small and broken sequence,
+  // Very small and broken sequence,
   // return max, because we should return something anyway.
   if (pos < 0) { return max; }
 
-  // If we came to start of buffer - that means vuffer is too small,
+  // If we came to start of buffer - that means buffer is too small,
   // return max too.
   if (pos === 0) { return max; }
 
   return (pos + _utf8len[buf[pos]] > max) ? pos : max;
 };
 
-},{"./common":24}],26:[function(require,module,exports){
+},{"./common":57}],59:[function(require,module,exports){
 'use strict';
 
 // Note: adler32 takes 12% for level 0 and 2% for level 6.
-// It doesn't worth to make additional optimizationa as in original.
+// It isn't worth it to make additional optimizations as in original.
 // Small size is preferable.
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -5616,7 +6041,7 @@ function adler32(adler, buf, len, pos) {
 
 module.exports = adler32;
 
-},{}],27:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -5686,7 +6111,7 @@ module.exports = {
   //Z_NULL:                 null // Use -1 or null inline, depending on var type
 };
 
-},{}],28:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 'use strict';
 
 // Note: we can't get significant speed boost here.
@@ -5747,7 +6172,7 @@ function crc32(crc, buf, len, pos) {
 
 module.exports = crc32;
 
-},{}],29:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -7623,7 +8048,7 @@ exports.deflatePrime = deflatePrime;
 exports.deflateTune = deflateTune;
 */
 
-},{"../utils/common":24,"./adler32":26,"./crc32":28,"./messages":34,"./trees":35}],30:[function(require,module,exports){
+},{"../utils/common":57,"./adler32":59,"./crc32":61,"./messages":67,"./trees":68}],63:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -7683,7 +8108,7 @@ function GZheader() {
 
 module.exports = GZheader;
 
-},{}],31:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -7887,7 +8312,7 @@ module.exports = function inflate_fast(strm, start) {
                   break top;
                 }
 
-// (!) This block is disabled in zlib defailts,
+// (!) This block is disabled in zlib defaults,
 // don't enable it for binary compatibility
 //#ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
 //                if (len <= op - whave) {
@@ -8030,7 +8455,7 @@ module.exports = function inflate_fast(strm, start) {
   return;
 };
 
-},{}],32:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -8465,162 +8890,72 @@ function inflate(strm, flush) {
   inf_leave: // goto emulation
   for (;;) {
     switch (state.mode) {
-    case HEAD:
-      if (state.wrap === 0) {
-        state.mode = TYPEDO;
-        break;
-      }
-      //=== NEEDBITS(16);
-      while (bits < 16) {
-        if (have === 0) { break inf_leave; }
-        have--;
-        hold += input[next++] << bits;
-        bits += 8;
-      }
-      //===//
-      if ((state.wrap & 2) && hold === 0x8b1f) {  /* gzip header */
-        state.check = 0/*crc32(0L, Z_NULL, 0)*/;
-        //=== CRC2(state.check, hold);
-        hbuf[0] = hold & 0xff;
-        hbuf[1] = (hold >>> 8) & 0xff;
-        state.check = crc32(state.check, hbuf, 2, 0);
+      case HEAD:
+        if (state.wrap === 0) {
+          state.mode = TYPEDO;
+          break;
+        }
+        //=== NEEDBITS(16);
+        while (bits < 16) {
+          if (have === 0) { break inf_leave; }
+          have--;
+          hold += input[next++] << bits;
+          bits += 8;
+        }
         //===//
+        if ((state.wrap & 2) && hold === 0x8b1f) {  /* gzip header */
+          state.check = 0/*crc32(0L, Z_NULL, 0)*/;
+          //=== CRC2(state.check, hold);
+          hbuf[0] = hold & 0xff;
+          hbuf[1] = (hold >>> 8) & 0xff;
+          state.check = crc32(state.check, hbuf, 2, 0);
+          //===//
 
+          //=== INITBITS();
+          hold = 0;
+          bits = 0;
+          //===//
+          state.mode = FLAGS;
+          break;
+        }
+        state.flags = 0;           /* expect zlib header */
+        if (state.head) {
+          state.head.done = false;
+        }
+        if (!(state.wrap & 1) ||   /* check if zlib header allowed */
+          (((hold & 0xff)/*BITS(8)*/ << 8) + (hold >> 8)) % 31) {
+          strm.msg = 'incorrect header check';
+          state.mode = BAD;
+          break;
+        }
+        if ((hold & 0x0f)/*BITS(4)*/ !== Z_DEFLATED) {
+          strm.msg = 'unknown compression method';
+          state.mode = BAD;
+          break;
+        }
+        //--- DROPBITS(4) ---//
+        hold >>>= 4;
+        bits -= 4;
+        //---//
+        len = (hold & 0x0f)/*BITS(4)*/ + 8;
+        if (state.wbits === 0) {
+          state.wbits = len;
+        }
+        else if (len > state.wbits) {
+          strm.msg = 'invalid window size';
+          state.mode = BAD;
+          break;
+        }
+        state.dmax = 1 << len;
+        //Tracev((stderr, "inflate:   zlib header ok\n"));
+        strm.adler = state.check = 1/*adler32(0L, Z_NULL, 0)*/;
+        state.mode = hold & 0x200 ? DICTID : TYPE;
         //=== INITBITS();
         hold = 0;
         bits = 0;
         //===//
-        state.mode = FLAGS;
         break;
-      }
-      state.flags = 0;           /* expect zlib header */
-      if (state.head) {
-        state.head.done = false;
-      }
-      if (!(state.wrap & 1) ||   /* check if zlib header allowed */
-        (((hold & 0xff)/*BITS(8)*/ << 8) + (hold >> 8)) % 31) {
-        strm.msg = 'incorrect header check';
-        state.mode = BAD;
-        break;
-      }
-      if ((hold & 0x0f)/*BITS(4)*/ !== Z_DEFLATED) {
-        strm.msg = 'unknown compression method';
-        state.mode = BAD;
-        break;
-      }
-      //--- DROPBITS(4) ---//
-      hold >>>= 4;
-      bits -= 4;
-      //---//
-      len = (hold & 0x0f)/*BITS(4)*/ + 8;
-      if (state.wbits === 0) {
-        state.wbits = len;
-      }
-      else if (len > state.wbits) {
-        strm.msg = 'invalid window size';
-        state.mode = BAD;
-        break;
-      }
-      state.dmax = 1 << len;
-      //Tracev((stderr, "inflate:   zlib header ok\n"));
-      strm.adler = state.check = 1/*adler32(0L, Z_NULL, 0)*/;
-      state.mode = hold & 0x200 ? DICTID : TYPE;
-      //=== INITBITS();
-      hold = 0;
-      bits = 0;
-      //===//
-      break;
-    case FLAGS:
-      //=== NEEDBITS(16); */
-      while (bits < 16) {
-        if (have === 0) { break inf_leave; }
-        have--;
-        hold += input[next++] << bits;
-        bits += 8;
-      }
-      //===//
-      state.flags = hold;
-      if ((state.flags & 0xff) !== Z_DEFLATED) {
-        strm.msg = 'unknown compression method';
-        state.mode = BAD;
-        break;
-      }
-      if (state.flags & 0xe000) {
-        strm.msg = 'unknown header flags set';
-        state.mode = BAD;
-        break;
-      }
-      if (state.head) {
-        state.head.text = ((hold >> 8) & 1);
-      }
-      if (state.flags & 0x0200) {
-        //=== CRC2(state.check, hold);
-        hbuf[0] = hold & 0xff;
-        hbuf[1] = (hold >>> 8) & 0xff;
-        state.check = crc32(state.check, hbuf, 2, 0);
-        //===//
-      }
-      //=== INITBITS();
-      hold = 0;
-      bits = 0;
-      //===//
-      state.mode = TIME;
-      /* falls through */
-    case TIME:
-      //=== NEEDBITS(32); */
-      while (bits < 32) {
-        if (have === 0) { break inf_leave; }
-        have--;
-        hold += input[next++] << bits;
-        bits += 8;
-      }
-      //===//
-      if (state.head) {
-        state.head.time = hold;
-      }
-      if (state.flags & 0x0200) {
-        //=== CRC4(state.check, hold)
-        hbuf[0] = hold & 0xff;
-        hbuf[1] = (hold >>> 8) & 0xff;
-        hbuf[2] = (hold >>> 16) & 0xff;
-        hbuf[3] = (hold >>> 24) & 0xff;
-        state.check = crc32(state.check, hbuf, 4, 0);
-        //===
-      }
-      //=== INITBITS();
-      hold = 0;
-      bits = 0;
-      //===//
-      state.mode = OS;
-      /* falls through */
-    case OS:
-      //=== NEEDBITS(16); */
-      while (bits < 16) {
-        if (have === 0) { break inf_leave; }
-        have--;
-        hold += input[next++] << bits;
-        bits += 8;
-      }
-      //===//
-      if (state.head) {
-        state.head.xflags = (hold & 0xff);
-        state.head.os = (hold >> 8);
-      }
-      if (state.flags & 0x0200) {
-        //=== CRC2(state.check, hold);
-        hbuf[0] = hold & 0xff;
-        hbuf[1] = (hold >>> 8) & 0xff;
-        state.check = crc32(state.check, hbuf, 2, 0);
-        //===//
-      }
-      //=== INITBITS();
-      hold = 0;
-      bits = 0;
-      //===//
-      state.mode = EXLEN;
-      /* falls through */
-    case EXLEN:
-      if (state.flags & 0x0400) {
+      case FLAGS:
         //=== NEEDBITS(16); */
         while (bits < 16) {
           if (have === 0) { break inf_leave; }
@@ -8629,9 +8964,19 @@ function inflate(strm, flush) {
           bits += 8;
         }
         //===//
-        state.length = hold;
+        state.flags = hold;
+        if ((state.flags & 0xff) !== Z_DEFLATED) {
+          strm.msg = 'unknown compression method';
+          state.mode = BAD;
+          break;
+        }
+        if (state.flags & 0xe000) {
+          strm.msg = 'unknown header flags set';
+          state.mode = BAD;
+          break;
+        }
         if (state.head) {
-          state.head.extra_len = hold;
+          state.head.text = ((hold >> 8) & 1);
         }
         if (state.flags & 0x0200) {
           //=== CRC2(state.check, hold);
@@ -8644,102 +8989,36 @@ function inflate(strm, flush) {
         hold = 0;
         bits = 0;
         //===//
-      }
-      else if (state.head) {
-        state.head.extra = null/*Z_NULL*/;
-      }
-      state.mode = EXTRA;
-      /* falls through */
-    case EXTRA:
-      if (state.flags & 0x0400) {
-        copy = state.length;
-        if (copy > have) { copy = have; }
-        if (copy) {
-          if (state.head) {
-            len = state.head.extra_len - state.length;
-            if (!state.head.extra) {
-              // Use untyped array for more conveniend processing later
-              state.head.extra = new Array(state.head.extra_len);
-            }
-            utils.arraySet(
-              state.head.extra,
-              input,
-              next,
-              // extra field is limited to 65536 bytes
-              // - no need for additional size check
-              copy,
-              /*len + copy > state.head.extra_max - len ? state.head.extra_max : copy,*/
-              len
-            );
-            //zmemcpy(state.head.extra + len, next,
-            //        len + copy > state.head.extra_max ?
-            //        state.head.extra_max - len : copy);
-          }
-          if (state.flags & 0x0200) {
-            state.check = crc32(state.check, input, copy, next);
-          }
-          have -= copy;
-          next += copy;
-          state.length -= copy;
+        state.mode = TIME;
+        /* falls through */
+      case TIME:
+        //=== NEEDBITS(32); */
+        while (bits < 32) {
+          if (have === 0) { break inf_leave; }
+          have--;
+          hold += input[next++] << bits;
+          bits += 8;
         }
-        if (state.length) { break inf_leave; }
-      }
-      state.length = 0;
-      state.mode = NAME;
-      /* falls through */
-    case NAME:
-      if (state.flags & 0x0800) {
-        if (have === 0) { break inf_leave; }
-        copy = 0;
-        do {
-          // TODO: 2 or 1 bytes?
-          len = input[next + copy++];
-          /* use constant limit because in js we should not preallocate memory */
-          if (state.head && len &&
-              (state.length < 65536 /*state.head.name_max*/)) {
-            state.head.name += String.fromCharCode(len);
-          }
-        } while (len && copy < have);
-
+        //===//
+        if (state.head) {
+          state.head.time = hold;
+        }
         if (state.flags & 0x0200) {
-          state.check = crc32(state.check, input, copy, next);
+          //=== CRC4(state.check, hold)
+          hbuf[0] = hold & 0xff;
+          hbuf[1] = (hold >>> 8) & 0xff;
+          hbuf[2] = (hold >>> 16) & 0xff;
+          hbuf[3] = (hold >>> 24) & 0xff;
+          state.check = crc32(state.check, hbuf, 4, 0);
+          //===
         }
-        have -= copy;
-        next += copy;
-        if (len) { break inf_leave; }
-      }
-      else if (state.head) {
-        state.head.name = null;
-      }
-      state.length = 0;
-      state.mode = COMMENT;
-      /* falls through */
-    case COMMENT:
-      if (state.flags & 0x1000) {
-        if (have === 0) { break inf_leave; }
-        copy = 0;
-        do {
-          len = input[next + copy++];
-          /* use constant limit because in js we should not preallocate memory */
-          if (state.head && len &&
-              (state.length < 65536 /*state.head.comm_max*/)) {
-            state.head.comment += String.fromCharCode(len);
-          }
-        } while (len && copy < have);
-        if (state.flags & 0x0200) {
-          state.check = crc32(state.check, input, copy, next);
-        }
-        have -= copy;
-        next += copy;
-        if (len) { break inf_leave; }
-      }
-      else if (state.head) {
-        state.head.comment = null;
-      }
-      state.mode = HCRC;
-      /* falls through */
-    case HCRC:
-      if (state.flags & 0x0200) {
+        //=== INITBITS();
+        hold = 0;
+        bits = 0;
+        //===//
+        state.mode = OS;
+        /* falls through */
+      case OS:
         //=== NEEDBITS(16); */
         while (bits < 16) {
           if (have === 0) { break inf_leave; }
@@ -8748,201 +9027,213 @@ function inflate(strm, flush) {
           bits += 8;
         }
         //===//
-        if (hold !== (state.check & 0xffff)) {
-          strm.msg = 'header crc mismatch';
-          state.mode = BAD;
-          break;
+        if (state.head) {
+          state.head.xflags = (hold & 0xff);
+          state.head.os = (hold >> 8);
+        }
+        if (state.flags & 0x0200) {
+          //=== CRC2(state.check, hold);
+          hbuf[0] = hold & 0xff;
+          hbuf[1] = (hold >>> 8) & 0xff;
+          state.check = crc32(state.check, hbuf, 2, 0);
+          //===//
         }
         //=== INITBITS();
         hold = 0;
         bits = 0;
         //===//
-      }
-      if (state.head) {
-        state.head.hcrc = ((state.flags >> 9) & 1);
-        state.head.done = true;
-      }
-      strm.adler = state.check = 0;
-      state.mode = TYPE;
-      break;
-    case DICTID:
-      //=== NEEDBITS(32); */
-      while (bits < 32) {
-        if (have === 0) { break inf_leave; }
-        have--;
-        hold += input[next++] << bits;
-        bits += 8;
-      }
-      //===//
-      strm.adler = state.check = zswap32(hold);
-      //=== INITBITS();
-      hold = 0;
-      bits = 0;
-      //===//
-      state.mode = DICT;
-      /* falls through */
-    case DICT:
-      if (state.havedict === 0) {
-        //--- RESTORE() ---
-        strm.next_out = put;
-        strm.avail_out = left;
-        strm.next_in = next;
-        strm.avail_in = have;
-        state.hold = hold;
-        state.bits = bits;
-        //---
-        return Z_NEED_DICT;
-      }
-      strm.adler = state.check = 1/*adler32(0L, Z_NULL, 0)*/;
-      state.mode = TYPE;
-      /* falls through */
-    case TYPE:
-      if (flush === Z_BLOCK || flush === Z_TREES) { break inf_leave; }
-      /* falls through */
-    case TYPEDO:
-      if (state.last) {
-        //--- BYTEBITS() ---//
-        hold >>>= bits & 7;
-        bits -= bits & 7;
-        //---//
-        state.mode = CHECK;
-        break;
-      }
-      //=== NEEDBITS(3); */
-      while (bits < 3) {
-        if (have === 0) { break inf_leave; }
-        have--;
-        hold += input[next++] << bits;
-        bits += 8;
-      }
-      //===//
-      state.last = (hold & 0x01)/*BITS(1)*/;
-      //--- DROPBITS(1) ---//
-      hold >>>= 1;
-      bits -= 1;
-      //---//
-
-      switch ((hold & 0x03)/*BITS(2)*/) {
-      case 0:                             /* stored block */
-        //Tracev((stderr, "inflate:     stored block%s\n",
-        //        state.last ? " (last)" : ""));
-        state.mode = STORED;
-        break;
-      case 1:                             /* fixed block */
-        fixedtables(state);
-        //Tracev((stderr, "inflate:     fixed codes block%s\n",
-        //        state.last ? " (last)" : ""));
-        state.mode = LEN_;             /* decode codes */
-        if (flush === Z_TREES) {
-          //--- DROPBITS(2) ---//
-          hold >>>= 2;
-          bits -= 2;
-          //---//
-          break inf_leave;
+        state.mode = EXLEN;
+        /* falls through */
+      case EXLEN:
+        if (state.flags & 0x0400) {
+          //=== NEEDBITS(16); */
+          while (bits < 16) {
+            if (have === 0) { break inf_leave; }
+            have--;
+            hold += input[next++] << bits;
+            bits += 8;
+          }
+          //===//
+          state.length = hold;
+          if (state.head) {
+            state.head.extra_len = hold;
+          }
+          if (state.flags & 0x0200) {
+            //=== CRC2(state.check, hold);
+            hbuf[0] = hold & 0xff;
+            hbuf[1] = (hold >>> 8) & 0xff;
+            state.check = crc32(state.check, hbuf, 2, 0);
+            //===//
+          }
+          //=== INITBITS();
+          hold = 0;
+          bits = 0;
+          //===//
         }
+        else if (state.head) {
+          state.head.extra = null/*Z_NULL*/;
+        }
+        state.mode = EXTRA;
+        /* falls through */
+      case EXTRA:
+        if (state.flags & 0x0400) {
+          copy = state.length;
+          if (copy > have) { copy = have; }
+          if (copy) {
+            if (state.head) {
+              len = state.head.extra_len - state.length;
+              if (!state.head.extra) {
+                // Use untyped array for more convenient processing later
+                state.head.extra = new Array(state.head.extra_len);
+              }
+              utils.arraySet(
+                state.head.extra,
+                input,
+                next,
+                // extra field is limited to 65536 bytes
+                // - no need for additional size check
+                copy,
+                /*len + copy > state.head.extra_max - len ? state.head.extra_max : copy,*/
+                len
+              );
+              //zmemcpy(state.head.extra + len, next,
+              //        len + copy > state.head.extra_max ?
+              //        state.head.extra_max - len : copy);
+            }
+            if (state.flags & 0x0200) {
+              state.check = crc32(state.check, input, copy, next);
+            }
+            have -= copy;
+            next += copy;
+            state.length -= copy;
+          }
+          if (state.length) { break inf_leave; }
+        }
+        state.length = 0;
+        state.mode = NAME;
+        /* falls through */
+      case NAME:
+        if (state.flags & 0x0800) {
+          if (have === 0) { break inf_leave; }
+          copy = 0;
+          do {
+            // TODO: 2 or 1 bytes?
+            len = input[next + copy++];
+            /* use constant limit because in js we should not preallocate memory */
+            if (state.head && len &&
+                (state.length < 65536 /*state.head.name_max*/)) {
+              state.head.name += String.fromCharCode(len);
+            }
+          } while (len && copy < have);
+
+          if (state.flags & 0x0200) {
+            state.check = crc32(state.check, input, copy, next);
+          }
+          have -= copy;
+          next += copy;
+          if (len) { break inf_leave; }
+        }
+        else if (state.head) {
+          state.head.name = null;
+        }
+        state.length = 0;
+        state.mode = COMMENT;
+        /* falls through */
+      case COMMENT:
+        if (state.flags & 0x1000) {
+          if (have === 0) { break inf_leave; }
+          copy = 0;
+          do {
+            len = input[next + copy++];
+            /* use constant limit because in js we should not preallocate memory */
+            if (state.head && len &&
+                (state.length < 65536 /*state.head.comm_max*/)) {
+              state.head.comment += String.fromCharCode(len);
+            }
+          } while (len && copy < have);
+          if (state.flags & 0x0200) {
+            state.check = crc32(state.check, input, copy, next);
+          }
+          have -= copy;
+          next += copy;
+          if (len) { break inf_leave; }
+        }
+        else if (state.head) {
+          state.head.comment = null;
+        }
+        state.mode = HCRC;
+        /* falls through */
+      case HCRC:
+        if (state.flags & 0x0200) {
+          //=== NEEDBITS(16); */
+          while (bits < 16) {
+            if (have === 0) { break inf_leave; }
+            have--;
+            hold += input[next++] << bits;
+            bits += 8;
+          }
+          //===//
+          if (hold !== (state.check & 0xffff)) {
+            strm.msg = 'header crc mismatch';
+            state.mode = BAD;
+            break;
+          }
+          //=== INITBITS();
+          hold = 0;
+          bits = 0;
+          //===//
+        }
+        if (state.head) {
+          state.head.hcrc = ((state.flags >> 9) & 1);
+          state.head.done = true;
+        }
+        strm.adler = state.check = 0;
+        state.mode = TYPE;
         break;
-      case 2:                             /* dynamic block */
-        //Tracev((stderr, "inflate:     dynamic codes block%s\n",
-        //        state.last ? " (last)" : ""));
-        state.mode = TABLE;
-        break;
-      case 3:
-        strm.msg = 'invalid block type';
-        state.mode = BAD;
-      }
-      //--- DROPBITS(2) ---//
-      hold >>>= 2;
-      bits -= 2;
-      //---//
-      break;
-    case STORED:
-      //--- BYTEBITS() ---// /* go to byte boundary */
-      hold >>>= bits & 7;
-      bits -= bits & 7;
-      //---//
-      //=== NEEDBITS(32); */
-      while (bits < 32) {
-        if (have === 0) { break inf_leave; }
-        have--;
-        hold += input[next++] << bits;
-        bits += 8;
-      }
-      //===//
-      if ((hold & 0xffff) !== ((hold >>> 16) ^ 0xffff)) {
-        strm.msg = 'invalid stored block lengths';
-        state.mode = BAD;
-        break;
-      }
-      state.length = hold & 0xffff;
-      //Tracev((stderr, "inflate:       stored length %u\n",
-      //        state.length));
-      //=== INITBITS();
-      hold = 0;
-      bits = 0;
-      //===//
-      state.mode = COPY_;
-      if (flush === Z_TREES) { break inf_leave; }
-      /* falls through */
-    case COPY_:
-      state.mode = COPY;
-      /* falls through */
-    case COPY:
-      copy = state.length;
-      if (copy) {
-        if (copy > have) { copy = have; }
-        if (copy > left) { copy = left; }
-        if (copy === 0) { break inf_leave; }
-        //--- zmemcpy(put, next, copy); ---
-        utils.arraySet(output, input, next, copy, put);
-        //---//
-        have -= copy;
-        next += copy;
-        left -= copy;
-        put += copy;
-        state.length -= copy;
-        break;
-      }
-      //Tracev((stderr, "inflate:       stored end\n"));
-      state.mode = TYPE;
-      break;
-    case TABLE:
-      //=== NEEDBITS(14); */
-      while (bits < 14) {
-        if (have === 0) { break inf_leave; }
-        have--;
-        hold += input[next++] << bits;
-        bits += 8;
-      }
-      //===//
-      state.nlen = (hold & 0x1f)/*BITS(5)*/ + 257;
-      //--- DROPBITS(5) ---//
-      hold >>>= 5;
-      bits -= 5;
-      //---//
-      state.ndist = (hold & 0x1f)/*BITS(5)*/ + 1;
-      //--- DROPBITS(5) ---//
-      hold >>>= 5;
-      bits -= 5;
-      //---//
-      state.ncode = (hold & 0x0f)/*BITS(4)*/ + 4;
-      //--- DROPBITS(4) ---//
-      hold >>>= 4;
-      bits -= 4;
-      //---//
-//#ifndef PKZIP_BUG_WORKAROUND
-      if (state.nlen > 286 || state.ndist > 30) {
-        strm.msg = 'too many length or distance symbols';
-        state.mode = BAD;
-        break;
-      }
-//#endif
-      //Tracev((stderr, "inflate:       table sizes ok\n"));
-      state.have = 0;
-      state.mode = LENLENS;
-      /* falls through */
-    case LENLENS:
-      while (state.have < state.ncode) {
-        //=== NEEDBITS(3);
+      case DICTID:
+        //=== NEEDBITS(32); */
+        while (bits < 32) {
+          if (have === 0) { break inf_leave; }
+          have--;
+          hold += input[next++] << bits;
+          bits += 8;
+        }
+        //===//
+        strm.adler = state.check = zswap32(hold);
+        //=== INITBITS();
+        hold = 0;
+        bits = 0;
+        //===//
+        state.mode = DICT;
+        /* falls through */
+      case DICT:
+        if (state.havedict === 0) {
+          //--- RESTORE() ---
+          strm.next_out = put;
+          strm.avail_out = left;
+          strm.next_in = next;
+          strm.avail_in = have;
+          state.hold = hold;
+          state.bits = bits;
+          //---
+          return Z_NEED_DICT;
+        }
+        strm.adler = state.check = 1/*adler32(0L, Z_NULL, 0)*/;
+        state.mode = TYPE;
+        /* falls through */
+      case TYPE:
+        if (flush === Z_BLOCK || flush === Z_TREES) { break inf_leave; }
+        /* falls through */
+      case TYPEDO:
+        if (state.last) {
+          //--- BYTEBITS() ---//
+          hold >>>= bits & 7;
+          bits -= bits & 7;
+          //---//
+          state.mode = CHECK;
+          break;
+        }
+        //=== NEEDBITS(3); */
         while (bits < 3) {
           if (have === 0) { break inf_leave; }
           have--;
@@ -8950,39 +9241,442 @@ function inflate(strm, flush) {
           bits += 8;
         }
         //===//
-        state.lens[order[state.have++]] = (hold & 0x07);//BITS(3);
-        //--- DROPBITS(3) ---//
-        hold >>>= 3;
-        bits -= 3;
+        state.last = (hold & 0x01)/*BITS(1)*/;
+        //--- DROPBITS(1) ---//
+        hold >>>= 1;
+        bits -= 1;
         //---//
-      }
-      while (state.have < 19) {
-        state.lens[order[state.have++]] = 0;
-      }
-      // We have separate tables & no pointers. 2 commented lines below not needed.
-      //state.next = state.codes;
-      //state.lencode = state.next;
-      // Switch to use dynamic table
-      state.lencode = state.lendyn;
-      state.lenbits = 7;
 
-      opts = { bits: state.lenbits };
-      ret = inflate_table(CODES, state.lens, 0, 19, state.lencode, 0, state.work, opts);
-      state.lenbits = opts.bits;
-
-      if (ret) {
-        strm.msg = 'invalid code lengths set';
-        state.mode = BAD;
+        switch ((hold & 0x03)/*BITS(2)*/) {
+          case 0:                             /* stored block */
+            //Tracev((stderr, "inflate:     stored block%s\n",
+            //        state.last ? " (last)" : ""));
+            state.mode = STORED;
+            break;
+          case 1:                             /* fixed block */
+            fixedtables(state);
+            //Tracev((stderr, "inflate:     fixed codes block%s\n",
+            //        state.last ? " (last)" : ""));
+            state.mode = LEN_;             /* decode codes */
+            if (flush === Z_TREES) {
+              //--- DROPBITS(2) ---//
+              hold >>>= 2;
+              bits -= 2;
+              //---//
+              break inf_leave;
+            }
+            break;
+          case 2:                             /* dynamic block */
+            //Tracev((stderr, "inflate:     dynamic codes block%s\n",
+            //        state.last ? " (last)" : ""));
+            state.mode = TABLE;
+            break;
+          case 3:
+            strm.msg = 'invalid block type';
+            state.mode = BAD;
+        }
+        //--- DROPBITS(2) ---//
+        hold >>>= 2;
+        bits -= 2;
+        //---//
         break;
-      }
-      //Tracev((stderr, "inflate:       code lengths ok\n"));
-      state.have = 0;
-      state.mode = CODELENS;
-      /* falls through */
-    case CODELENS:
-      while (state.have < state.nlen + state.ndist) {
+      case STORED:
+        //--- BYTEBITS() ---// /* go to byte boundary */
+        hold >>>= bits & 7;
+        bits -= bits & 7;
+        //---//
+        //=== NEEDBITS(32); */
+        while (bits < 32) {
+          if (have === 0) { break inf_leave; }
+          have--;
+          hold += input[next++] << bits;
+          bits += 8;
+        }
+        //===//
+        if ((hold & 0xffff) !== ((hold >>> 16) ^ 0xffff)) {
+          strm.msg = 'invalid stored block lengths';
+          state.mode = BAD;
+          break;
+        }
+        state.length = hold & 0xffff;
+        //Tracev((stderr, "inflate:       stored length %u\n",
+        //        state.length));
+        //=== INITBITS();
+        hold = 0;
+        bits = 0;
+        //===//
+        state.mode = COPY_;
+        if (flush === Z_TREES) { break inf_leave; }
+        /* falls through */
+      case COPY_:
+        state.mode = COPY;
+        /* falls through */
+      case COPY:
+        copy = state.length;
+        if (copy) {
+          if (copy > have) { copy = have; }
+          if (copy > left) { copy = left; }
+          if (copy === 0) { break inf_leave; }
+          //--- zmemcpy(put, next, copy); ---
+          utils.arraySet(output, input, next, copy, put);
+          //---//
+          have -= copy;
+          next += copy;
+          left -= copy;
+          put += copy;
+          state.length -= copy;
+          break;
+        }
+        //Tracev((stderr, "inflate:       stored end\n"));
+        state.mode = TYPE;
+        break;
+      case TABLE:
+        //=== NEEDBITS(14); */
+        while (bits < 14) {
+          if (have === 0) { break inf_leave; }
+          have--;
+          hold += input[next++] << bits;
+          bits += 8;
+        }
+        //===//
+        state.nlen = (hold & 0x1f)/*BITS(5)*/ + 257;
+        //--- DROPBITS(5) ---//
+        hold >>>= 5;
+        bits -= 5;
+        //---//
+        state.ndist = (hold & 0x1f)/*BITS(5)*/ + 1;
+        //--- DROPBITS(5) ---//
+        hold >>>= 5;
+        bits -= 5;
+        //---//
+        state.ncode = (hold & 0x0f)/*BITS(4)*/ + 4;
+        //--- DROPBITS(4) ---//
+        hold >>>= 4;
+        bits -= 4;
+        //---//
+//#ifndef PKZIP_BUG_WORKAROUND
+        if (state.nlen > 286 || state.ndist > 30) {
+          strm.msg = 'too many length or distance symbols';
+          state.mode = BAD;
+          break;
+        }
+//#endif
+        //Tracev((stderr, "inflate:       table sizes ok\n"));
+        state.have = 0;
+        state.mode = LENLENS;
+        /* falls through */
+      case LENLENS:
+        while (state.have < state.ncode) {
+          //=== NEEDBITS(3);
+          while (bits < 3) {
+            if (have === 0) { break inf_leave; }
+            have--;
+            hold += input[next++] << bits;
+            bits += 8;
+          }
+          //===//
+          state.lens[order[state.have++]] = (hold & 0x07);//BITS(3);
+          //--- DROPBITS(3) ---//
+          hold >>>= 3;
+          bits -= 3;
+          //---//
+        }
+        while (state.have < 19) {
+          state.lens[order[state.have++]] = 0;
+        }
+        // We have separate tables & no pointers. 2 commented lines below not needed.
+        //state.next = state.codes;
+        //state.lencode = state.next;
+        // Switch to use dynamic table
+        state.lencode = state.lendyn;
+        state.lenbits = 7;
+
+        opts = { bits: state.lenbits };
+        ret = inflate_table(CODES, state.lens, 0, 19, state.lencode, 0, state.work, opts);
+        state.lenbits = opts.bits;
+
+        if (ret) {
+          strm.msg = 'invalid code lengths set';
+          state.mode = BAD;
+          break;
+        }
+        //Tracev((stderr, "inflate:       code lengths ok\n"));
+        state.have = 0;
+        state.mode = CODELENS;
+        /* falls through */
+      case CODELENS:
+        while (state.have < state.nlen + state.ndist) {
+          for (;;) {
+            here = state.lencode[hold & ((1 << state.lenbits) - 1)];/*BITS(state.lenbits)*/
+            here_bits = here >>> 24;
+            here_op = (here >>> 16) & 0xff;
+            here_val = here & 0xffff;
+
+            if ((here_bits) <= bits) { break; }
+            //--- PULLBYTE() ---//
+            if (have === 0) { break inf_leave; }
+            have--;
+            hold += input[next++] << bits;
+            bits += 8;
+            //---//
+          }
+          if (here_val < 16) {
+            //--- DROPBITS(here.bits) ---//
+            hold >>>= here_bits;
+            bits -= here_bits;
+            //---//
+            state.lens[state.have++] = here_val;
+          }
+          else {
+            if (here_val === 16) {
+              //=== NEEDBITS(here.bits + 2);
+              n = here_bits + 2;
+              while (bits < n) {
+                if (have === 0) { break inf_leave; }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              //===//
+              //--- DROPBITS(here.bits) ---//
+              hold >>>= here_bits;
+              bits -= here_bits;
+              //---//
+              if (state.have === 0) {
+                strm.msg = 'invalid bit length repeat';
+                state.mode = BAD;
+                break;
+              }
+              len = state.lens[state.have - 1];
+              copy = 3 + (hold & 0x03);//BITS(2);
+              //--- DROPBITS(2) ---//
+              hold >>>= 2;
+              bits -= 2;
+              //---//
+            }
+            else if (here_val === 17) {
+              //=== NEEDBITS(here.bits + 3);
+              n = here_bits + 3;
+              while (bits < n) {
+                if (have === 0) { break inf_leave; }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              //===//
+              //--- DROPBITS(here.bits) ---//
+              hold >>>= here_bits;
+              bits -= here_bits;
+              //---//
+              len = 0;
+              copy = 3 + (hold & 0x07);//BITS(3);
+              //--- DROPBITS(3) ---//
+              hold >>>= 3;
+              bits -= 3;
+              //---//
+            }
+            else {
+              //=== NEEDBITS(here.bits + 7);
+              n = here_bits + 7;
+              while (bits < n) {
+                if (have === 0) { break inf_leave; }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              //===//
+              //--- DROPBITS(here.bits) ---//
+              hold >>>= here_bits;
+              bits -= here_bits;
+              //---//
+              len = 0;
+              copy = 11 + (hold & 0x7f);//BITS(7);
+              //--- DROPBITS(7) ---//
+              hold >>>= 7;
+              bits -= 7;
+              //---//
+            }
+            if (state.have + copy > state.nlen + state.ndist) {
+              strm.msg = 'invalid bit length repeat';
+              state.mode = BAD;
+              break;
+            }
+            while (copy--) {
+              state.lens[state.have++] = len;
+            }
+          }
+        }
+
+        /* handle error breaks in while */
+        if (state.mode === BAD) { break; }
+
+        /* check for end-of-block code (better have one) */
+        if (state.lens[256] === 0) {
+          strm.msg = 'invalid code -- missing end-of-block';
+          state.mode = BAD;
+          break;
+        }
+
+        /* build code tables -- note: do not change the lenbits or distbits
+           values here (9 and 6) without reading the comments in inftrees.h
+           concerning the ENOUGH constants, which depend on those values */
+        state.lenbits = 9;
+
+        opts = { bits: state.lenbits };
+        ret = inflate_table(LENS, state.lens, 0, state.nlen, state.lencode, 0, state.work, opts);
+        // We have separate tables & no pointers. 2 commented lines below not needed.
+        // state.next_index = opts.table_index;
+        state.lenbits = opts.bits;
+        // state.lencode = state.next;
+
+        if (ret) {
+          strm.msg = 'invalid literal/lengths set';
+          state.mode = BAD;
+          break;
+        }
+
+        state.distbits = 6;
+        //state.distcode.copy(state.codes);
+        // Switch to use dynamic table
+        state.distcode = state.distdyn;
+        opts = { bits: state.distbits };
+        ret = inflate_table(DISTS, state.lens, state.nlen, state.ndist, state.distcode, 0, state.work, opts);
+        // We have separate tables & no pointers. 2 commented lines below not needed.
+        // state.next_index = opts.table_index;
+        state.distbits = opts.bits;
+        // state.distcode = state.next;
+
+        if (ret) {
+          strm.msg = 'invalid distances set';
+          state.mode = BAD;
+          break;
+        }
+        //Tracev((stderr, 'inflate:       codes ok\n'));
+        state.mode = LEN_;
+        if (flush === Z_TREES) { break inf_leave; }
+        /* falls through */
+      case LEN_:
+        state.mode = LEN;
+        /* falls through */
+      case LEN:
+        if (have >= 6 && left >= 258) {
+          //--- RESTORE() ---
+          strm.next_out = put;
+          strm.avail_out = left;
+          strm.next_in = next;
+          strm.avail_in = have;
+          state.hold = hold;
+          state.bits = bits;
+          //---
+          inflate_fast(strm, _out);
+          //--- LOAD() ---
+          put = strm.next_out;
+          output = strm.output;
+          left = strm.avail_out;
+          next = strm.next_in;
+          input = strm.input;
+          have = strm.avail_in;
+          hold = state.hold;
+          bits = state.bits;
+          //---
+
+          if (state.mode === TYPE) {
+            state.back = -1;
+          }
+          break;
+        }
+        state.back = 0;
         for (;;) {
-          here = state.lencode[hold & ((1 << state.lenbits) - 1)];/*BITS(state.lenbits)*/
+          here = state.lencode[hold & ((1 << state.lenbits) - 1)];  /*BITS(state.lenbits)*/
+          here_bits = here >>> 24;
+          here_op = (here >>> 16) & 0xff;
+          here_val = here & 0xffff;
+
+          if (here_bits <= bits) { break; }
+          //--- PULLBYTE() ---//
+          if (have === 0) { break inf_leave; }
+          have--;
+          hold += input[next++] << bits;
+          bits += 8;
+          //---//
+        }
+        if (here_op && (here_op & 0xf0) === 0) {
+          last_bits = here_bits;
+          last_op = here_op;
+          last_val = here_val;
+          for (;;) {
+            here = state.lencode[last_val +
+                    ((hold & ((1 << (last_bits + last_op)) - 1))/*BITS(last.bits + last.op)*/ >> last_bits)];
+            here_bits = here >>> 24;
+            here_op = (here >>> 16) & 0xff;
+            here_val = here & 0xffff;
+
+            if ((last_bits + here_bits) <= bits) { break; }
+            //--- PULLBYTE() ---//
+            if (have === 0) { break inf_leave; }
+            have--;
+            hold += input[next++] << bits;
+            bits += 8;
+            //---//
+          }
+          //--- DROPBITS(last.bits) ---//
+          hold >>>= last_bits;
+          bits -= last_bits;
+          //---//
+          state.back += last_bits;
+        }
+        //--- DROPBITS(here.bits) ---//
+        hold >>>= here_bits;
+        bits -= here_bits;
+        //---//
+        state.back += here_bits;
+        state.length = here_val;
+        if (here_op === 0) {
+          //Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
+          //        "inflate:         literal '%c'\n" :
+          //        "inflate:         literal 0x%02x\n", here.val));
+          state.mode = LIT;
+          break;
+        }
+        if (here_op & 32) {
+          //Tracevv((stderr, "inflate:         end of block\n"));
+          state.back = -1;
+          state.mode = TYPE;
+          break;
+        }
+        if (here_op & 64) {
+          strm.msg = 'invalid literal/length code';
+          state.mode = BAD;
+          break;
+        }
+        state.extra = here_op & 15;
+        state.mode = LENEXT;
+        /* falls through */
+      case LENEXT:
+        if (state.extra) {
+          //=== NEEDBITS(state.extra);
+          n = state.extra;
+          while (bits < n) {
+            if (have === 0) { break inf_leave; }
+            have--;
+            hold += input[next++] << bits;
+            bits += 8;
+          }
+          //===//
+          state.length += hold & ((1 << state.extra) - 1)/*BITS(state.extra)*/;
+          //--- DROPBITS(state.extra) ---//
+          hold >>>= state.extra;
+          bits -= state.extra;
+          //---//
+          state.back += state.extra;
+        }
+        //Tracevv((stderr, "inflate:         length %u\n", state.length));
+        state.was = state.length;
+        state.mode = DIST;
+        /* falls through */
+      case DIST:
+        for (;;) {
+          here = state.distcode[hold & ((1 << state.distbits) - 1)];/*BITS(state.distbits)*/
           here_bits = here >>> 24;
           here_op = (here >>> 16) & 0xff;
           here_val = here & 0xffff;
@@ -8995,354 +9689,85 @@ function inflate(strm, flush) {
           bits += 8;
           //---//
         }
-        if (here_val < 16) {
-          //--- DROPBITS(here.bits) ---//
-          hold >>>= here_bits;
-          bits -= here_bits;
-          //---//
-          state.lens[state.have++] = here_val;
-        }
-        else {
-          if (here_val === 16) {
-            //=== NEEDBITS(here.bits + 2);
-            n = here_bits + 2;
-            while (bits < n) {
-              if (have === 0) { break inf_leave; }
-              have--;
-              hold += input[next++] << bits;
-              bits += 8;
-            }
-            //===//
-            //--- DROPBITS(here.bits) ---//
-            hold >>>= here_bits;
-            bits -= here_bits;
+        if ((here_op & 0xf0) === 0) {
+          last_bits = here_bits;
+          last_op = here_op;
+          last_val = here_val;
+          for (;;) {
+            here = state.distcode[last_val +
+                    ((hold & ((1 << (last_bits + last_op)) - 1))/*BITS(last.bits + last.op)*/ >> last_bits)];
+            here_bits = here >>> 24;
+            here_op = (here >>> 16) & 0xff;
+            here_val = here & 0xffff;
+
+            if ((last_bits + here_bits) <= bits) { break; }
+            //--- PULLBYTE() ---//
+            if (have === 0) { break inf_leave; }
+            have--;
+            hold += input[next++] << bits;
+            bits += 8;
             //---//
-            if (state.have === 0) {
-              strm.msg = 'invalid bit length repeat';
+          }
+          //--- DROPBITS(last.bits) ---//
+          hold >>>= last_bits;
+          bits -= last_bits;
+          //---//
+          state.back += last_bits;
+        }
+        //--- DROPBITS(here.bits) ---//
+        hold >>>= here_bits;
+        bits -= here_bits;
+        //---//
+        state.back += here_bits;
+        if (here_op & 64) {
+          strm.msg = 'invalid distance code';
+          state.mode = BAD;
+          break;
+        }
+        state.offset = here_val;
+        state.extra = (here_op) & 15;
+        state.mode = DISTEXT;
+        /* falls through */
+      case DISTEXT:
+        if (state.extra) {
+          //=== NEEDBITS(state.extra);
+          n = state.extra;
+          while (bits < n) {
+            if (have === 0) { break inf_leave; }
+            have--;
+            hold += input[next++] << bits;
+            bits += 8;
+          }
+          //===//
+          state.offset += hold & ((1 << state.extra) - 1)/*BITS(state.extra)*/;
+          //--- DROPBITS(state.extra) ---//
+          hold >>>= state.extra;
+          bits -= state.extra;
+          //---//
+          state.back += state.extra;
+        }
+//#ifdef INFLATE_STRICT
+        if (state.offset > state.dmax) {
+          strm.msg = 'invalid distance too far back';
+          state.mode = BAD;
+          break;
+        }
+//#endif
+        //Tracevv((stderr, "inflate:         distance %u\n", state.offset));
+        state.mode = MATCH;
+        /* falls through */
+      case MATCH:
+        if (left === 0) { break inf_leave; }
+        copy = _out - left;
+        if (state.offset > copy) {         /* copy from window */
+          copy = state.offset - copy;
+          if (copy > state.whave) {
+            if (state.sane) {
+              strm.msg = 'invalid distance too far back';
               state.mode = BAD;
               break;
             }
-            len = state.lens[state.have - 1];
-            copy = 3 + (hold & 0x03);//BITS(2);
-            //--- DROPBITS(2) ---//
-            hold >>>= 2;
-            bits -= 2;
-            //---//
-          }
-          else if (here_val === 17) {
-            //=== NEEDBITS(here.bits + 3);
-            n = here_bits + 3;
-            while (bits < n) {
-              if (have === 0) { break inf_leave; }
-              have--;
-              hold += input[next++] << bits;
-              bits += 8;
-            }
-            //===//
-            //--- DROPBITS(here.bits) ---//
-            hold >>>= here_bits;
-            bits -= here_bits;
-            //---//
-            len = 0;
-            copy = 3 + (hold & 0x07);//BITS(3);
-            //--- DROPBITS(3) ---//
-            hold >>>= 3;
-            bits -= 3;
-            //---//
-          }
-          else {
-            //=== NEEDBITS(here.bits + 7);
-            n = here_bits + 7;
-            while (bits < n) {
-              if (have === 0) { break inf_leave; }
-              have--;
-              hold += input[next++] << bits;
-              bits += 8;
-            }
-            //===//
-            //--- DROPBITS(here.bits) ---//
-            hold >>>= here_bits;
-            bits -= here_bits;
-            //---//
-            len = 0;
-            copy = 11 + (hold & 0x7f);//BITS(7);
-            //--- DROPBITS(7) ---//
-            hold >>>= 7;
-            bits -= 7;
-            //---//
-          }
-          if (state.have + copy > state.nlen + state.ndist) {
-            strm.msg = 'invalid bit length repeat';
-            state.mode = BAD;
-            break;
-          }
-          while (copy--) {
-            state.lens[state.have++] = len;
-          }
-        }
-      }
-
-      /* handle error breaks in while */
-      if (state.mode === BAD) { break; }
-
-      /* check for end-of-block code (better have one) */
-      if (state.lens[256] === 0) {
-        strm.msg = 'invalid code -- missing end-of-block';
-        state.mode = BAD;
-        break;
-      }
-
-      /* build code tables -- note: do not change the lenbits or distbits
-         values here (9 and 6) without reading the comments in inftrees.h
-         concerning the ENOUGH constants, which depend on those values */
-      state.lenbits = 9;
-
-      opts = { bits: state.lenbits };
-      ret = inflate_table(LENS, state.lens, 0, state.nlen, state.lencode, 0, state.work, opts);
-      // We have separate tables & no pointers. 2 commented lines below not needed.
-      // state.next_index = opts.table_index;
-      state.lenbits = opts.bits;
-      // state.lencode = state.next;
-
-      if (ret) {
-        strm.msg = 'invalid literal/lengths set';
-        state.mode = BAD;
-        break;
-      }
-
-      state.distbits = 6;
-      //state.distcode.copy(state.codes);
-      // Switch to use dynamic table
-      state.distcode = state.distdyn;
-      opts = { bits: state.distbits };
-      ret = inflate_table(DISTS, state.lens, state.nlen, state.ndist, state.distcode, 0, state.work, opts);
-      // We have separate tables & no pointers. 2 commented lines below not needed.
-      // state.next_index = opts.table_index;
-      state.distbits = opts.bits;
-      // state.distcode = state.next;
-
-      if (ret) {
-        strm.msg = 'invalid distances set';
-        state.mode = BAD;
-        break;
-      }
-      //Tracev((stderr, 'inflate:       codes ok\n'));
-      state.mode = LEN_;
-      if (flush === Z_TREES) { break inf_leave; }
-      /* falls through */
-    case LEN_:
-      state.mode = LEN;
-      /* falls through */
-    case LEN:
-      if (have >= 6 && left >= 258) {
-        //--- RESTORE() ---
-        strm.next_out = put;
-        strm.avail_out = left;
-        strm.next_in = next;
-        strm.avail_in = have;
-        state.hold = hold;
-        state.bits = bits;
-        //---
-        inflate_fast(strm, _out);
-        //--- LOAD() ---
-        put = strm.next_out;
-        output = strm.output;
-        left = strm.avail_out;
-        next = strm.next_in;
-        input = strm.input;
-        have = strm.avail_in;
-        hold = state.hold;
-        bits = state.bits;
-        //---
-
-        if (state.mode === TYPE) {
-          state.back = -1;
-        }
-        break;
-      }
-      state.back = 0;
-      for (;;) {
-        here = state.lencode[hold & ((1 << state.lenbits) - 1)];  /*BITS(state.lenbits)*/
-        here_bits = here >>> 24;
-        here_op = (here >>> 16) & 0xff;
-        here_val = here & 0xffff;
-
-        if (here_bits <= bits) { break; }
-        //--- PULLBYTE() ---//
-        if (have === 0) { break inf_leave; }
-        have--;
-        hold += input[next++] << bits;
-        bits += 8;
-        //---//
-      }
-      if (here_op && (here_op & 0xf0) === 0) {
-        last_bits = here_bits;
-        last_op = here_op;
-        last_val = here_val;
-        for (;;) {
-          here = state.lencode[last_val +
-                  ((hold & ((1 << (last_bits + last_op)) - 1))/*BITS(last.bits + last.op)*/ >> last_bits)];
-          here_bits = here >>> 24;
-          here_op = (here >>> 16) & 0xff;
-          here_val = here & 0xffff;
-
-          if ((last_bits + here_bits) <= bits) { break; }
-          //--- PULLBYTE() ---//
-          if (have === 0) { break inf_leave; }
-          have--;
-          hold += input[next++] << bits;
-          bits += 8;
-          //---//
-        }
-        //--- DROPBITS(last.bits) ---//
-        hold >>>= last_bits;
-        bits -= last_bits;
-        //---//
-        state.back += last_bits;
-      }
-      //--- DROPBITS(here.bits) ---//
-      hold >>>= here_bits;
-      bits -= here_bits;
-      //---//
-      state.back += here_bits;
-      state.length = here_val;
-      if (here_op === 0) {
-        //Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
-        //        "inflate:         literal '%c'\n" :
-        //        "inflate:         literal 0x%02x\n", here.val));
-        state.mode = LIT;
-        break;
-      }
-      if (here_op & 32) {
-        //Tracevv((stderr, "inflate:         end of block\n"));
-        state.back = -1;
-        state.mode = TYPE;
-        break;
-      }
-      if (here_op & 64) {
-        strm.msg = 'invalid literal/length code';
-        state.mode = BAD;
-        break;
-      }
-      state.extra = here_op & 15;
-      state.mode = LENEXT;
-      /* falls through */
-    case LENEXT:
-      if (state.extra) {
-        //=== NEEDBITS(state.extra);
-        n = state.extra;
-        while (bits < n) {
-          if (have === 0) { break inf_leave; }
-          have--;
-          hold += input[next++] << bits;
-          bits += 8;
-        }
-        //===//
-        state.length += hold & ((1 << state.extra) - 1)/*BITS(state.extra)*/;
-        //--- DROPBITS(state.extra) ---//
-        hold >>>= state.extra;
-        bits -= state.extra;
-        //---//
-        state.back += state.extra;
-      }
-      //Tracevv((stderr, "inflate:         length %u\n", state.length));
-      state.was = state.length;
-      state.mode = DIST;
-      /* falls through */
-    case DIST:
-      for (;;) {
-        here = state.distcode[hold & ((1 << state.distbits) - 1)];/*BITS(state.distbits)*/
-        here_bits = here >>> 24;
-        here_op = (here >>> 16) & 0xff;
-        here_val = here & 0xffff;
-
-        if ((here_bits) <= bits) { break; }
-        //--- PULLBYTE() ---//
-        if (have === 0) { break inf_leave; }
-        have--;
-        hold += input[next++] << bits;
-        bits += 8;
-        //---//
-      }
-      if ((here_op & 0xf0) === 0) {
-        last_bits = here_bits;
-        last_op = here_op;
-        last_val = here_val;
-        for (;;) {
-          here = state.distcode[last_val +
-                  ((hold & ((1 << (last_bits + last_op)) - 1))/*BITS(last.bits + last.op)*/ >> last_bits)];
-          here_bits = here >>> 24;
-          here_op = (here >>> 16) & 0xff;
-          here_val = here & 0xffff;
-
-          if ((last_bits + here_bits) <= bits) { break; }
-          //--- PULLBYTE() ---//
-          if (have === 0) { break inf_leave; }
-          have--;
-          hold += input[next++] << bits;
-          bits += 8;
-          //---//
-        }
-        //--- DROPBITS(last.bits) ---//
-        hold >>>= last_bits;
-        bits -= last_bits;
-        //---//
-        state.back += last_bits;
-      }
-      //--- DROPBITS(here.bits) ---//
-      hold >>>= here_bits;
-      bits -= here_bits;
-      //---//
-      state.back += here_bits;
-      if (here_op & 64) {
-        strm.msg = 'invalid distance code';
-        state.mode = BAD;
-        break;
-      }
-      state.offset = here_val;
-      state.extra = (here_op) & 15;
-      state.mode = DISTEXT;
-      /* falls through */
-    case DISTEXT:
-      if (state.extra) {
-        //=== NEEDBITS(state.extra);
-        n = state.extra;
-        while (bits < n) {
-          if (have === 0) { break inf_leave; }
-          have--;
-          hold += input[next++] << bits;
-          bits += 8;
-        }
-        //===//
-        state.offset += hold & ((1 << state.extra) - 1)/*BITS(state.extra)*/;
-        //--- DROPBITS(state.extra) ---//
-        hold >>>= state.extra;
-        bits -= state.extra;
-        //---//
-        state.back += state.extra;
-      }
-//#ifdef INFLATE_STRICT
-      if (state.offset > state.dmax) {
-        strm.msg = 'invalid distance too far back';
-        state.mode = BAD;
-        break;
-      }
-//#endif
-      //Tracevv((stderr, "inflate:         distance %u\n", state.offset));
-      state.mode = MATCH;
-      /* falls through */
-    case MATCH:
-      if (left === 0) { break inf_leave; }
-      copy = _out - left;
-      if (state.offset > copy) {         /* copy from window */
-        copy = state.offset - copy;
-        if (copy > state.whave) {
-          if (state.sane) {
-            strm.msg = 'invalid distance too far back';
-            state.mode = BAD;
-            break;
-          }
-// (!) This block is disabled in zlib defailts,
+// (!) This block is disabled in zlib defaults,
 // don't enable it for binary compatibility
 //#ifdef INFLATE_ALLOW_INVALID_DISTANCE_TOOFAR_ARRR
 //          Trace((stderr, "inflate.c too far\n"));
@@ -9357,106 +9782,106 @@ function inflate(strm, flush) {
 //          if (state.length === 0) { state.mode = LEN; }
 //          break;
 //#endif
+          }
+          if (copy > state.wnext) {
+            copy -= state.wnext;
+            from = state.wsize - copy;
+          }
+          else {
+            from = state.wnext - copy;
+          }
+          if (copy > state.length) { copy = state.length; }
+          from_source = state.window;
         }
-        if (copy > state.wnext) {
-          copy -= state.wnext;
-          from = state.wsize - copy;
+        else {                              /* copy from output */
+          from_source = output;
+          from = put - state.offset;
+          copy = state.length;
         }
-        else {
-          from = state.wnext - copy;
-        }
-        if (copy > state.length) { copy = state.length; }
-        from_source = state.window;
-      }
-      else {                              /* copy from output */
-        from_source = output;
-        from = put - state.offset;
-        copy = state.length;
-      }
-      if (copy > left) { copy = left; }
-      left -= copy;
-      state.length -= copy;
-      do {
-        output[put++] = from_source[from++];
-      } while (--copy);
-      if (state.length === 0) { state.mode = LEN; }
-      break;
-    case LIT:
-      if (left === 0) { break inf_leave; }
-      output[put++] = state.length;
-      left--;
-      state.mode = LEN;
-      break;
-    case CHECK:
-      if (state.wrap) {
-        //=== NEEDBITS(32);
-        while (bits < 32) {
-          if (have === 0) { break inf_leave; }
-          have--;
-          // Use '|' insdead of '+' to make sure that result is signed
-          hold |= input[next++] << bits;
-          bits += 8;
-        }
-        //===//
-        _out -= left;
-        strm.total_out += _out;
-        state.total += _out;
-        if (_out) {
-          strm.adler = state.check =
-              /*UPDATE(state.check, put - _out, _out);*/
-              (state.flags ? crc32(state.check, output, _out, put - _out) : adler32(state.check, output, _out, put - _out));
+        if (copy > left) { copy = left; }
+        left -= copy;
+        state.length -= copy;
+        do {
+          output[put++] = from_source[from++];
+        } while (--copy);
+        if (state.length === 0) { state.mode = LEN; }
+        break;
+      case LIT:
+        if (left === 0) { break inf_leave; }
+        output[put++] = state.length;
+        left--;
+        state.mode = LEN;
+        break;
+      case CHECK:
+        if (state.wrap) {
+          //=== NEEDBITS(32);
+          while (bits < 32) {
+            if (have === 0) { break inf_leave; }
+            have--;
+            // Use '|' instead of '+' to make sure that result is signed
+            hold |= input[next++] << bits;
+            bits += 8;
+          }
+          //===//
+          _out -= left;
+          strm.total_out += _out;
+          state.total += _out;
+          if (_out) {
+            strm.adler = state.check =
+                /*UPDATE(state.check, put - _out, _out);*/
+                (state.flags ? crc32(state.check, output, _out, put - _out) : adler32(state.check, output, _out, put - _out));
 
+          }
+          _out = left;
+          // NB: crc32 stored as signed 32-bit int, zswap32 returns signed too
+          if ((state.flags ? hold : zswap32(hold)) !== state.check) {
+            strm.msg = 'incorrect data check';
+            state.mode = BAD;
+            break;
+          }
+          //=== INITBITS();
+          hold = 0;
+          bits = 0;
+          //===//
+          //Tracev((stderr, "inflate:   check matches trailer\n"));
         }
-        _out = left;
-        // NB: crc32 stored as signed 32-bit int, zswap32 returns signed too
-        if ((state.flags ? hold : zswap32(hold)) !== state.check) {
-          strm.msg = 'incorrect data check';
-          state.mode = BAD;
-          break;
+        state.mode = LENGTH;
+        /* falls through */
+      case LENGTH:
+        if (state.wrap && state.flags) {
+          //=== NEEDBITS(32);
+          while (bits < 32) {
+            if (have === 0) { break inf_leave; }
+            have--;
+            hold += input[next++] << bits;
+            bits += 8;
+          }
+          //===//
+          if (hold !== (state.total & 0xffffffff)) {
+            strm.msg = 'incorrect length check';
+            state.mode = BAD;
+            break;
+          }
+          //=== INITBITS();
+          hold = 0;
+          bits = 0;
+          //===//
+          //Tracev((stderr, "inflate:   length matches trailer\n"));
         }
-        //=== INITBITS();
-        hold = 0;
-        bits = 0;
-        //===//
-        //Tracev((stderr, "inflate:   check matches trailer\n"));
-      }
-      state.mode = LENGTH;
-      /* falls through */
-    case LENGTH:
-      if (state.wrap && state.flags) {
-        //=== NEEDBITS(32);
-        while (bits < 32) {
-          if (have === 0) { break inf_leave; }
-          have--;
-          hold += input[next++] << bits;
-          bits += 8;
-        }
-        //===//
-        if (hold !== (state.total & 0xffffffff)) {
-          strm.msg = 'incorrect length check';
-          state.mode = BAD;
-          break;
-        }
-        //=== INITBITS();
-        hold = 0;
-        bits = 0;
-        //===//
-        //Tracev((stderr, "inflate:   length matches trailer\n"));
-      }
-      state.mode = DONE;
-      /* falls through */
-    case DONE:
-      ret = Z_STREAM_END;
-      break inf_leave;
-    case BAD:
-      ret = Z_DATA_ERROR;
-      break inf_leave;
-    case MEM:
-      return Z_MEM_ERROR;
-    case SYNC:
-      /* falls through */
-    default:
-      return Z_STREAM_ERROR;
+        state.mode = DONE;
+        /* falls through */
+      case DONE:
+        ret = Z_STREAM_END;
+        break inf_leave;
+      case BAD:
+        ret = Z_DATA_ERROR;
+        break inf_leave;
+      case MEM:
+        return Z_MEM_ERROR;
+      case SYNC:
+        /* falls through */
+      default:
+        return Z_STREAM_ERROR;
     }
   }
 
@@ -9588,7 +10013,7 @@ exports.inflateSyncPoint = inflateSyncPoint;
 exports.inflateUndermine = inflateUndermine;
 */
 
-},{"../utils/common":24,"./adler32":26,"./crc32":28,"./inffast":31,"./inftrees":33}],33:[function(require,module,exports){
+},{"../utils/common":57,"./adler32":59,"./crc32":61,"./inffast":64,"./inftrees":66}],66:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -9933,7 +10358,7 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
   return 0;
 };
 
-},{"../utils/common":24}],34:[function(require,module,exports){
+},{"../utils/common":57}],67:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -9967,7 +10392,7 @@ module.exports = {
   '-6':   'incompatible version' /* Z_VERSION_ERROR (-6) */
 };
 
-},{}],35:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -10098,7 +10523,7 @@ var bl_order =
 
 var DIST_CODE_LEN = 512; /* see definition of array dist_code below */
 
-// !!!! Use flat array insdead of structure, Freq = i*2, Len = i*2+1
+// !!!! Use flat array instead of structure, Freq = i*2, Len = i*2+1
 var static_ltree  = new Array((L_CODES + 2) * 2);
 zero(static_ltree);
 /* The static literal tree. Since the bit lengths are imposed, there is no
@@ -11153,7 +11578,7 @@ function _tr_tally(s, dist, lc)
     s.dyn_dtree[d_code(dist) * 2]/*.Freq*/++;
   }
 
-// (!) This block is disabled in zlib defailts,
+// (!) This block is disabled in zlib defaults,
 // don't enable it for binary compatibility
 
 //#ifdef TRUNCATE_BLOCK
@@ -11189,7 +11614,7 @@ exports._tr_flush_block  = _tr_flush_block;
 exports._tr_tally = _tr_tally;
 exports._tr_align = _tr_align;
 
-},{"../utils/common":24}],36:[function(require,module,exports){
+},{"../utils/common":57}],69:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -11238,157 +11663,8 @@ function ZStream() {
 
 module.exports = ZStream;
 
-},{}],37:[function(require,module,exports){
-
-var pako = require("pako");
-var atob = require("atob");
-var btoa = require("btoa");
-
-var CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".split("");
-
-function isDataPixel(color) {
-    return color[3] === 255;
-}
-
-function dataToImage(data, sourceImage) {
-    
-    var result, pixels, imageData;
-    var stringified = JSON.stringify(data);
-    var compressed = pako.deflate(stringified, {to: "string"});
-    var encoded = btoa(encodeURIComponent(compressed)).split("");
-    var canvas = document.createElement("canvas");
-    var context = canvas.getContext("2d");
-    var imageSize = Math.ceil(Math.sqrt(encoded.length / 3));
-    var drawn = 0;
-    var width = imageSize;
-    var height = imageSize;
-    
-    document.body.appendChild(canvas);
-    
-    if (sourceImage) {
-        width = sourceImage.width;
-        height = sourceImage.height;
-        context.canvas.width = width;
-        context.canvas.height = height;
-        context.drawImage(sourceImage, 0, 0, width, height);
-    }
-    else {
-        context.canvas.width = width;
-        context.canvas.height = height;
-        context.fillStyle = "black";
-        context.fillRect(0, 0, width, height);
-    }
-    
-    imageData = context.getImageData(0, 0, width, height);
-    context.canvas.width = width;
-    context.canvas.height = height;
-    pixels = imageData.data;
-    
-    eachColor(pixels, function (color, offset) {
-        
-        var red, green, blue;
-        
-        if (isDataPixel(color)) {
-            if (drawn < encoded.length) {
-                
-                red = 1 + CHARACTERS.indexOf(encoded[drawn]);
-                green = 1 + CHARACTERS.indexOf(encoded[drawn + 1]);
-                blue = 1 + CHARACTERS.indexOf(encoded[drawn + 2]);
-                
-                pixels[offset] = red;
-                pixels[offset + 1] = green;
-                pixels[offset + 2] = blue;
-                
-                drawn += 3;
-            }
-            else {
-                pixels[offset + 3] = 254;
-            }
-        }
-    });
-    
-    if (drawn < encoded.length) {
-        cleanUp();
-        throw new Error("Could not fit data inside image!");
-    }
-    
-    context.putImageData(imageData, 0, 0);
-    
-    result = new Image();
-    
-    result.src = canvas.toDataURL("image/png");
-    
-    cleanUp();
-    
-    return result;
-    
-    function cleanUp() {
-        canvas.parentNode.removeChild(canvas);
-    }
-}
-
-function imageToData(image) {
-    
-    var imageData;
-    var data = [];
-    var canvas = document.createElement("canvas");
-    var context = canvas.getContext("2d");
-    var width = image.width;
-    var height = image.height;
-    
-    context.canvas.width = width;
-    context.canvas.height = height;
-    
-    document.body.appendChild(canvas);
-    
-    context.drawImage(image, 0, 0);
-    
-    imageData = context.getImageData(0, 0, width, height);
-    
-    eachColor(imageData.data, function (color) {
-        
-        var char, i;
-        
-        if (isDataPixel(color)) {
-            
-            for (i = 0; i < 3; i += 1) {
-                
-                char = CHARACTERS[color[i] - 1];
-                
-                if (char) {
-                    data.push(char);
-                }
-            }
-        }
-    });
-    
-    canvas.parentNode.removeChild(canvas);
-    
-    data = decodeURIComponent(atob(data.join("")));
-    data = pako.inflate(data, {to: "string"});
-    data = JSON.parse(data);
-    
-    return data;
-}
-
-function eachColor(data, fn) {
-    
-    var i, length;
-    
-    for (i = 0, length = data.length; i < length; i += 4) {
-        fn([data[i], data[i + 1], data[i + 2], data[i + 3]], i);
-    }
-    
-    return data;
-}
-
-module.exports = {
-    save: dataToImage,
-    load: imageToData
-};
-
-},{"atob":1,"btoa":7,"pako":21}],38:[function(require,module,exports){
-/*! scrollbarWidth.js v0.1.0 | felixexter | MIT | https://github.com/felixexter/scrollbarWidth */
+},{}],70:[function(require,module,exports){
+/*! scrollbarWidth.js v0.1.3 | felixexter | MIT | https://github.com/felixexter/scrollbarWidth */
 (function (root, factory) {
 	if (typeof define === 'function' && define.amd) {
 		define([], factory);
@@ -11401,6 +11677,10 @@ module.exports = {
 	'use strict';
 
 	function scrollbarWidth() {
+		if (typeof document === 'undefined') {
+			return 0
+		}
+
 		var
 			body = document.body,
 			box = document.createElement('div'),
@@ -11424,7 +11704,7 @@ module.exports = {
 	return scrollbarWidth;
 }));
 
-},{}],39:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 /*
  * smoothscroll polyfill - v0.3.5
  * https://iamdustan.github.io/smoothscroll
@@ -11672,12 +11952,15 @@ module.exports = {
         return;
       }
 
+      var left = arguments[0].left;
+      var top = arguments[0].top;
+
       // LET THE SMOOTHNESS BEGIN!
       smoothScroll.call(
           this,
           this,
-          arguments[0].left,
-          arguments[0].top
+          typeof left === 'number' ? left : this.scrollLeft,
+          typeof top === 'number' ? top : this.scrollTop
       );
     };
 
@@ -11703,7 +11986,10 @@ module.exports = {
     Element.prototype.scrollIntoView = function() {
       // avoid smooth behavior if not required
       if (shouldBailOut(arguments[0])) {
-        original.scrollIntoView.call(this, arguments[0] || true);
+        original.scrollIntoView.call(
+          this,
+          arguments[0] === undefined ? true : arguments[0]
+        );
         return;
       }
 
@@ -11746,7 +12032,7 @@ module.exports = {
   }
 })(window, document);
 
-},{}],40:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 /* global requestAnimationFrame */
 
 var eases = require("eases");
@@ -11941,298 +12227,41 @@ module.exports = {
     transform: transform
 };
 
-},{"eases":59}],41:[function(require,module,exports){
-function backInOut(t) {
-  var s = 1.70158 * 1.525
-  if ((t *= 2) < 1)
-    return 0.5 * (t * t * ((s + 1) * t - s))
-  return 0.5 * ((t -= 2) * t * ((s + 1) * t + s) + 2)
-}
-
-module.exports = backInOut
-},{}],42:[function(require,module,exports){
-function backIn(t) {
-  var s = 1.70158
-  return t * t * ((s + 1) * t - s)
-}
-
-module.exports = backIn
-},{}],43:[function(require,module,exports){
-function backOut(t) {
-  var s = 1.70158
-  return --t * t * ((s + 1) * t + s) + 1
-}
-
-module.exports = backOut
-},{}],44:[function(require,module,exports){
-var bounceOut = require('./bounce-out')
-
-function bounceInOut(t) {
-  return t < 0.5
-    ? 0.5 * (1.0 - bounceOut(1.0 - t * 2.0))
-    : 0.5 * bounceOut(t * 2.0 - 1.0) + 0.5
-}
-
-module.exports = bounceInOut
-},{"./bounce-out":46}],45:[function(require,module,exports){
-var bounceOut = require('./bounce-out')
-
-function bounceIn(t) {
-  return 1.0 - bounceOut(1.0 - t)
-}
-
-module.exports = bounceIn
-},{"./bounce-out":46}],46:[function(require,module,exports){
-function bounceOut(t) {
-  var a = 4.0 / 11.0
-  var b = 8.0 / 11.0
-  var c = 9.0 / 10.0
-
-  var ca = 4356.0 / 361.0
-  var cb = 35442.0 / 1805.0
-  var cc = 16061.0 / 1805.0
-
-  var t2 = t * t
-
-  return t < a
-    ? 7.5625 * t2
-    : t < b
-      ? 9.075 * t2 - 9.9 * t + 3.4
-      : t < c
-        ? ca * t2 - cb * t + cc
-        : 10.8 * t * t - 20.52 * t + 10.72
-}
-
-module.exports = bounceOut
-},{}],47:[function(require,module,exports){
-function circInOut(t) {
-  if ((t *= 2) < 1) return -0.5 * (Math.sqrt(1 - t * t) - 1)
-  return 0.5 * (Math.sqrt(1 - (t -= 2) * t) + 1)
-}
-
-module.exports = circInOut
-},{}],48:[function(require,module,exports){
-function circIn(t) {
-  return 1.0 - Math.sqrt(1.0 - t * t)
-}
-
-module.exports = circIn
-},{}],49:[function(require,module,exports){
-function circOut(t) {
-  return Math.sqrt(1 - ( --t * t ))
-}
-
-module.exports = circOut
-},{}],50:[function(require,module,exports){
-function cubicInOut(t) {
-  return t < 0.5
-    ? 4.0 * t * t * t
-    : 0.5 * Math.pow(2.0 * t - 2.0, 3.0) + 1.0
-}
-
-module.exports = cubicInOut
-},{}],51:[function(require,module,exports){
-function cubicIn(t) {
-  return t * t * t
-}
-
-module.exports = cubicIn
-},{}],52:[function(require,module,exports){
-function cubicOut(t) {
-  var f = t - 1.0
-  return f * f * f + 1.0
-}
-
-module.exports = cubicOut
-},{}],53:[function(require,module,exports){
-function elasticInOut(t) {
-  return t < 0.5
-    ? 0.5 * Math.sin(+13.0 * Math.PI/2 * 2.0 * t) * Math.pow(2.0, 10.0 * (2.0 * t - 1.0))
-    : 0.5 * Math.sin(-13.0 * Math.PI/2 * ((2.0 * t - 1.0) + 1.0)) * Math.pow(2.0, -10.0 * (2.0 * t - 1.0)) + 1.0
-}
-
-module.exports = elasticInOut
-},{}],54:[function(require,module,exports){
-function elasticIn(t) {
-  return Math.sin(13.0 * t * Math.PI/2) * Math.pow(2.0, 10.0 * (t - 1.0))
-}
-
-module.exports = elasticIn
-},{}],55:[function(require,module,exports){
-function elasticOut(t) {
-  return Math.sin(-13.0 * (t + 1.0) * Math.PI/2) * Math.pow(2.0, -10.0 * t) + 1.0
-}
-
-module.exports = elasticOut
-},{}],56:[function(require,module,exports){
-function expoInOut(t) {
-  return (t === 0.0 || t === 1.0)
-    ? t
-    : t < 0.5
-      ? +0.5 * Math.pow(2.0, (20.0 * t) - 10.0)
-      : -0.5 * Math.pow(2.0, 10.0 - (t * 20.0)) + 1.0
-}
-
-module.exports = expoInOut
-},{}],57:[function(require,module,exports){
-function expoIn(t) {
-  return t === 0.0 ? t : Math.pow(2.0, 10.0 * (t - 1.0))
-}
-
-module.exports = expoIn
-},{}],58:[function(require,module,exports){
-function expoOut(t) {
-  return t === 1.0 ? t : 1.0 - Math.pow(2.0, -10.0 * t)
-}
-
-module.exports = expoOut
-},{}],59:[function(require,module,exports){
-module.exports = {
-	'backInOut': require('./back-in-out'),
-	'backIn': require('./back-in'),
-	'backOut': require('./back-out'),
-	'bounceInOut': require('./bounce-in-out'),
-	'bounceIn': require('./bounce-in'),
-	'bounceOut': require('./bounce-out'),
-	'circInOut': require('./circ-in-out'),
-	'circIn': require('./circ-in'),
-	'circOut': require('./circ-out'),
-	'cubicInOut': require('./cubic-in-out'),
-	'cubicIn': require('./cubic-in'),
-	'cubicOut': require('./cubic-out'),
-	'elasticInOut': require('./elastic-in-out'),
-	'elasticIn': require('./elastic-in'),
-	'elasticOut': require('./elastic-out'),
-	'expoInOut': require('./expo-in-out'),
-	'expoIn': require('./expo-in'),
-	'expoOut': require('./expo-out'),
-	'linear': require('./linear'),
-	'quadInOut': require('./quad-in-out'),
-	'quadIn': require('./quad-in'),
-	'quadOut': require('./quad-out'),
-	'quartInOut': require('./quart-in-out'),
-	'quartIn': require('./quart-in'),
-	'quartOut': require('./quart-out'),
-	'quintInOut': require('./quint-in-out'),
-	'quintIn': require('./quint-in'),
-	'quintOut': require('./quint-out'),
-	'sineInOut': require('./sine-in-out'),
-	'sineIn': require('./sine-in'),
-	'sineOut': require('./sine-out')
-}
-},{"./back-in":42,"./back-in-out":41,"./back-out":43,"./bounce-in":45,"./bounce-in-out":44,"./bounce-out":46,"./circ-in":48,"./circ-in-out":47,"./circ-out":49,"./cubic-in":51,"./cubic-in-out":50,"./cubic-out":52,"./elastic-in":54,"./elastic-in-out":53,"./elastic-out":55,"./expo-in":57,"./expo-in-out":56,"./expo-out":58,"./linear":60,"./quad-in":62,"./quad-in-out":61,"./quad-out":63,"./quart-in":65,"./quart-in-out":64,"./quart-out":66,"./quint-in":68,"./quint-in-out":67,"./quint-out":69,"./sine-in":71,"./sine-in-out":70,"./sine-out":72}],60:[function(require,module,exports){
-function linear(t) {
-  return t
-}
-
-module.exports = linear
-},{}],61:[function(require,module,exports){
-function quadInOut(t) {
-    t /= 0.5
-    if (t < 1) return 0.5*t*t
-    t--
-    return -0.5 * (t*(t-2) - 1)
-}
-
-module.exports = quadInOut
-},{}],62:[function(require,module,exports){
-function quadIn(t) {
-  return t * t
-}
-
-module.exports = quadIn
-},{}],63:[function(require,module,exports){
-function quadOut(t) {
-  return -t * (t - 2.0)
-}
-
-module.exports = quadOut
-},{}],64:[function(require,module,exports){
-function quarticInOut(t) {
-  return t < 0.5
-    ? +8.0 * Math.pow(t, 4.0)
-    : -8.0 * Math.pow(t - 1.0, 4.0) + 1.0
-}
-
-module.exports = quarticInOut
-},{}],65:[function(require,module,exports){
-function quarticIn(t) {
-  return Math.pow(t, 4.0)
-}
-
-module.exports = quarticIn
-},{}],66:[function(require,module,exports){
-function quarticOut(t) {
-  return Math.pow(t - 1.0, 3.0) * (1.0 - t) + 1.0
-}
-
-module.exports = quarticOut
-},{}],67:[function(require,module,exports){
-function qinticInOut(t) {
-    if ( ( t *= 2 ) < 1 ) return 0.5 * t * t * t * t * t
-    return 0.5 * ( ( t -= 2 ) * t * t * t * t + 2 )
-}
-
-module.exports = qinticInOut
-},{}],68:[function(require,module,exports){
-function qinticIn(t) {
-  return t * t * t * t * t
-}
-
-module.exports = qinticIn
-},{}],69:[function(require,module,exports){
-function qinticOut(t) {
-  return --t * t * t * t * t + 1
-}
-
-module.exports = qinticOut
-},{}],70:[function(require,module,exports){
-function sineInOut(t) {
-  return -0.5 * (Math.cos(Math.PI*t) - 1)
-}
-
-module.exports = sineInOut
-},{}],71:[function(require,module,exports){
-function sineIn (t) {
-  var v = Math.cos(t * Math.PI * 0.5)
-  if (Math.abs(v) < 1e-14) return 1
-  else return 1 - v
-}
-
-module.exports = sineIn
-
-},{}],72:[function(require,module,exports){
-function sineOut(t) {
-  return Math.sin(t * Math.PI/2)
-}
-
-module.exports = sineOut
-},{}],73:[function(require,module,exports){
+},{"eases":27}],73:[function(require,module,exports){
 /* global module */
 
 (function () {
     
     var format = create("{", "}"), output;
     
-    function create (left, right) {
+    function id (v) {
+        return v;
+    }
+    
+//
+// Creates a format function using `left` as the left delimiter, `right` as the right
+// delimiter. If `filter` is supplied, every value inserted into the input template is run
+// through this `filter` function. This can be used to add HTML escaping and similar things.
+//
+    function create (left, right, escape) {
         
         if (typeof left !== "string" || typeof right !== "string") {
             throw new Error("Arguments left and right must be strings.");
         }
         
+        escape = (typeof escape === "function" ? escape : id);
+        
         return function (text, values) {
-            
-            var key;
             
             if (Array.isArray(values)) {
                 values.forEach(function (value, i) {
-                    text = text.split(left + (i + 1) + right).join(value);
+                    text = text.split(left + (i + 1) + right).join(escape(value));
                 });
             }
             else {
-                for (key in values) {
-                    text = text.split(left + key + right).join(values[key]);
-                }
+                Object.keys(values).forEach(function (key) {
+                    text = text.split(left + key + right).join(escape(values[key]));
+                });
             }
             
             return text;
@@ -12477,7 +12506,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"howler":20}],75:[function(require,module,exports){
+},{"howler":51}],75:[function(require,module,exports){
 
 var cartridge = require("png-cartridge");
 var createConfirm = require("../../utils/browser/confirm.js");
@@ -12650,7 +12679,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../../utils/browser/confirm.js":90,"png-cartridge":37}],76:[function(require,module,exports){
+},{"../../utils/browser/confirm.js":90,"png-cartridge":53}],76:[function(require,module,exports){
 //
 // # Highlighter Component
 //
@@ -12774,7 +12803,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../../utils/browser/getAbsoluteRect":91,"../../utils/browser/scrolling":96,"../../utils/browser/setStyle":97,"enjoy-core/compose":13,"transform-js":40}],77:[function(require,module,exports){
+},{"../../utils/browser/getAbsoluteRect":91,"../../utils/browser/scrolling":96,"../../utils/browser/setStyle":97,"enjoy-core/compose":43,"transform-js":72}],77:[function(require,module,exports){
 //
 // # Screens component
 //
@@ -13013,7 +13042,8 @@ function create(context) {
                     env.getAll(),
                     vars.getAll(),
                     script.innerHTML,
-                    0
+                    0,
+                    "screens/" + name
                 );
             }, screenContainer.querySelectorAll("script"));
             
@@ -13264,7 +13294,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../../utils/browser/confirm.js":90,"../../utils/evalScript.js":99,"enjoy-core/each":14,"transform-js":40,"vrep":73}],78:[function(require,module,exports){
+},{"../../utils/browser/confirm.js":90,"../../utils/evalScript.js":99,"enjoy-core/each":44,"transform-js":72,"vrep":73}],78:[function(require,module,exports){
 /* global __line */
 
 var format = require("vrep").format;
@@ -13933,7 +13963,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../../utils/browser/confirm.js":90,"../../utils/browser/getClickableParent":92,"../../utils/browser/notifications.js":93,"../../utils/browser/revealText.js":94,"../../utils/browser/scrolling.js":96,"class-manipulator":8,"vrep":73}],79:[function(require,module,exports){
+},{"../../utils/browser/confirm.js":90,"../../utils/browser/getClickableParent":92,"../../utils/browser/notifications.js":93,"../../utils/browser/revealText.js":94,"../../utils/browser/scrolling.js":96,"class-manipulator":6,"vrep":73}],79:[function(require,module,exports){
 //
 // # Script environment component
 //
@@ -14198,7 +14228,6 @@ function create(context) {
             console.log("Resuming game from saved state...");
             overwriteStorageSlot("current", data.current);
             settings.set("current_slot_exists", true);
-            //resume(data.current);
         }
     }
     
@@ -14561,7 +14590,10 @@ function create(context) {
         storage.save("current", serialized);
         context.emit("run_node", copy);
         
-        if (typeof data.get("timeout") === "number") {
+        if (typeof data.get("autonext") === "number") {
+            startTimer(node, data.get("autonext"));
+        }
+        else if (typeof data.get("timeout") === "number") {
             startTimer(node);
         }
         
@@ -14576,7 +14608,8 @@ function create(context) {
                     env.getAll(),
                     vars.getAll(),
                     script.body,
-                    script.line
+                    script.line,
+                    script.file
                 );
             }
             catch (error) {
@@ -14636,9 +14669,9 @@ function create(context) {
         return Date.now() - nextClickTime > NEXT_RETURN_WAIT;
     }
     
-    function startTimer(node) {
+    function startTimer(node, autonext) {
         
-        var timeout = node.data.timeout;
+        var timeout = typeof autonext === "number" ? autonext : node.data.timeout;
         var start = Date.now();
         
         context.emit("timer_start", timeout);
@@ -14727,7 +14760,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/evalScript":99,"clone":9,"deepmerge":10}],82:[function(require,module,exports){
+},{"../utils/evalScript":99,"clone":7,"deepmerge":8}],82:[function(require,module,exports){
 
 var clone = require("clone");
 var createApi = require("../utils/node.js");
@@ -14848,7 +14881,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"../utils/node.js":100,"clone":9}],83:[function(require,module,exports){
+},{"../utils/node.js":100,"clone":7}],83:[function(require,module,exports){
 
 var clone = require("clone");
 
@@ -14954,7 +14987,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"clone":9}],84:[function(require,module,exports){
+},{"clone":7}],84:[function(require,module,exports){
 //
 // Module for storing the game state in local storage.
 //
@@ -15422,7 +15455,7 @@ function create(context) {
 
 module.exports = create;
 
-},{"clone":9}],87:[function(require,module,exports){
+},{"clone":7}],87:[function(require,module,exports){
 
 function create(context) {
     
@@ -15548,7 +15581,7 @@ module.exports = {
     decode: decodeResources
 };
 
-},{"../components/audio.js":74,"../components/browser-ui/cartridges.js":75,"../components/browser-ui/highlighter.js":76,"../components/browser-ui/screens.js":77,"../components/browser-ui/ui.js":78,"../components/env.js":79,"../components/focus.js":80,"../components/interpreter.js":81,"../components/nodes.js":82,"../components/settings.js":83,"../components/storage.js":84,"../components/story.js":85,"../components/system.js":86,"../components/vars.js":87,"../utils/context.js":98,"smoothscroll-polyfill":39}],90:[function(require,module,exports){
+},{"../components/audio.js":74,"../components/browser-ui/cartridges.js":75,"../components/browser-ui/highlighter.js":76,"../components/browser-ui/screens.js":77,"../components/browser-ui/ui.js":78,"../components/env.js":79,"../components/focus.js":80,"../components/interpreter.js":81,"../components/nodes.js":82,"../components/settings.js":83,"../components/storage.js":84,"../components/story.js":85,"../components/system.js":86,"../components/vars.js":87,"../utils/context.js":98,"smoothscroll-polyfill":71}],90:[function(require,module,exports){
 
 function create(context) {
     
@@ -15712,7 +15745,7 @@ module.exports = {
     create: create
 };
 
-},{"transform-js":40,"vrep":73}],94:[function(require,module,exports){
+},{"transform-js":72,"vrep":73}],94:[function(require,module,exports){
 
 var transform = require("transform-js").transform;
 
@@ -15839,7 +15872,7 @@ function setOpacity(element) {
 
 module.exports = create;
 
-},{"transform-js":40}],95:[function(require,module,exports){
+},{"transform-js":72}],95:[function(require,module,exports){
 
 function getScrollX() {
     return (window.pageXOffset || document.scrollLeft || 0) - (document.clientLeft || 0);
@@ -15938,7 +15971,7 @@ module.exports = {
     isElementInView: isElementInView
 };
 
-},{"./getAbsoluteRect":91,"./scrollPosition":95,"scrollbarwidth":38,"transform-js":40}],97:[function(require,module,exports){
+},{"./getAbsoluteRect":91,"./scrollPosition":95,"scrollbarwidth":70,"transform-js":72}],97:[function(require,module,exports){
 
 var auto = require("enjoy-core/auto");
 
@@ -15949,7 +15982,7 @@ var setStyle = auto(function (element, key, unit, start, end, value) {
 
 module.exports = setStyle;
 
-},{"enjoy-core/auto":12}],98:[function(require,module,exports){
+},{"enjoy-core/auto":42}],98:[function(require,module,exports){
 /* eslint-disable no-console */
 
 var EventEmitter = require("events");
@@ -16108,16 +16141,17 @@ module.exports = {
     create: create
 };
 
-},{"events":6}],99:[function(require,module,exports){
+},{"events":50}],99:[function(require,module,exports){
 /* eslint-disable no-unused-vars, no-eval */
 
-function evalScript(engine, __story, _, $, __body, __line) {
+function evalScript(engine, __story, _, $, __body, __line, __file) {
     
     var link = _.link;
     var nodes = __story.nodes;
     var title = __story.meta.title;
     
     window.__line = __line;
+    window.__file = __file;
     
     return eval(__body);
 }

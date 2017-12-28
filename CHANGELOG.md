@@ -14,6 +14,7 @@
 * Introduces a hierarchy for node tags
 * Screens can now have embedded scripts
 * Desktop builds now use electron instead of NW.js
+* Adds `autonext` property
 
 Story format now uses markdown-like syntax where appropriate:
 

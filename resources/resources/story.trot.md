@@ -249,15 +249,21 @@ You close the chest.
 
 ### explain_toothrot
 
+(#) autonext: 3000
+
 The name "Toothrot" is an homage to the character Herman Toothrot from the famous
 adventure game "Monkey Island."
 ***
+(#) autonext: 2000
 Wait -- you've played that game, right?
 ***
+(#) autonext: 1000
 Surely you have.
 ***
+(#) autonext: 2000
 Everyone has played it.
 ***
+(#) autonext: 1000
 Including you...
 ***
 Right?

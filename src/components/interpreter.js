@@ -457,7 +457,10 @@ function create(context) {
         storage.save("current", serialized);
         context.emit("run_node", copy);
         
-        if (typeof data.get("timeout") === "number") {
+        if (typeof data.get("autonext") === "number") {
+            startTimer(node, data.get("autonext"));
+        }
+        else if (typeof data.get("timeout") === "number") {
             startTimer(node);
         }
         
@@ -533,9 +536,9 @@ function create(context) {
         return Date.now() - nextClickTime > NEXT_RETURN_WAIT;
     }
     
-    function startTimer(node) {
+    function startTimer(node, autonext) {
         
-        var timeout = node.data.timeout;
+        var timeout = typeof autonext === "number" ? autonext : node.data.timeout;
         var start = Date.now();
         
         context.emit("timer_start", timeout);
