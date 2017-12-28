@@ -11,8 +11,14 @@ var errors = {
     
     UNKNOWN_NEXT_NODE: "Unknown next node '{next}' for node '{nodeId}' (<{nodeFile}>@{nodeLine}).",
     
+    UNKNOWN_AUTONEXT_TARGET: "Unknown autonextTarget '{target}' for node '{nodeId}' " +
+        "(<{nodeFile}>@{nodeLine}).",
+    
     CONFLICT_NEXT_RETURN: "Conflict: Node '{nodeId}' (<{nodeFile}>@{nodeLine}) has both a " +
         "next node and a return to the last node.",
+    
+    NO_AUTONEXT_TARGET: "Node '{nodeId}' (<{nodeFile}>@{nodeLine}) has an autonext property " +
+        "but no autonextTarget, next node or return is specified.",
     
     OPTION_WITHOUT_TARGET_OR_VALUE: "Option must have at least one of 'target' or 'value' in " +
         "node '{nodeId}' (<{nodeFile}>@{nodeLine}). <{optionFile}>@{optionLine}",

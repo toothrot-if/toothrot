@@ -1,6 +1,6 @@
 /*
     Toothrot Engine (v2.0.0-beta.9)
-    Build time: Thu, 28 Dec 2017 20:38:25 GMT
+    Build time: Thu, 28 Dec 2017 21:25:15 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -14591,7 +14591,7 @@ function create(context) {
         context.emit("run_node", copy);
         
         if (typeof data.get("autonext") === "number") {
-            startTimer(node, data.get("autonext"));
+            startTimer(node, data.get("autonext"), data.get("autonextTarget"));
         }
         else if (typeof data.get("timeout") === "number") {
             startTimer(node);
@@ -14627,7 +14627,7 @@ function create(context) {
         }
     }
     
-    function next() {
+    function next(autonextTarget) {
         
         var lastNodes, tag;
         
@@ -14635,7 +14635,12 @@ function create(context) {
             return;
         }
         
-        if (currentNode.next) {
+        if (autonextTarget) {
+            console.log("Going to autonextTarget ('" + autonextTarget + "')...");
+            runNode(story.getNode(autonextTarget), "autonextTarget");
+            nextClickTime = Date.now();
+        }
+        else if (currentNode.next) {
             console.log("Going to next node ('" + currentNode.next + "')...");
             runNode(story.getNode(currentNode.next), "next");
             nextClickTime = Date.now();
@@ -14669,7 +14674,7 @@ function create(context) {
         return Date.now() - nextClickTime > NEXT_RETURN_WAIT;
     }
     
-    function startTimer(node, autonext) {
+    function startTimer(node, autonext, autonextTarget) {
         
         var timeout = typeof autonext === "number" ? autonext : node.data.timeout;
         var start = Date.now();
@@ -14705,7 +14710,10 @@ function create(context) {
             
             context.emit("timer_end");
             
-            if (options.length && typeof node.defaultOption === "number") {
+            if (autonextTarget) {
+                next(autonextTarget);
+            }
+            else if (options.length && typeof node.defaultOption === "number") {
                 
                 if (node.defaultOption < 0 || node.defaultOption >= options.length) {
                     throw new Error("Unknown default option '" + node.defaultOption +

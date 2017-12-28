@@ -458,7 +458,7 @@ function create(context) {
         context.emit("run_node", copy);
         
         if (typeof data.get("autonext") === "number") {
-            startTimer(node, data.get("autonext"));
+            startTimer(node, data.get("autonext"), data.get("autonextTarget"));
         }
         else if (typeof data.get("timeout") === "number") {
             startTimer(node);
@@ -494,7 +494,7 @@ function create(context) {
         }
     }
     
-    function next() {
+    function next(autonextTarget) {
         
         var lastNodes, tag;
         
@@ -502,7 +502,12 @@ function create(context) {
             return;
         }
         
-        if (currentNode.next) {
+        if (autonextTarget) {
+            console.log("Going to autonextTarget ('" + autonextTarget + "')...");
+            runNode(story.getNode(autonextTarget), "autonextTarget");
+            nextClickTime = Date.now();
+        }
+        else if (currentNode.next) {
             console.log("Going to next node ('" + currentNode.next + "')...");
             runNode(story.getNode(currentNode.next), "next");
             nextClickTime = Date.now();
@@ -536,7 +541,7 @@ function create(context) {
         return Date.now() - nextClickTime > NEXT_RETURN_WAIT;
     }
     
-    function startTimer(node, autonext) {
+    function startTimer(node, autonext, autonextTarget) {
         
         var timeout = typeof autonext === "number" ? autonext : node.data.timeout;
         var start = Date.now();
@@ -572,7 +577,10 @@ function create(context) {
             
             context.emit("timer_end");
             
-            if (options.length && typeof node.defaultOption === "number") {
+            if (autonextTarget) {
+                next(autonextTarget);
+            }
+            else if (options.length && typeof node.defaultOption === "number") {
                 
                 if (node.defaultOption < 0 || node.defaultOption >= options.length) {
                     throw new Error("Unknown default option '" + node.defaultOption +

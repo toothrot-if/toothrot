@@ -73,9 +73,28 @@ function validator(handleError) {
             }));
         }
         
+        if (node.data.autonextTarget && !nodes[node.data.autonextTarget]) {
+            handleError(createError({
+                id: "UNKNOWN_AUTONEXT_TARGET",
+                target: node.data.autonextTarget,
+                nodeLine: node.line,
+                nodeFile: node.file,
+                nodeId: node.id
+            }));
+        }
+        
         if (node.next && node.returnToLast) {
             handleError(createError({
                 id: "CONFLICT_NEXT_RETURN",
+                nodeId: node.id,
+                nodeFile: node.file,
+                nodeLine: node.line
+            }));
+        }
+        
+        if (node.data.autonext && !node.returnToLast && !node.next && !node.data.autonextTarget) {
+            handleError(createError({
+                id: "NO_AUTONEXT_TARGET",
                 nodeId: node.id,
                 nodeFile: node.file,
                 nodeLine: node.line
@@ -161,37 +180,6 @@ function validator(handleError) {
                 target: link.target,
                 label: link.label
             }));
-        }
-    }
-    
-    function validateObjectLink(link, node, nodes) {
-        
-        if (!link.target || !Object.keys(link.target).length) {
-            handleError(createError({
-                id: "NO_OBJECT_LINK_TARGETS",
-                nodeId: node.id,
-                nodeLine: node.line,
-                nodeFile: node.file,
-                linkFile: link.file,
-                linkLine: link.line,
-                label: link.label
-            }));
-        }
-        else {
-            each(function (target) {
-                if (!(target in nodes)) {
-                    handleError(createError({
-                        id: "UNKNOWN_LINK_TARGET",
-                        nodeId: node.id,
-                        nodeLine: node.line,
-                        nodeFile: node.file,
-                        linkFile: link.file,
-                        linkLine: link.line,
-                        target: target,
-                        label: link.label
-                    }));
-                }
-            }, link.target);
         }
     }
     
