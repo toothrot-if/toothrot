@@ -229,6 +229,8 @@ function create(context) {
     
     function onNodeChange(node) {
         
+        env.set("notify", notify);
+        
         if (!currentNode) {
             replaceContent();
         }
@@ -574,8 +576,12 @@ function create(context) {
             interpreter.runNodeById(target.getAttribute("data-node-id"));
         }
         else if (action === "quickSave") {
-            interpreter.saveQuick(qsSlot, function () {
-                notify("Game saved in quick save slot.", "success", NOTIFICATION_DURATION);
+            interpreter.saveQuick(qsSlot, function (error) {
+                notify(
+                    error ? "Error while saving the game." : "Game saved in quick save slot.",
+                    error ? "error" : "success",
+                    NOTIFICATION_DURATION
+                );
             });
         }
         else if (action === "quickLoad") {
@@ -589,10 +595,12 @@ function create(context) {
                 confirm("Load quick save slot and discard progress?", function (yes) {
                     if (yes) {
                         interpreter.clearState();
-                        interpreter.loadQuick(qsSlot, function () {
+                        interpreter.loadQuick(qsSlot, function (error) {
                             notify(
-                                "Game loaded from quick save slot.",
-                                "success",
+                                error ?
+                                    "Error while loading game." :
+                                    "Game loaded from quick save slot.",
+                                error ? "error" : "success",
                                 NOTIFICATION_DURATION
                             );
                         });

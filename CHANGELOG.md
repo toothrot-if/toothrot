@@ -33,6 +33,9 @@ Various new methods have been added to the env object (`_`) or were changed:
 * `_.event(textOrObject)`: Adds an event.
 * `_.last([tag])`: Returns the name of the last node, or if `tag` is given, the last node with
   the tag.
+* `_.save(savegameId[, then])`: Saves the current state of the game under `savegameId`.
+* `_.load(savegameId[, then])`: Loads a savegame.
+* `_.notify(text[, type[, duration]])`: Displays a notification.
 * `_.dim()`: Has been removed.
 
 The following new global variables are now available in scripts:

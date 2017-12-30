@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v2.0.0-beta.10)
-    Build time: Sat, 30 Dec 2017 22:58:06 GMT
+    Toothrot Engine (v2.0.0-beta.11)
+    Build time: Sat, 30 Dec 2017 23:50:39 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -13526,6 +13526,8 @@ function create(context) {
     
     function onNodeChange(node) {
         
+        env.set("notify", notify);
+        
         if (!currentNode) {
             replaceContent();
         }
@@ -13871,8 +13873,12 @@ function create(context) {
             interpreter.runNodeById(target.getAttribute("data-node-id"));
         }
         else if (action === "quickSave") {
-            interpreter.saveQuick(qsSlot, function () {
-                notify("Game saved in quick save slot.", "success", NOTIFICATION_DURATION);
+            interpreter.saveQuick(qsSlot, function (error) {
+                notify(
+                    error ? "Error while saving the game." : "Game saved in quick save slot.",
+                    error ? "error" : "success",
+                    NOTIFICATION_DURATION
+                );
             });
         }
         else if (action === "quickLoad") {
@@ -13886,10 +13892,12 @@ function create(context) {
                 confirm("Load quick save slot and discard progress?", function (yes) {
                     if (yes) {
                         interpreter.clearState();
-                        interpreter.loadQuick(qsSlot, function () {
+                        interpreter.loadQuick(qsSlot, function (error) {
                             notify(
-                                "Game loaded from quick save slot.",
-                                "success",
+                                error ?
+                                    "Error while loading game." :
+                                    "Game loaded from quick save slot.",
+                                error ? "error" : "success",
                                 NOTIFICATION_DURATION
                             );
                         });
@@ -13978,7 +13986,12 @@ function create(context) {
         },
         save: function (savegameId, then) {
             setTimeout(function () {
-                context.getComponent("interpreter").save(savegameId, then);
+                context.getComponent("interpreter").save(savegameId, then || function () {});
+            }, 20);
+        },
+        load: function (savegameId, then) {
+            setTimeout(function () {
+                context.getComponent("interpreter").load(savegameId, then || function () {});
             }, 20);
         }
     };
@@ -14335,7 +14348,7 @@ function create(context) {
         storage.load(name, function (error, data) {
             
             if (error) {
-                return;
+                return then(error);
             }
             
             resume(data.data);
@@ -14352,7 +14365,7 @@ function create(context) {
         storage.save(name, data, function (error) {
             
             if (error) {
-                return;
+                return then(error);
             }
             
             savegames[name] = data;

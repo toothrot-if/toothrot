@@ -197,7 +197,7 @@ function create(context) {
         storage.load(name, function (error, data) {
             
             if (error) {
-                return;
+                return then(error);
             }
             
             resume(data.data);
@@ -214,7 +214,7 @@ function create(context) {
         storage.save(name, data, function (error) {
             
             if (error) {
-                return;
+                return then(error);
             }
             
             savegames[name] = data;

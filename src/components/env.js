@@ -12,7 +12,12 @@ function create(context) {
         },
         save: function (savegameId, then) {
             setTimeout(function () {
-                context.getComponent("interpreter").save(savegameId, then);
+                context.getComponent("interpreter").save(savegameId, then || function () {});
+            }, 20);
+        },
+        load: function (savegameId, then) {
+            setTimeout(function () {
+                context.getComponent("interpreter").load(savegameId, then || function () {});
             }, 20);
         }
     };
