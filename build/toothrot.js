@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v2.0.0-beta.9)
-    Build time: Thu, 28 Dec 2017 21:25:15 GMT
+    Toothrot Engine (v2.0.0-beta.10)
+    Build time: Sat, 30 Dec 2017 22:58:06 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -13975,6 +13975,11 @@ function create(context) {
     var env = {
         oneOf: function () {
             return arguments[Math.floor(Math.random() * arguments.length)];
+        },
+        save: function (savegameId, then) {
+            setTimeout(function () {
+                context.getComponent("interpreter").save(savegameId, then);
+            }, 20);
         }
     };
     

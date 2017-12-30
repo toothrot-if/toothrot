@@ -9,6 +9,11 @@ function create(context) {
     var env = {
         oneOf: function () {
             return arguments[Math.floor(Math.random() * arguments.length)];
+        },
+        save: function (savegameId, then) {
+            setTimeout(function () {
+                context.getComponent("interpreter").save(savegameId, then);
+            }, 20);
         }
     };
     
