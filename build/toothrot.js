@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v2.0.0-beta.11)
-    Build time: Sat, 30 Dec 2017 23:50:39 GMT
+    Toothrot Engine (v2.0.0-beta.12)
+    Build time: Sun, 31 Dec 2017 02:12:20 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -12869,8 +12869,16 @@ function create(context) {
         context.on("update_state", onUpdateState);
         
         setTimeout(function () {
-            interpreter.hasCurrentSlot(function () {
-                run("main");
+            interpreter.hasCurrentSlot(function (error, exists) {
+                if (exists && settings.get("continueOnStart")) {
+                    continueWithCurrentSlot();
+                }
+                else if (settings.get("skipMainMenu")) {
+                    startStory();
+                }
+                else {
+                    run("main");
+                }
             });
         }, 20);
     }
@@ -12927,13 +12935,10 @@ function create(context) {
                 }
             }
             else if (target === "start") {
-                exitScreenMode();
-                interpreter.start();
+                startStory();
             }
             else if (target === "continue") {
-                interpreter.clearState();
-                exitScreenMode();
-                interpreter.loadCurrentSlot();
+                continueWithCurrentSlot();
             }
             else if (target === "resume") {
                 resumeGame();
@@ -13199,8 +13204,29 @@ function create(context) {
         focus.setMode("node");
         
         currentScreen = undefined;
+    }
+    
+    function continueWithCurrentSlot() {
         
-        return;
+        removeInactiveElements();
+        interpreter.clearState();
+        exitScreenMode();
+        interpreter.loadCurrentSlot();
+        
+        setTimeout(function () {
+            context.emit("screen_exit");
+        }, 1000);
+    }
+    
+    function startStory() {
+        
+        removeInactiveElements();
+        exitScreenMode();
+        interpreter.start();
+        
+        setTimeout(function () {
+            context.emit("screen_exit");
+        }, 1000);
     }
     
     function saveSlot(element) {
@@ -14917,23 +14943,35 @@ function none() {
 
 function create(context) {
     
-    var storage, settings;
+    var storage, story, settings;
     
     function init() {
         
+        var defaultSettings;
+        
+        story = context.getComponent("story");
         storage = context.getComponent("storage");
         
         settings = {
             textSpeed: 50,
             soundVolume: 100,
             ambienceVolume: 100,
-            musicVolume: 100
+            musicVolume: 100,
+            skipMainMenu: false,
+            continueOnStart: true
         };
+        
+        defaultSettings = story.getSettings();
+        
+        Object.keys(defaultSettings).forEach(function (key) {
+            settings[key] = defaultSettings[key];
+        });
         
         load();
     }
     
     function destroy() {
+        story = null;
         storage = null;
     }
     
@@ -15265,6 +15303,10 @@ function create(context) {
         return story.head.hierarchy;
     }
     
+    function getSettings() {
+        return story.head.settings;
+    }
+    
     function getGlobalScripts() {
         return story.head.scripts;
     }
@@ -15328,6 +15370,7 @@ function create(context) {
         getAll: getAll,
         getNodeIds: getNodeIds,
         getSectionIds: getSectionIds,
+        getSettings: getSettings,
         getHierarchy: getHierarchy,
         getGlobalScripts: getGlobalScripts,
         getGlobalScript: getGlobalScript,

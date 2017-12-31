@@ -7,23 +7,35 @@ function none() {
 
 function create(context) {
     
-    var storage, settings;
+    var storage, story, settings;
     
     function init() {
         
+        var defaultSettings;
+        
+        story = context.getComponent("story");
         storage = context.getComponent("storage");
         
         settings = {
             textSpeed: 50,
             soundVolume: 100,
             ambienceVolume: 100,
-            musicVolume: 100
+            musicVolume: 100,
+            skipMainMenu: false,
+            continueOnStart: true
         };
+        
+        defaultSettings = story.getSettings();
+        
+        Object.keys(defaultSettings).forEach(function (key) {
+            settings[key] = defaultSettings[key];
+        });
         
         load();
     }
     
     function destroy() {
+        story = null;
         storage = null;
     }
     

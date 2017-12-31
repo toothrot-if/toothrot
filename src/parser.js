@@ -9,6 +9,7 @@ var createError = require("./utils/createError");
 var validator = require("./validator");
 
 var scriptPattern = /```js @([a-zA-Z0-9_]+)((.|\n)*?)\n```/g;
+var settingsPattern = /```json @settings((.|\n)*?)\n```/g;
 var hierarchyPattern = /```json @hierarchy((.|\n)*?)\n```/g;
 
 var currentFile;
@@ -242,6 +243,7 @@ function parseStructure(text, handleError) {
         
         ast.head.scripts = clone(head.scripts);
         
+        parseSettings();
         parseHierarchy();
     }
     
@@ -271,6 +273,34 @@ function parseStructure(text, handleError) {
         });
         
         ast.head.hierarchy = hierarchy;
+    }
+    
+    function parseSettings() {
+        
+        var settings = {};
+        
+        if (!ast.head.content) {
+            ast.head.settings = settings;
+            return;
+        }
+        
+        ast.head.content.replace(settingsPattern, function (match, body) {
+            
+            var line = countNewLines(ast.head.content.split(match[0])[0]) + ast.head.line + 1;
+            
+            try {
+                settings = JSON.parse(body);
+            }
+            catch (error) {
+                handleError(createError({
+                    id: "SETTINGS_JSON_ERROR"
+                }));
+            }
+            
+            return (new Array(line - ast.head.line - 1)).join("\n");
+        });
+        
+        ast.head.settings = settings;
     }
     
     function setSection(line, lineOffset) {

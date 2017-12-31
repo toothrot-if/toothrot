@@ -15,6 +15,7 @@
 * Screens can now have embedded scripts
 * Desktop builds now use electron instead of NW.js
 * Adds `autonext` property
+* Makes it possible to define default settings in the main story file
 
 Story format now uses markdown-like syntax where appropriate:
 

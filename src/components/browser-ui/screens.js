@@ -63,8 +63,16 @@ function create(context) {
         context.on("update_state", onUpdateState);
         
         setTimeout(function () {
-            interpreter.hasCurrentSlot(function () {
-                run("main");
+            interpreter.hasCurrentSlot(function (error, exists) {
+                if (exists && settings.get("continueOnStart")) {
+                    continueWithCurrentSlot();
+                }
+                else if (settings.get("skipMainMenu")) {
+                    startStory();
+                }
+                else {
+                    run("main");
+                }
             });
         }, 20);
     }
@@ -121,13 +129,10 @@ function create(context) {
                 }
             }
             else if (target === "start") {
-                exitScreenMode();
-                interpreter.start();
+                startStory();
             }
             else if (target === "continue") {
-                interpreter.clearState();
-                exitScreenMode();
-                interpreter.loadCurrentSlot();
+                continueWithCurrentSlot();
             }
             else if (target === "resume") {
                 resumeGame();
@@ -393,8 +398,29 @@ function create(context) {
         focus.setMode("node");
         
         currentScreen = undefined;
+    }
+    
+    function continueWithCurrentSlot() {
         
-        return;
+        removeInactiveElements();
+        interpreter.clearState();
+        exitScreenMode();
+        interpreter.loadCurrentSlot();
+        
+        setTimeout(function () {
+            context.emit("screen_exit");
+        }, 1000);
+    }
+    
+    function startStory() {
+        
+        removeInactiveElements();
+        exitScreenMode();
+        interpreter.start();
+        
+        setTimeout(function () {
+            context.emit("screen_exit");
+        }, 1000);
     }
     
     function saveSlot(element) {

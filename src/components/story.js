@@ -47,6 +47,10 @@ function create(context) {
         return story.head.hierarchy;
     }
     
+    function getSettings() {
+        return story.head.settings;
+    }
+    
     function getGlobalScripts() {
         return story.head.scripts;
     }
@@ -110,6 +114,7 @@ function create(context) {
         getAll: getAll,
         getNodeIds: getNodeIds,
         getSectionIds: getSectionIds,
+        getSettings: getSettings,
         getHierarchy: getHierarchy,
         getGlobalScripts: getGlobalScripts,
         getGlobalScript: getGlobalScript,

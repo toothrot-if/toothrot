@@ -4,6 +4,7 @@ var errors = {
     NO_TITLE: "No story title specified!",
     NO_START_NODE: "Required node 'start' is missing.",
     
+    SETTINGS_JSON_ERROR: "The settings section contains mal-formed JSON.",
     HIERARCHY_JSON_ERROR: "The hierarchy section contains mal-formed JSON.",
     
     CIRCULAR_HIERARCHY:
