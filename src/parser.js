@@ -45,6 +45,7 @@ function parse(text, then) {
     each(bind(parseNodeContent, handleError), ast.nodes);
     
     validateAst(ast);
+    normalizeWasIn(ast.nodes);
     
     if (typeof then === "function") {
         then(errors.length ? errors : null, ast);
@@ -68,6 +69,20 @@ function parse(text, then) {
     function throwError(error) {
         throw error;
     }
+}
+
+function normalizeWasIn(nodes) {
+    Object.keys(nodes).forEach(function (id) {
+        nodes[id].data.contains.forEach(function (item) {
+            
+            var wasIn = nodes[item].data.wasIn;
+            
+            if (wasIn.indexOf(id) < 0) {
+                wasIn.push(id);
+            }
+            
+        });
+    });
 }
 
 function parseScripts(node, oldContent) {
