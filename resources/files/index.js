@@ -8,24 +8,24 @@ var url = require("url");
 var fs = require("fs");
 
 var app = electron.app;
-var configPath = path.normalize(app.getPath("userData") + "/config.json");
+var configPath = path.join(app.getPath("userData"), "/config.json");
 var BrowserWindow = electron.BrowserWindow;
-
-if (!fs.existsSync(configPath)) {
-    fs.writeFileSync(configPath, JSON.stringify({
-        fullscreen: true,
-        width: 960,
-        height: 540
-    }));
-}
-
-config = JSON.parse(fs.readFileSync(configPath));
 
 function saveConfig() {
     fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
 }
 
 function start() {
+    
+    if (!fs.existsSync(configPath)) {
+        fs.writeFileSync(configPath, JSON.stringify({
+            fullscreen: true,
+            width: 960,
+            height: 540
+        }));
+    }
+    
+    config = JSON.parse(fs.readFileSync(configPath));
     
     win = new BrowserWindow({
         width: config.width,
