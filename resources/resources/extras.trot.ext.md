@@ -1,10 +1,8 @@
 
-## other_section
+## another_section
 
-### other_section_node
+### another_node
 
-This is a node in another section.
-
-Test: `@test`
+This is a node in another section, written in a separate file.
 
 (<)
