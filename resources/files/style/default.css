@@ -545,6 +545,69 @@ strong, b {
     font-weight: bold;
 }
 
+.indicators {
+    position: fixed;
+    z-index: 1000;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 620px;
+}
+
+.indicators .icon {
+    fill: white;
+}
+
+.autonext-indicator {
+    cursor: pointer;
+    opacity: 0.8;
+    transition-duration: 0.5s;
+    text-align: center;
+    pointer-events: none;
+}
+
+.autonext-indicator.disabled {
+    opacity: 0;
+}
+
+.next-indicator, .return-indicator {
+    cursor: pointer;
+    position: absolute;
+    opacity: 0.8;
+    transition-duration: 1.4s;
+    animation: 2s fade infinite;
+}
+
+.next-indicator {
+    right: 10px;
+}
+
+.return-indicator {
+    left: 30px;
+}
+
+.next-indicator.disabled, .return-indicator.disabled {
+    opacity: 0;
+    animation: none;
+}
+
+@keyframes fade {
+    0% {
+        opacity: 0.8;
+    }
+    
+    50% {
+        opacity: 0.2;
+    }
+    
+    100% {
+        opacity: 0.8;
+    }
+}
+
 
 
 
@@ -607,6 +670,10 @@ strong, b {
 
 .screen-buttons *[data-type=menu-item] {
     margin-left: 0;
+}
+
+.return-indicator {
+    left: 10px;
 }
 
 }
@@ -704,27 +771,6 @@ strong, b {
 .link.clicked {
     color: white;
     background: linear-gradient(to bottom, rgba(50, 50, 50, 1) 0%, rgba(0, 0, 0, 1) 100%);
-}
-
-.next-indicator {
-    position: fixed;
-    bottom: 10px;
-    left: 0;
-    right: 0;
-    margin-left: auto;
-    margin-right: auto;
-    width: 90%;
-    max-width: 430px;
-    cursor: pointer;
-    z-index: 1000;
-    opacity: 0.8;
-    transition-duration: 0.5s;
-    text-align: center;
-    pointer-events: none;
-}
-
-.next-indicator.disabled {
-    opacity: 0;
 }
 
 .event {

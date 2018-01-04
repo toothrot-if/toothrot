@@ -22,7 +22,9 @@ function create(context) {
             ambienceVolume: 100,
             musicVolume: 100,
             skipMainMenu: false,
-            continueOnStart: true
+            continueOnStart: true,
+            useNextIndicator: true,
+            useReturnIndicator: true
         };
         
         defaultSettings = story.getSettings();

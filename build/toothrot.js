@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v2.0.0-beta.12)
-    Build time: Sun, 31 Dec 2017 02:12:20 GMT
+    Toothrot Engine (v2.0.0-beta.16)
+    Build time: Thu, 04 Jan 2018 17:55:50 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -13342,8 +13342,8 @@ var NOTIFICATION_DURATION = 3000;
 
 function create(context) {
     
-    var ui, text, indicator, optionsParent, optionsContainer;
-    var container, screenContainer, templates, currentNode, currentSection;
+    var ui, text, autonextIndicator, nextIndicator, returnIndicator, optionsParent;
+    var optionsContainer, container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
     var system, settings, env, focus, confirm, nodes, bg1, bg2, bg3;
     
@@ -13426,10 +13426,18 @@ function create(context) {
         
         ui.setAttribute("role", "navigation");
         
-        indicator = ui.querySelector(".next-indicator");
+        autonextIndicator = ui.querySelector(".autonext-indicator");
+        nextIndicator = ui.querySelector(".next-indicator");
+        returnIndicator = ui.querySelector(".return-indicator");
         
-        indicator.setAttribute("title", "Click or press space to continue");
-        indicator.setAttribute("tabindex", "1");
+        ui.querySelector(".indicators").addEventListener("click", onContainerClick);
+        
+        autonextIndicator.setAttribute("title", "Click or press space to continue");
+        autonextIndicator.setAttribute("tabindex", "1");
+        nextIndicator.setAttribute("title", "Click or press space to continue");
+        nextIndicator.setAttribute("tabindex", "1");
+        returnIndicator.setAttribute("title", "Click or press space to return");
+        returnIndicator.setAttribute("tabindex", "1");
         
         scrolling.hideScrollbar(text);
         
@@ -13714,6 +13722,14 @@ function create(context) {
             
             function insertSpecials() {
                 
+                var useReturn = "useReturnIndicator" in node.data ?
+                    node.data.useReturnIndicator :
+                    settings.get("useReturnIndicator");
+                
+                var useNext = "useNextIndicator" in node.data ?
+                    node.data.useNextIndicator :
+                    settings.get("useNextIndicator");
+                
                 if (typeof node.data.timeout === "number") {
                     addTimer(text);
                 }
@@ -13722,11 +13738,29 @@ function create(context) {
                     addOptions(text, node);
                 }
                 
-                if (node.next || node.returnToLast) {
-                    indicator.classList.remove("disabled");
+                if (
+                    node.data.autonext ||
+                    (!useNext && node.next) ||
+                    (!useNext && !useReturn && node.returnToLast)
+                ) {
+                    autonextIndicator.classList.remove("disabled");
                 }
                 else {
-                    indicator.classList.add("disabled");
+                    autonextIndicator.classList.add("disabled");
+                }
+                
+                if (useNext && (node.next || (!useReturn && node.returnToLast))) {
+                    nextIndicator.classList.remove("disabled");
+                }
+                else {
+                    nextIndicator.classList.add("disabled");
+                }
+                
+                if (useReturn && node.returnToLast) {
+                    returnIndicator.classList.remove("disabled");
+                }
+                else {
+                    returnIndicator.classList.add("disabled");
                 }
             }
             
@@ -14958,7 +14992,9 @@ function create(context) {
             ambienceVolume: 100,
             musicVolume: 100,
             skipMainMenu: false,
-            continueOnStart: true
+            continueOnStart: true,
+            useNextIndicator: true,
+            useReturnIndicator: true
         };
         
         defaultSettings = story.getSettings();
