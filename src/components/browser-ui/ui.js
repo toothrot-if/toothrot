@@ -19,10 +19,10 @@ var NOTIFICATION_DURATION = 3000;
 
 function create(context) {
     
-    var ui, text, autonextIndicator, nextIndicator, returnIndicator, optionsParent;
+    var ui, text, autonextIndicator, nextIndicator, returnIndicator, indicatorHint, optionsParent;
     var optionsContainer, container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
-    var system, settings, env, focus, confirm, nodes, bg1, bg2, bg3;
+    var system, settings, env, focus, confirm, nodes, bg1, bg2, bg3, indicatorHintTimeout;
     
     function init() {
         
@@ -106,6 +106,7 @@ function create(context) {
         autonextIndicator = ui.querySelector(".autonext-indicator");
         nextIndicator = ui.querySelector(".next-indicator");
         returnIndicator = ui.querySelector(".return-indicator");
+        indicatorHint = ui.querySelector(".indicator-hint");
         
         ui.querySelector(".indicators").addEventListener("click", onContainerClick);
         
@@ -399,6 +400,9 @@ function create(context) {
             
             function insertSpecials() {
                 
+                var indicatorEnabled = false;
+                var indicatorHintSetting = settings.get("indicatorHint");
+                
                 var useReturn = "useReturnIndicator" in node.data ?
                     node.data.useReturnIndicator :
                     settings.get("useReturnIndicator");
@@ -420,6 +424,7 @@ function create(context) {
                     (!useNext && node.next) ||
                     (!useNext && !useReturn && node.returnToLast)
                 ) {
+                    indicatorEnabled = true;
                     autonextIndicator.classList.remove("disabled");
                 }
                 else {
@@ -427,6 +432,7 @@ function create(context) {
                 }
                 
                 if (useNext && (node.next || (!useReturn && node.returnToLast))) {
+                    indicatorEnabled = true;
                     nextIndicator.classList.remove("disabled");
                 }
                 else {
@@ -434,14 +440,32 @@ function create(context) {
                 }
                 
                 if (useReturn && node.returnToLast) {
+                    indicatorEnabled = true;
                     returnIndicator.classList.remove("disabled");
                 }
                 else {
                     returnIndicator.classList.add("disabled");
                 }
+                
+                
+                clearTimeout(indicatorHintTimeout);
+                disableIndicatorHint();
+                
+                if (indicatorHintSetting && indicatorEnabled) {
+                    indicatorHintTimeout = setTimeout(enableIndicatorHint, indicatorHintSetting);
+                }
+                
             }
             
         }
+    }
+    
+    function enableIndicatorHint() {
+        indicatorHint.classList.add("enabled");
+    }
+    
+    function disableIndicatorHint() {
+        indicatorHint.classList.remove("enabled");
     }
     
     function animateSectionExit(then) {

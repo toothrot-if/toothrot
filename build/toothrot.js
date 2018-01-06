@@ -1,6 +1,6 @@
 /*
-    Toothrot Engine (v2.0.0-beta.16)
-    Build time: Thu, 04 Jan 2018 17:55:50 GMT
+    Toothrot Engine (v2.0.0-beta.17)
+    Build time: Sat, 06 Jan 2018 15:38:50 GMT
 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (Buffer){
@@ -13342,10 +13342,10 @@ var NOTIFICATION_DURATION = 3000;
 
 function create(context) {
     
-    var ui, text, autonextIndicator, nextIndicator, returnIndicator, optionsParent;
+    var ui, text, autonextIndicator, nextIndicator, returnIndicator, indicatorHint, optionsParent;
     var optionsContainer, container, screenContainer, templates, currentNode, currentSection;
     var charAnimation, notify, timerTemplate, story, vars, interpreter, screens, highlighter;
-    var system, settings, env, focus, confirm, nodes, bg1, bg2, bg3;
+    var system, settings, env, focus, confirm, nodes, bg1, bg2, bg3, indicatorHintTimeout;
     
     function init() {
         
@@ -13429,6 +13429,7 @@ function create(context) {
         autonextIndicator = ui.querySelector(".autonext-indicator");
         nextIndicator = ui.querySelector(".next-indicator");
         returnIndicator = ui.querySelector(".return-indicator");
+        indicatorHint = ui.querySelector(".indicator-hint");
         
         ui.querySelector(".indicators").addEventListener("click", onContainerClick);
         
@@ -13722,6 +13723,9 @@ function create(context) {
             
             function insertSpecials() {
                 
+                var indicatorEnabled = false;
+                var indicatorHintSetting = settings.get("indicatorHint");
+                
                 var useReturn = "useReturnIndicator" in node.data ?
                     node.data.useReturnIndicator :
                     settings.get("useReturnIndicator");
@@ -13743,6 +13747,7 @@ function create(context) {
                     (!useNext && node.next) ||
                     (!useNext && !useReturn && node.returnToLast)
                 ) {
+                    indicatorEnabled = true;
                     autonextIndicator.classList.remove("disabled");
                 }
                 else {
@@ -13750,6 +13755,7 @@ function create(context) {
                 }
                 
                 if (useNext && (node.next || (!useReturn && node.returnToLast))) {
+                    indicatorEnabled = true;
                     nextIndicator.classList.remove("disabled");
                 }
                 else {
@@ -13757,14 +13763,32 @@ function create(context) {
                 }
                 
                 if (useReturn && node.returnToLast) {
+                    indicatorEnabled = true;
                     returnIndicator.classList.remove("disabled");
                 }
                 else {
                     returnIndicator.classList.add("disabled");
                 }
+                
+                
+                clearTimeout(indicatorHintTimeout);
+                disableIndicatorHint();
+                
+                if (indicatorHintSetting && indicatorEnabled) {
+                    indicatorHintTimeout = setTimeout(enableIndicatorHint, indicatorHintSetting);
+                }
+                
             }
             
         }
+    }
+    
+    function enableIndicatorHint() {
+        indicatorHint.classList.add("enabled");
+    }
+    
+    function disableIndicatorHint() {
+        indicatorHint.classList.remove("enabled");
     }
     
     function animateSectionExit(then) {
@@ -14994,7 +15018,8 @@ function create(context) {
             skipMainMenu: false,
             continueOnStart: true,
             useNextIndicator: true,
-            useReturnIndicator: true
+            useReturnIndicator: true,
+            indicatorHint: 5000
         };
         
         defaultSettings = story.getSettings();

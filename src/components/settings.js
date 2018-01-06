@@ -24,7 +24,8 @@ function create(context) {
             skipMainMenu: false,
             continueOnStart: true,
             useNextIndicator: true,
-            useReturnIndicator: true
+            useReturnIndicator: true,
+            indicatorHint: 5000
         };
         
         defaultSettings = story.getSettings();

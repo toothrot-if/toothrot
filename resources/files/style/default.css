@@ -298,6 +298,7 @@ strong, b {
     background: rgba(0, 0, 0, 0.6);
     background: linear-gradient(to bottom, rgba(50, 50, 50, 0.9) 0%, rgba(0, 0, 0, 0.8) 100%);
     border-top: 0;
+    text-align: left;
 }
 
 .button {
@@ -545,20 +546,62 @@ strong, b {
     font-weight: bold;
 }
 
-.indicators {
+.indicator-container {
     position: fixed;
     z-index: 1000;
-    bottom: 10px;
+    bottom: 0;
     left: 0;
     right: 0;
-    margin-left: auto;
-    margin-right: auto;
+    height: 50px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.indicators {
+    position: fixed;
+    bottom: 5px;
     width: 100%;
     max-width: 620px;
+    height: 40px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .indicators .icon {
     fill: white;
+}
+
+.indicator-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 22px;
+    padding-left: 10px;
+    transform: translateX(-50%);
+    font-size: 0.8em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition-duration: 1s;
+}
+
+.indicator-hint.enabled {
+    opacity: 0.3;
+}
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes fade-out {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
 }
 
 .autonext-indicator {
@@ -577,7 +620,6 @@ strong, b {
     cursor: pointer;
     position: absolute;
     opacity: 0.8;
-    transition-duration: 1.4s;
     animation: 2s fade infinite;
 }
 
@@ -586,7 +628,7 @@ strong, b {
 }
 
 .return-indicator {
-    left: 30px;
+    right: 10px;
 }
 
 .next-indicator.disabled, .return-indicator.disabled {
@@ -670,10 +712,6 @@ strong, b {
 
 .screen-buttons *[data-type=menu-item] {
     margin-left: 0;
-}
-
-.return-indicator {
-    left: 10px;
 }
 
 }
