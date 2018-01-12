@@ -578,6 +578,7 @@ strong, b {
     transform: translateX(-50%);
     font-size: 0.8em;
     text-transform: uppercase;
+    white-space: nowrap;
     opacity: 0;
     transition-duration: 1s;
 }
