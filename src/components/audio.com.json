@@ -1,0 +1,11 @@
+{
+    "name": "audio",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["browser"],
+    "offers": ["audio"],
+    "requires": ["vars", "settings"],
+    "file": "./audio.com.js"
+}

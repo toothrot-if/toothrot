@@ -1,0 +1,11 @@
+{
+    "name": "story",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["any"],
+    "offers": ["story"],
+    "requires": ["resources"],
+    "file": "./story.com.js"
+}

@@ -1,73 +1,54 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-console */
-/* global require, process */
+//
+// # Toothrot CLI Application Bootstrapper
+//
+// This script bootstraps a `multiversum` app to provide a CLI for toothrot. 
+//
 
-var fs = require("fs");
-var colors = require("colors");
+/* global process, __dirname */
 
-var pack = require("../src/packer").pack;
-var parse = require("../src/parser").parse;
-var build = require("../src/builder").build;
-var init = require("../src/initializer").init;
-var validator = require("../src/validator");
+var joinPath = require("path").join;
+var semver = require("semver");
+var createApp = require("multiversum/bootstrap").bootstrap;
+var parseArgs = require("./args").parse;
+
+// @ts-ignore
+var package = require("../package.json");
 
 var args = process.argv;
-var command = args[2];
-var path = args[3];
-var outputDir = args[4];
+var flags = parseArgs(args).flags;
 
-if (command === "build") {
-    build(path, outputDir, false);
-}
-else if (command === "build-desktop") {
-    build(path, outputDir, true);
-}
-else if (command === "pack") {
-    console.log(pack(path));
-}
-else if (command === "parse") {
-    parse("" + fs.readFileSync(path), function (errors, result) {
-        if (errors) {
-            reportErrors(errors);
+var TOOTHROT_DIR = joinPath(__dirname, "../");
+
+var app = createApp([TOOTHROT_DIR, process.cwd()], {
+    patterns: ["**/*.com.json"],
+    onError: flags.debug ? undefined : function () {},
+    filter: function (component) {
+        
+        if (component.application !== "toothrot") {
+            return false;
         }
-        else {
-            console.log(JSON.stringify(result, null, 4));
+        
+        if (!semver.satisfies(package.version, component.applicationVersion)) {
+            return false;
         }
-    });
-}
-else if (command === "init") {
-    init(path || process.cwd());
-}
-else if (command === "validate") {
-    validate(JSON.parse("" + fs.readFileSync(path)));
-}
-else {
-    console.log("Usage: build [inputDir] [outputDir]");
-    console.log("Usage: pack [inputDir]");
-    console.log("Usage: parse [storyFile]");
-}
+        
+        //
+        // Include components with flag `debug` only if `--debug` parameter is in argv
+        //
+        if (
+            !flags.debug &&
+            // @ts-ignore
+            Array.isArray(component.flags) &&
+            // @ts-ignore
+            component.flags.indexOf("debug") >= 0
+        ) {
+            return false;
+        }
+        
+        return component.applicationSteps.indexOf("build") >= 0;
+    }
+});
 
-function reportErrors(errors) {
-    errors.forEach(function (error) {
-        console.error(colors.red(error.toothrotMessage || error.message));
-    });
-}
-
-function validate(ast) {
-    
-    var errors = [];
-    
-    validator(collect).validate(ast);
-    
-    if (errors.length) {
-        reportErrors(errors);
-    }
-    else {
-        console.log(colors.green("No errors found! :)"));
-    }
-    
-    function collect(error) {
-        errors.push(error);
-    }
-}
+app.init();

@@ -1,0 +1,10 @@
+{
+    "name": "cli.commands.init",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["build"],
+    "environments": ["cli"],
+    "requires": ["initializer"],
+    "file": "./init.com.js"
+}

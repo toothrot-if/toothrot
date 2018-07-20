@@ -1,0 +1,10 @@
+{
+    "name": "vars",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["any"],
+    "offers": ["vars"],
+    "file": "./vars.com.js"
+}

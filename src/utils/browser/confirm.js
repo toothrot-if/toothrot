@@ -1,11 +1,10 @@
 
 function create(context) {
     
-    var template = context.getResource("templates").confirm;
-    var focus = context.getComponent("focus");
-    
     function confirm(text, then) {
         
+        var template = context.channel("resources/get").call("templates").confirm;
+        var focus = context.getInterface("focus", ["getMode", "setMode"]);
         var boxContainer = document.createElement("div");
         var oldFocus = focus.getMode();
         

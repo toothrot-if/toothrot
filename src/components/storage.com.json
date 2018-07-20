@@ -1,0 +1,11 @@
+{
+    "name": "storage",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["browser"],
+    "offers": ["storage"],
+    "requires": ["logger"],
+    "file": "./storage.com.js"
+}

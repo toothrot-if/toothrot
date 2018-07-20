@@ -1,0 +1,11 @@
+{
+    "name": "builder",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["build"],
+    "environments": ["cli"],
+    "offers": ["builder"],
+    "requires": ["logger", "packer"],
+    "file": "./builder.com.js"
+}

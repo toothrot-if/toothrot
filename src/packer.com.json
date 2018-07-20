@@ -1,0 +1,11 @@
+{
+    "name": "packer",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["build"],
+    "environments": ["cli"],
+    "offers": ["packer"],
+    "requires": ["parser"],
+    "file": "./packer.com.js"
+}

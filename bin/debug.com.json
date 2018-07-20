@@ -1,0 +1,10 @@
+{
+    "name": "cliDebug",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["build"],
+    "environments": ["cli"],
+    "flags": ["debug"],
+    "file": "./debug.com.js"
+}

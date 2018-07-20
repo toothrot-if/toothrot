@@ -1,0 +1,18 @@
+{
+    "name": "uiOptions",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["browser"],
+    "offers": ["uiOptions"],
+    "file": "./options.com.js",
+    "channels": {
+        "exposes": {
+            "uiOptions": ["add", "addMany", "createWrapper", "createContainer"]
+        },
+        "decorates": {
+            "ui": ["insertNodeControls", "nodeHasControls"]
+        }
+    }
+}

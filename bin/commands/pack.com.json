@@ -1,0 +1,10 @@
+{
+    "name": "cli.commands.pack",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["build"],
+    "environments": ["cli"],
+    "requires": ["packer"],
+    "file": "./pack.com.js"
+}

@@ -46,7 +46,7 @@
             }
             
             function onFileChange(event) {
-                engine.emit("cartridge_file_change", event);
+                engine.publish("cartridge_file_change", event);
             }
             
             uploadContainer.addEventListener("click", onClick);
