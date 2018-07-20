@@ -83,11 +83,8 @@ function create(context) {
         
         var componentFileContent;
         
-        //
-        // Using the toothrot folder here so that node_modules can be browserified as well.
-        //
-        var buildPath = joinPath(TOOTHROT_DIR, "/build/");
-        var tmpDir = createTempFolderPath(buildPath);
+        var modulesPath = joinPath(TOOTHROT_DIR, "/node_modules/");
+        var tmpDir = createTempFolderPath();
         var components = gatherComponents(dir);
         var appSrcFilePath = joinPath(TOOTHROT_DIR, "/src/runtimes/browser.js");
         var appDestFilePath = joinPath(tmpDir, "/toothrot.js");
@@ -100,58 +97,67 @@ function create(context) {
         
         logger.log("Creating bootstrap file for browser in `" + tmpDir + "`...");
         
-        if (!fs.existsSync(buildPath)) {
-            logger.log("Creating build folder `" + buildPath + "`...");
-            fs.mkdirSync(buildPath);
-        }
-        
         if (!fs.existsSync(tmpDir)) {
             logger.log("Creating temporary folder `" + tmpDir + "`...");
             fs.mkdirSync(tmpDir);
         }
         
-        componentFileContent = "module.exports = " + JSON.stringify(components, null, 4) + ";";
-        
-        componentFileContent = componentFileContent.replace(
-            /"file":[^"]*(".*")/g,
-            '"create": require($1).create'
-        );
-        
-        fs.writeFileSync(componentFilePath, componentFileContent);
-        fs.writeFileSync(appDestFilePath, fs.readFileSync(appSrcFilePath));
-        
-        destination.write(
-            "/*\n" +
-            "    Toothrot Engine (v" + package.version + ")\n" +
-            "    Build time: " + (new Date().toUTCString()) + 
-            "\n*/\n"
-        );
-        
-        browserify(appDestFilePath).bundle(function (error, buffer) {
+        ncp(modulesPath, joinPath(tmpDir, "/node_modules/"), function (error) {
             
             if (error) {
                 logger.error(error);
                 return;
             }
             
-            destination.on("close", function () {
+            componentFileContent = "module.exports = " + JSON.stringify(components, null, 4) + ";";
+            
+            componentFileContent = componentFileContent.replace(
+                /"file":[^"]*(".*")/g,
+                '"create": require($1).create'
+            );
+            
+            fs.writeFileSync(componentFilePath, componentFileContent);
+            fs.writeFileSync(appDestFilePath, fs.readFileSync(appSrcFilePath));
+            
+            destination.write(
+                "/*\n" +
+                "    Toothrot Engine (v" + package.version + ")\n" +
+                "    Build time: " + (new Date().toUTCString()) + 
+                "\n*/\n"
+            );
+            
+            browserify(appDestFilePath).bundle(function (error, buffer) {
                 
-                maskBundlePaths(outputPath, components);
+                if (error) {
+                    logger.error(error);
+                    return;
+                }
                 
-                logger.success("Browser component bundle written successfully.");
+                destination.on("close", function () {
+                    
+                    maskBundlePaths(outputPath, components);
+                    
+                    logger.success("Browser component bundle written successfully.");
+                    
+                    logger.info("Removing temporary files...");
+                    
+                    rimraf(tmpDir, function (error) {
+                        
+                        if (error) {
+                            logger.error(error);
+                            return;
+                        }
+                        
+                        logger.success("Temporary files removed.");
+                    });
+                });
                 
-                logger.info("Removing temporary files...");
-                fs.unlinkSync(componentFilePath);
-                fs.unlinkSync(appDestFilePath);
-                fs.rmdirSync(tmpDir);
-                logger.success("Temporary files removed.");
+                destination.write(buffer);
+                destination.end();
+                
             });
             
-            destination.write(buffer);
-            destination.end();
-            
         });
-        
     }
     
     //
@@ -196,8 +202,8 @@ function create(context) {
         logger.success("File paths in browser bundle masked successfully.");
     }
     
-    function createTempFolderPath(dir) {
-        return joinPath(dir || os.tmpdir(), "/toothrot_" + Math.round(Math.random() * 10000));
+    function createTempFolderPath() {
+        return joinPath(os.tmpdir(), "/toothrot_" + Math.round(Math.random() * 10000));
     }
     
     function build(dir, outputDir, buildDesktop, then) {
@@ -255,19 +261,41 @@ function create(context) {
         
             createBootstrapFile(base, bundleFilePath);
             
+            logger.info("Copying files from `" + filesDir + "` to `" + tmpDir + "`...");
+            
             ncp(filesDir, tmpDir, function (error) {
                 
                 if (error) {
                     then(error);
-                    return console.error(error);
+                    return logger.error(error);
                 }
+                
+                logger.success("Files copied to `" + tmpDir + "`.");
+                
+                logger.info(
+                    "Copying temporary directory contents to output folder `" + browserDir + "`..."
+                );
                 
                 ncp(tmpDir, browserDir, function (error) {
                     
                     if (error) {
                         then(error);
-                        return console.error(error);
+                        return logger.error(error);
                     }
+                    
+                    logger.success("Files copied to `" + browserDir + "`.");
+                    
+                    logger.info("Removing temporary folder `" + tmpDir + "`...");
+                    
+                    rimraf(tmpDir, function (error) {
+                        
+                        if (error) {
+                            logger.error(error);
+                            return;
+                        }
+                        
+                        logger.success("Successfully removed temporary folder `" + tmpDir + "`.");
+                    });
                     
                     try {
                         rawResources = packer.pack(base);
