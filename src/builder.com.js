@@ -86,7 +86,8 @@ function create(context) {
         //
         // Using the toothrot folder here so that node_modules can be browserified as well.
         //
-        var tmpDir = createTempFolderPath(joinPath(TOOTHROT_DIR, "/build/"));
+        var buildPath = joinPath(TOOTHROT_DIR, "/build/");
+        var tmpDir = createTempFolderPath(buildPath);
         var components = gatherComponents(dir);
         var appSrcFilePath = joinPath(TOOTHROT_DIR, "/src/runtimes/browser.js");
         var appDestFilePath = joinPath(tmpDir, "/toothrot.js");
@@ -98,6 +99,11 @@ function create(context) {
         );
         
         logger.log("Creating bootstrap file for browser in `" + tmpDir + "`...");
+        
+        if (!fs.existsSync(buildPath)) {
+            logger.log("Creating build folder `" + buildPath + "`...");
+            fs.mkdirSync(buildPath);
+        }
         
         if (!fs.existsSync(tmpDir)) {
             logger.log("Creating temporary folder `" + tmpDir + "`...");
