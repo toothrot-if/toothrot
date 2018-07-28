@@ -79,7 +79,7 @@ function create(context) {
         return components;
     }
     
-    function createBootstrapFile(dir, outputPath) {
+    function createBootstrapFile(dir, outputPath, then) {
         
         var componentFileContent;
         
@@ -106,6 +106,7 @@ function create(context) {
             
             if (error) {
                 logger.error(error);
+                then(error);
                 return;
             }
             
@@ -130,6 +131,7 @@ function create(context) {
                 
                 if (error) {
                     logger.error(error);
+                    then(error);
                     return;
                 }
                 
@@ -145,10 +147,12 @@ function create(context) {
                         
                         if (error) {
                             logger.error(error);
+                            then(error);
                             return;
                         }
                         
                         logger.success("Temporary files removed.");
+                        then();
                     });
                 });
                 
@@ -259,108 +263,120 @@ function create(context) {
                 fs.mkdirSync(desktopDir);
             }
         
-            createBootstrapFile(base, bundleFilePath);
-            
-            logger.info("Copying files from `" + filesDir + "` to `" + tmpDir + "`...");
-            
-            ncp(filesDir, tmpDir, function (error) {
+            createBootstrapFile(base, bundleFilePath, function (error) {
                 
                 if (error) {
                     then(error);
                     return logger.error(error);
                 }
                 
-                logger.success("Files copied to `" + tmpDir + "`.");
+                logger.info("Copying files from `" + filesDir + "` to `" + tmpDir + "`...");
                 
-                logger.info(
-                    "Copying temporary directory contents to output folder `" + browserDir + "`..."
-                );
-                
-                ncp(tmpDir, browserDir, function (error) {
+                ncp(filesDir, tmpDir, function (error) {
                     
                     if (error) {
                         then(error);
                         return logger.error(error);
                     }
                     
-                    logger.success("Files copied to `" + browserDir + "`.");
+                    logger.success("Files copied to `" + tmpDir + "`.");
                     
-                    logger.info("Removing temporary folder `" + tmpDir + "`...");
+                    logger.info(
+                        "Copying temporary directory contents to output folder `" +
+                        browserDir + "`..."
+                    );
                     
-                    rimraf(tmpDir, function (error) {
+                    ncp(tmpDir, browserDir, function (error) {
                         
                         if (error) {
-                            logger.error(error);
-                            return;
-                        }
-                        
-                        logger.success("Successfully removed temporary folder `" + tmpDir + "`.");
-                    });
-                    
-                    try {
-                        rawResources = packer.pack(base);
-                    }
-                    catch (error) {
-                        
-                        if (error.isToothrotError) {
                             then(error);
-                            logger.error(error.toothrotMessage);
-                            return;
+                            return logger.error(error);
                         }
                         
-                        if (Array.isArray(error)) {
-                            reportErrors(error);
-                            then(error);
-                            return;
-                        }
+                        logger.success("Files copied to `" + browserDir + "`.");
                         
-                        throw error;
-                    }
-                    
-                    project.name = JSON.parse(rawResources).story.meta.title || project.name;
-                    resources = new Buffer(encodeURIComponent(rawResources)).toString("base64");
-                    
-                    indexContent = "(function () {" +
-                            "window.toothrotResources = '" + resources + "';" +
-                        "}());";
-                    
-                    fs.writeFileSync(browserDir + "resources.js", indexContent);
-                    fs.writeFileSync(projectFile, JSON.stringify(project, null, 4));
-                    
-                    logger.success("Toothrot project built successfully in: " + browserDir);
-                    
-                    createAppCacheFile(browserDir);
-                    
-                    if (buildDesktop) {
+                        logger.info("Removing temporary folder `" + tmpDir + "`...");
                         
-                        logger.log("Building desktop apps...");
-                        
-                        fs.writeFileSync(
-                            normalize(browserDir + "/package.json"),
-                            JSON.stringify(project, null, 4)
-                        );
-                        
-                        buildDesktopApps(
-                            buildDir,
-                            project.electron || {},
-                            function (error) {
-                                
-                                if (error) {
-                                    then(error);
-                                    logger.error("Cannot build desktop apps: " + error);
-                                    return;
-                                }
-                                
-                                then(null);
-                                logger.success("Desktop apps build in: " + desktopDir);
+                        rimraf(tmpDir, function (error) {
+                            
+                            if (error) {
+                                logger.error(error);
+                                return;
                             }
-                        );
-                    }
-                    else {
-                        then(null);
-                    }
+                            
+                            logger.success(
+                                "Successfully removed temporary folder `" + tmpDir + "`."
+                            );
+                        });
+                        
+                        try {
+                            rawResources = packer.pack(base);
+                        }
+                        catch (error) {
+                            
+                            if (error.isToothrotError) {
+                                then(error);
+                                logger.error(error.toothrotMessage);
+                                return;
+                            }
+                            
+                            if (Array.isArray(error)) {
+                                reportErrors(error);
+                                then(error);
+                                return;
+                            }
+                            
+                            throw error;
+                        }
+                        
+                        project.name = JSON.parse(rawResources).story.meta.title || project.name;
+                        resources = new Buffer(encodeURIComponent(rawResources)).toString("base64");
+                        
+                        indexContent = "(function () {" +
+                                "window.toothrotResources = '" + resources + "';" +
+                            "}());";
+                        
+                        fs.writeFileSync(browserDir + "resources.js", indexContent);
+                        fs.writeFileSync(projectFile, JSON.stringify(project, null, 4));
+                        
+                        logger.success("Toothrot project built successfully in: " + browserDir);
+                        
+                        createAppCacheFile(browserDir, function () {
+                            
+                            if (buildDesktop) {
+                                
+                                logger.log("Building desktop apps...");
+                                
+                                fs.writeFileSync(
+                                    normalize(browserDir + "/package.json"),
+                                    JSON.stringify(project, null, 4)
+                                );
+                                
+                                buildDesktopApps(
+                                    buildDir,
+                                    project.electron || {},
+                                    function (error) {
+                                        
+                                        if (error) {
+                                            then(error);
+                                            logger.error("Cannot build desktop apps: " + error);
+                                            return;
+                                        }
+                                        
+                                        then(null);
+                                        logger.success("Desktop apps build in: " + desktopDir);
+                                    }
+                                );
+                            }
+                            else {
+                                then(null);
+                            }
+                        });
+                        
+                    });
                 });
             });
+            
         }
     }
     
@@ -399,7 +415,7 @@ function create(context) {
         
     }
     
-    function createAppCacheFile(dir) {
+    function createAppCacheFile(dir, then) {
         
         var cacheFile = "" +
             "CACHE MANIFEST\n" +
@@ -413,7 +429,8 @@ function create(context) {
         recurse(dir, function (error, files) {
             
             if (error) {
-                return console.error(error);
+                then(error);
+                return;
             }
             
             files.forEach(function (file) {
@@ -423,6 +440,8 @@ function create(context) {
             fs.writeFileSync(cacheFilePath, cacheFile);
             
             logger.success("Created appcache file at: " + cacheFilePath);
+            
+            then();
         });
         
         function normalizePath(path) {
