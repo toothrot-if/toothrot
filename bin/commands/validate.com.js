@@ -22,7 +22,7 @@ function create(context) {
             
             var commands = fn();
             
-            commands.init = {
+            commands.validate = {
                 run: validate,
                 brief: "validates a story file",
                 usage: "[<path>]",
