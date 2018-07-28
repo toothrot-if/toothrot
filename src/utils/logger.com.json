@@ -4,7 +4,7 @@
     "application": "toothrot",
     "applicationVersion": "2.x",
     "applicationSteps": ["build", "run"],
-    "environments": ["cli", "browser"],
+    "environments": ["cli", "browser", "node"],
     "offers": ["logger"],
     "file": "./logger.com.js"
 }

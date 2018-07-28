@@ -31,6 +31,14 @@ function createToothrotApp(config) {
             }
             
             if (
+                !("environments" in component) ||
+                !Array.isArray(component.environments) ||
+                component.environments.indexOf("node") < 0
+            ) {
+                return;
+            }
+            
+            if (
                 !config.debug &&
                 // @ts-ignore
                 Array.isArray(component.flags) &&
