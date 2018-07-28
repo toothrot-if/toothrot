@@ -144,6 +144,8 @@ strong, b {
     margin-right: auto;
     margin-bottom: 20px;
     overflow: hidden;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;

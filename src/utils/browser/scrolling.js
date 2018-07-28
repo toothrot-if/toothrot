@@ -14,7 +14,7 @@ function hideScrollbar(element) {
     
     var scrollbarWidth = getScrollbarWidth(element);
     
-    element.style.overflowY = "auto";
+    element.style.overflowY = "scroll";
     element.style.overflowX = "hidden";
     element.style.transform = "translate(" + scrollbarWidth + "px, 0px)";
 }

@@ -118,7 +118,7 @@ function create(context) {
         screenContainer.setAttribute("class", "screen-container");
         
         container.appendChild(text);
-        container.appendChild(screenContainer);
+        document.body.appendChild(screenContainer);
         document.body.appendChild(bg1);
         document.body.appendChild(bg2);
         document.body.appendChild(bg3);

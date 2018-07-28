@@ -379,7 +379,7 @@ function create(context) {
             return then();
         }
         
-        context.call("ui/getStageContainer").appendChild(curtain);
+        document.body.appendChild(curtain);
         
         curtain.style.display = "";
         curtainVisible = true;
@@ -393,7 +393,12 @@ function create(context) {
     function hideCurtain(then) {
         
         if (!curtainVisible) {
-            return then();
+            
+            if (then) {
+                then();
+            }
+            
+            return;
         }
         
         curtainVisible = false;
@@ -403,7 +408,7 @@ function create(context) {
             curtain.style.display = "none";
             
             try {
-                context.call("ui/getStageContainer").removeChild(curtain);
+                document.body.removeChild(curtain);
             }
             catch (error) {
                 logger.error(error);
