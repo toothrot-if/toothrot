@@ -8,8 +8,10 @@ function create(context) {
     var system = context.createInterface("system", {
         exit: exit,
         canExit: canExit,
+        fullscreen: fullscreen,
         getFeatures: getFeatures,
         hasFullscreen: hasFullscreen,
+        hasBrowserFullscreen: hasBrowserFullscreen,
         toggleFullscreen: toggleFullscreen,
         enterFullscreen: fullscreen,
         exitFullscreen: exitFullscreen,
@@ -70,10 +72,12 @@ function create(context) {
             return remote.getCurrentWindow().isFullScreen();
         }
         
-        return "fullscreenElement" in document ||
-            "mozFullScreenElement" in document ||
-            "msFullscreenElement" in document ||
-            "webkitFullscreenElement" in document;
+        return document.fullscreenElement ||
+            // @ts-ignore
+            document.mozFullScreenElement ||
+            // @ts-ignore
+            document.msFullscreenElement ||
+            document.webkitFullscreenElement;
     }
     
     function fullscreen() {
@@ -126,8 +130,15 @@ function create(context) {
         }
     }
     
+    function hasBrowserFullscreen() {
+        return "requestFullscreen" in document.documentElement ||
+            "msRequestFullscreen" in document.documentElement ||
+            "mozRequestFullScreen" in document.documentElement ||
+            "webkitRequestFullscreen" in document.documentElement;
+    }
+    
     function hasFullscreen() {
-        return runningElectron;
+        return runningElectron || system.hasBrowserFullscreen();
     }
     
     function canExit() {
