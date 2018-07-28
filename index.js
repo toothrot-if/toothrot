@@ -1,54 +1,50 @@
-/* global require */
+/* global __dirname, process */
 
-var clone = require("clone");
-var parser = require("./src/parser");
-var validator = require("./src/validator");
+var semver = require("semver");
+var createApp = require("multiversum/bootstrap").bootstrap;
 
-//
-// The `onError` parameter can be used to obtain errors as
-// they appear. If it's not supplied, errors are collected
-// and returned instead. If it *is* used, `unedfined` is
-// returned.
-//
-function validate(ast, onError) {
-    
-    var errors = [];
-    
-    validator(onError || collect).validate(ast);
-    
-    function collect(error) {
-        errors.push(error);
-    }
-    
-    if (onError) {
-        return;
-    }
-    
-    return errors;
-}
+// @ts-ignore
+var package = require("./package.json");
+var TOOTHROT_DIR = __dirname;
 
-function parseNodeContent(originalNode, then) {
+function createToothrotApp(config) {
     
-    var errors = [];
-    var node = clone(originalNode);
+    config = config || {};
+    config.applicationStep = config.applicationStep || "build";
+    config.debug = config.debug === true;
+    config.paths = Array.isArray(config.paths) ? config.paths : [];
     
-    node.links = node.links || [];
-    node.scripts = node.scripts || [];
+    config.paths.unshift(TOOTHROT_DIR);
+    config.paths.unshift(process.cwd());
     
-    parser.parseNodeContent(collect, node);
-    
-    function collect(error) {
-        errors.push(error);
-    }
-    
-    then(errors.length ? errors : null, errors.length ? null : node);
+    return createApp(config.paths, {
+        patterns: ["**/*.com.json"],
+        onError: config.debug ? (config.onError || undefined) : (config.onError || function () {}),
+        filter: function (component) {
+            
+            if (component.application !== "toothrot") {
+                return false;
+            }
+            
+            if (!semver.satisfies(package.version, component.applicationVersion)) {
+                return false;
+            }
+            
+            if (
+                !config.debug &&
+                // @ts-ignore
+                Array.isArray(component.flags) &&
+                // @ts-ignore
+                component.flags.indexOf("debug") >= 0
+            ) {
+                return false;
+            }
+            
+            return component.applicationSteps.indexOf(config.applicationStep) >= 0;
+        }
+    });
 }
 
 module.exports = {
-    build: require("./src/builder").build,
-    init: require("./src/initializer").init,
-    pack: require("./src/packer").pack,
-    parse: parser.parse,
-    parseNodeContent: parseNodeContent,
-    validate: validate
+    createApp: createToothrotApp
 };
