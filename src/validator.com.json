@@ -6,5 +6,6 @@
     "applicationSteps": ["build"],
     "environments": ["cli", "node"],
     "offers": ["validator"],
+    "requires": ["toothrotErrors"],
     "file": "./validator.com.js"
 }

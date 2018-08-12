@@ -6,6 +6,12 @@
     "applicationSteps": ["build"],
     "environments": ["cli", "node"],
     "offers": ["builder"],
-    "requires": ["logger", "packer"],
+    "requires": ["logger", "packer", "toothrotGatherer", "fileSystem"],
+    "modules": ["path", "assert", "semver", "minimatch"],
+    "resources": {
+        "toothrotPackageInfo": "../package.json",
+        "toothrotResourcesTemplate": "../misc/templates/resources.js",
+        "toothrotComponentTemplate": "../misc/templates/component.js"
+    },
     "file": "./builder.com.js"
 }

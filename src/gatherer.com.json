@@ -1,0 +1,11 @@
+{
+    "name": "toothrotGatherer",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["build"],
+    "environments": ["cli", "node"],
+    "offers": ["toothrotGatherer"],
+    "modules": ["path", "vrep", "multiversum/host", "multiversum/gatherer"],
+    "file": "./gatherer.com.js"
+}

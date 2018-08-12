@@ -1,0 +1,23 @@
+{
+    "name": "uiScreens",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["browser"],
+    "offers": ["uiScreens"],
+    "requires": [
+        "env",
+        "vars",
+        "story",
+        "focus",
+        "system",
+        "scripts",
+        "storage",
+        "settings",
+        "resources",
+        "uiConfirmations"
+    ],
+    "modules": ["vrep", "transform-js"],
+    "file": "./screens.com.js"
+}

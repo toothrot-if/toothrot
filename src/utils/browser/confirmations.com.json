@@ -1,0 +1,11 @@
+{
+    "name": "uiConfirmations",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["browser"],
+    "offers": ["uiConfirmations"],
+    "requires": ["resources", "focus"],
+    "file": "./confirmations.com.js"
+}

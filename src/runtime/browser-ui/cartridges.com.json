@@ -1,0 +1,12 @@
+{
+    "name": "cartridges",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["browser"],
+    "offers": ["cartridges"],
+    "requires": ["interpreter", "resources", "uiConfirmations"],
+    "modules": ["png-cartridge"],
+    "file": "./cartridges.com.js"
+}

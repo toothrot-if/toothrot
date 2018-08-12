@@ -1,0 +1,12 @@
+{
+    "name": "highlighter",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["browser"],
+    "offers": ["highlighter"],
+    "requires": ["focus", "uiPositioning", "uiScrolling"],
+    "modules": ["transform-js"],
+    "file": "./highlighter.com.js"
+}

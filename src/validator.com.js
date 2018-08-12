@@ -1,14 +1,16 @@
 
-var each = require("enjoy-core/each");
-var createError = require("./utils/createError");
-
 function create(context) {
+    
+    var createError;
     
     var api = context.createInterface("validator", {
         createValidator: createValidator
     });
     
     function init() {
+        
+        createError = context.channel("toothrotErrors/createError").call;
+        
         context.connectInterface(api);
     }
     
@@ -18,7 +20,11 @@ function create(context) {
     
     function createValidator(handleError) {
         
-        var validateNodes = each(validateNode);
+        function validateNodes(nodes) {
+            Object.keys(nodes).forEach(function (key) {
+                validateNode(nodes[key], key, nodes);
+            });
+        }
         
         function validateAst(ast) {
             
@@ -125,13 +131,10 @@ function create(context) {
         }
         
         function validateOptions(node, nodes) {
-            
-            var validateEach = each(function (option) {
-                validateOption(option, node, nodes);
-            });
-            
             if (Array.isArray(node.options)) {
-                validateEach(node.options);
+                node.options.forEach(function (option) {
+                    validateOption(option, node, nodes);
+                });
             }
         }
         
@@ -163,12 +166,9 @@ function create(context) {
         }
         
         function validateLinks(node, nodes) {
-            
-            var validateEach = each(function (link) {
+            node.links.forEach(function (link) {
                 validateLink(link, node, nodes);
             });
-            
-            validateEach(node.links);
         }
         
         function validateLink(link, node, nodes) {

@@ -1,0 +1,12 @@
+{
+    "name": "nodes",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["any"],
+    "offers": ["nodes"],
+    "requires": ["env", "vars", "story"],
+    "modules": ["clone"],
+    "file": "./nodes.com.js"
+}

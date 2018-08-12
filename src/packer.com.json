@@ -7,5 +7,6 @@
     "environments": ["cli", "node"],
     "offers": ["packer"],
     "requires": ["parser"],
+    "modules": ["fs", "datauri", "path"],
     "file": "./packer.com.js"
 }

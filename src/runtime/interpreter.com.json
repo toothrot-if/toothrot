@@ -1,0 +1,12 @@
+{
+    "name": "interpreter",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["any"],
+    "offers": ["interpreter"],
+    "requires": ["env", "vars", "nodes", "focus", "story", "storage", "settings", "scripts"],
+    "modules": ["clone", "deepmerge"],
+    "file": "./interpreter.com.js"
+}

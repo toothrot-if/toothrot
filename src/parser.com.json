@@ -6,6 +6,7 @@
     "applicationSteps": ["build"],
     "environments": ["cli", "node"],
     "offers": ["parser"],
-    "requires": ["validator"],
+    "requires": ["validator", "toothrotErrors"],
+    "modules": ["marked", "clone"],
     "file": "./parser.com.js"
 }

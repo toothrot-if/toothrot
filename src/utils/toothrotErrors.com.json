@@ -1,0 +1,15 @@
+{
+    "name": "toothrotErrors",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["build", "run"],
+    "environments": ["cli", "browser", "node"],
+    "offers": ["toothrotErrors"],
+    "requires": ["resources"],
+    "modules": ["vrep"],
+    "resources": {
+        "toothrotErrors": "errors.json"
+    },
+    "file": "./toothrotErrors.com.js"
+}

@@ -1,7 +1,7 @@
 
-var colors = require("colors");
-
 function create(context) {
+    
+    var colors;
     
     var api = context.createInterface("logger", {
         log: log,
@@ -12,6 +12,7 @@ function create(context) {
     });
     
     function init() {
+        colors = context.channel("getModule").call("colors");
         context.connectInterface(api);
     }
     

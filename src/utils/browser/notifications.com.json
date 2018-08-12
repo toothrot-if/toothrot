@@ -1,0 +1,11 @@
+{
+    "name": "uiNotifications",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["browser"],
+    "offers": ["uiNotifications"],
+    "modules": ["vrep", "transform-js"],
+    "file": "./notifications.com.js"
+}

@@ -6,5 +6,7 @@
     "applicationSteps": ["build"],
     "environments": ["cli", "node"],
     "offers": ["initializer"],
+    "requires": ["logger", "fileSystem"],
+    "modules": ["path"],
     "file": "./initializer.com.js"
 }

@@ -1,14 +1,7 @@
-/* global require, process */
-
-var fs = require("fs");
-var toDataUri = require("datauri").sync;
-var normalize = require("path").normalize;
-
-var readStoryFiles = require("./utils/readStoryFiles");
 
 function create(context) {
     
-    var parser;
+    var parser, toDataUri, normalize;
     
     var api = context.createInterface("packer", {
         pack: pack,
@@ -17,29 +10,64 @@ function create(context) {
     });
     
     function init() {
+        
+        var getModule = context.channel("getModule").call;
+        
+        toDataUri = getModule("datauri").sync;
+        normalize = getModule("path").normalize;
         parser = context.getInterface("parser", ["parse"]);
+        
         context.connectInterface(api);
     }
     
     function destroy() {
+        
         parser = null;
+        
         context.disconnectInterface(api);
     }
     
-    function pack(dir) {
+    function readStoryFiles(fs, dir) {
         
-        dir = dir || process.cwd();
+        var mainFile = normalize(dir + "/story.trot.md");
+        var content = "<<<story.trot.md>>>\n";
+        var files = getAdditionalStoryFiles(fs, dir);
+        
+        content += fs.readFileSync(mainFile);
+        
+        files.forEach(function (file) {
+            
+            var fileContent = fs.readFileSync(normalize(dir + "/" + file));
+            
+            content += "<<<" + file + ">>>\n";
+            content += fileContent;
+        });
+        
+        return content;
+    }
+    
+    function getAdditionalStoryFiles(fs, dir) {
+        
+        var allFiles = fs.readdirSync(dir);
+        
+        return allFiles.filter(function (file) {
+            return (/\.trot\.ext\.md/).test(file);
+        });
+    }
+    
+    function pack(fs, dir) {
+        
+        var story, storyFilesContent, templatePath, screenPath, imagePath, astFile, templateFiles,
+            screenFiles, imageFiles, bundle;
+        
         dir = normalize(dir + "/resources/");
-        
-        var story;
-        var storyFilesContent;
-        var templatePath = normalize(dir + "/templates/");
-        var screenPath = normalize(dir + "/screens/");
-        var imagePath = normalize(dir + "/images/");
-        var astFile = normalize(dir + "/ast.json");
-        var templateFiles = fs.readdirSync(templatePath);
-        var screenFiles = fs.readdirSync(screenPath);
-        var imageFiles = fs.readdirSync(imagePath);
+        templatePath = normalize(dir + "/templates/");
+        screenPath = normalize(dir + "/screens/");
+        imagePath = normalize(dir + "/images/");
+        astFile = normalize(dir + "/ast.json");
+        templateFiles = fs.readdirSync(templatePath);
+        screenFiles = fs.readdirSync(screenPath);
+        imageFiles = fs.readdirSync(imagePath);
         
         //
         // If there's an AST file in the resources folder (created by e.g. toothrot builder)
@@ -49,7 +77,7 @@ function create(context) {
             story = JSON.parse("" + fs.readFileSync(astFile));
         }
         else {
-            storyFilesContent = api.readStoryFiles(dir);
+            storyFilesContent = api.readStoryFiles(fs, dir);
             parser.parse("" + storyFilesContent, function (errors, ast) {
                 
                 if (errors) {
@@ -60,7 +88,7 @@ function create(context) {
             });
         }
         
-        var bundle = {
+        bundle = {
             meta: {
                 buildTime: Date.now()
             },

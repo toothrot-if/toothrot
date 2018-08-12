@@ -6,5 +6,6 @@
     "applicationSteps": ["build", "run"],
     "environments": ["cli", "browser", "node"],
     "offers": ["logger"],
+    "modules": ["colors"],
     "file": "./logger.com.js"
 }

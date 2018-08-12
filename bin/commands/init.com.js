@@ -1,5 +1,7 @@
 /* global process */
 
+var fs = require("fs");
+
 function create(context) {
     
     var initializer;
@@ -35,7 +37,7 @@ function create(context) {
         
         var path = args.args[1];
         
-        initializer.init(path || process.cwd());
+        initializer.init(fs, path || process.cwd());
     }
     
     return {

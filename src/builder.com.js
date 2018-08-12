@@ -1,421 +1,192 @@
-/* global require, Buffer, process, __dirname */
-
-var fs = require("fs");
-var ncp = require("ncp").ncp;
-var rimraf = require("rimraf");
-var semver = require("semver");
-var joinPath = require("path").join;
-var getBaseName = require("path").basename;
-var browserify = require("browserify");
-var normalize = require("path").normalize;
-var os = require("os");
-var recurse = require('recursive-readdir');
-var merge = require("deepmerge");
-var createGatherer = require("multiversum/gatherer").create;
-
-var TOOTHROT_DIR = joinPath(__dirname, "/../");
-
-// @ts-ignore
-var package = require(joinPath(TOOTHROT_DIR, "/package.json"));
+/* global require, Buffer, process */
 
 function create(context) {
     
-    var logger, packer;
+    var logger, packer, joinPath, normalize, gatherer, fsHelper;
     
     var api = context.createInterface("builder", {
         build: build,
-        buildDesktopApps: buildDesktopApps,
         createAppCacheFile: createAppCacheFile,
         reportErrors: reportErrors
     });
     
     function init() {
+        
+        var getModule = context.channel("getModule");
+        var path = getModule("path");
+        
+        joinPath = path.join;
+        normalize = path.normalize;
+        
         logger = context.getInterface("logger", ["log", "error", "info", "success"]);
         packer = context.getInterface("packer", ["pack"]);
+        gatherer = context.getInterface("toothrotGatherer", ["renderTemplate"]);
+        
+        fsHelper = context.getInterface("fileSystem", [
+            "copyAll",
+            "removeRecursive",
+            "readDirRecursive"
+        ]);
+        
         context.connectInterface(api);
     }
     
     function destroy() {
+        
         logger = null;
         packer = null;
+        gatherer = null;
+        
         context.disconnectInterface(api);
     }
     
-    function gatherComponents(dir) {
+    function gathererDependencyInjector(fs) {
         
-        var gatherer = createGatherer(context);
+        var getModule = context.channel("getModule");
         
-        gatherer.init();
+        var modules = {
+            fs: fs,
+            assert: getModule("assert"),
+            semver: getModule("semver"),
+            minimatch: getModule("minimatch")
+        };
         
-        logger.info("Gathering components in `" + dir + "` and `" + TOOTHROT_DIR + "`...");
+        return function (host) {
+            host.decorate("getModule", function (fn) {
+                return function (name) {
+                    
+                    var result = fn(name);
+                    
+                    if (result) {
+                        return result;
+                    }
+                    
+                    return name in modules ? modules[name] : getModule(name);
+                };
+            });
+        };
+    }
+    
+    function gatherComponents(fs, dir) {
         
-        var components = gatherer.gather([TOOTHROT_DIR, dir], {
-            patterns: ["**/*.com.json"],
-            filter: function (component) {
-                
-                var result = false;
-                
-                if (component.application !== "toothrot") {
-                    return false;
-                }
-                
-                if (!semver.satisfies(package.version, component.applicationVersion)) {
-                    return false;
-                }
-                
-                result = component.applicationSteps.indexOf("run") >= 0;
-                
-                if (result) {
-                    // @ts-ignore
-                    logger.log("Component added:", component.file);
-                }
-                
-                return result;
-            }
+        var componentFile, template, componentTemplate;
+        var getResource = context.channel("getResource");
+        
+        logger.info("Gathering components in `" + dir + "`...");
+        
+        template = getResource("toothrotResourcesTemplate");
+        componentTemplate = getResource("toothrotComponentTemplate");
+        
+        componentFile = gatherer.renderTemplate(fs, template, componentTemplate, {
+            paths: [dir],
+            prepareHost: gathererDependencyInjector(fs)
         });
         
         logger.success("Component gathering completed.");
         
-        return components;
+        return componentFile;
     }
     
-    function createBootstrapFile(dir, outputPath, then) {
+    function createBootstrapFiles(inputFs, dir, outputFs, outputPath) {
         
-        var componentFileContent;
-        
-        var modulesPath = joinPath(TOOTHROT_DIR, "/node_modules/");
-        var tmpDir = createTempFolderPath();
-        var components = gatherComponents(dir);
-        var appSrcFilePath = joinPath(TOOTHROT_DIR, "/src/runtimes/browser.js");
-        var appDestFilePath = joinPath(tmpDir, "/toothrot.js");
-        var componentFilePath = joinPath(tmpDir, "/components.js");
-        var destination = fs.createWriteStream(outputPath);
+        var runtimePath = joinPath(dir, "toothrot.js");
+        var componentFileContent = gatherComponents(inputFs, dir);
+        var appDestFilePath = joinPath(outputPath, "/toothrot.js");
+        var componentFilePath = joinPath(outputPath, "/components.js");
         
         logger.info(
-            "Bundling browser components for project in `" + dir + "` as `" + outputPath + "`..."
+            "Bundling browser components for project in `" + dir + "`..."
         );
         
-        logger.log("Creating bootstrap file for browser in `" + tmpDir + "`...");
+        logger.log("Creating bootstrap file for browser in `" + outputPath + "`...");
         
-        if (!fs.existsSync(tmpDir)) {
-            logger.log("Creating temporary folder `" + tmpDir + "`...");
-            fs.mkdirSync(tmpDir);
+        if (!outputFs.existsSync(outputPath)) {
+            logger.log("Creating temporary folder `" + outputPath + "`...");
+            outputFs.mkdirSync(outputPath);
         }
         
-        ncp(modulesPath, joinPath(tmpDir, "/node_modules/"), function (error) {
-            
-            if (error) {
-                logger.error(error);
-                then(error);
-                return;
-            }
-            
-            componentFileContent = "module.exports = " + JSON.stringify(components, null, 4) + ";";
-            
-            componentFileContent = componentFileContent.replace(
-                /"file":[^"]*(".*")/g,
-                '"create": require($1).create'
-            );
-            
-            fs.writeFileSync(componentFilePath, componentFileContent);
-            fs.writeFileSync(appDestFilePath, fs.readFileSync(appSrcFilePath));
-            
-            destination.write(
-                "/*\n" +
-                "    Toothrot Engine (v" + package.version + ")\n" +
-                "    Build time: " + (new Date().toUTCString()) + 
-                "\n*/\n"
-            );
-            
-            browserify(appDestFilePath).bundle(function (error, buffer) {
-                
-                if (error) {
-                    logger.error(error);
-                    then(error);
-                    return;
-                }
-                
-                destination.on("close", function () {
-                    
-                    maskBundlePaths(outputPath, components);
-                    
-                    logger.success("Browser component bundle written successfully.");
-                    
-                    logger.info("Removing temporary files...");
-                    
-                    rimraf(tmpDir, function (error) {
-                        
-                        if (error) {
-                            logger.error(error);
-                            then(error);
-                            return;
-                        }
-                        
-                        logger.success("Temporary files removed.");
-                        then();
-                    });
-                });
-                
-                destination.write(buffer);
-                destination.end();
-                
-            });
-            
-        });
+        outputFs.writeFileSync(appDestFilePath, inputFs.readFileSync(runtimePath));
+        outputFs.writeFileSync(componentFilePath, componentFileContent);
+        
+        logger.success("Browser component bundle written successfully.");
+        
     }
     
-    //
-    // We're removing the absolute file paths from our bundle to prevent leaking sensitive
-    // information about a user's computer.
-    //
-    function maskBundlePaths(file, components) {
-        
-        var content = "" + fs.readFileSync(file);
-        
-        logger.log("Masking file paths in browser bundle...");
-        
-        Object.keys(components).forEach(function (key) {
-            
-            var component = components[key];
-            
-            var jsFileName = "<masked_path_" + Math.round(Math.random() * 1000000) + ">/" +
-                getBaseName(component.file);
-            
-            var jsonFileName = "<masked_path_" + Math.round(Math.random() * 1000000) + ">/" +
-                getBaseName(component.definitionFile);
-            
-            content = content.replace(
-                new RegExp('"' + component.file + '"', "g"), '"' + jsFileName + '"'
-            );
-            
-            content = content.replace(
-                new RegExp("'" + component.file + "'", "g"), '"' + jsFileName + '"'
-            );
-            
-            content = content.replace(
-                new RegExp('"' + component.definitionFile + '"', "g"), '"' + jsonFileName + '"'
-            );
-            
-            content = content.replace(
-                new RegExp("'" + component.definitionFile + "'", "g"), '"' + jsonFileName + '"'
-            );
-        });
-        
-        fs.writeFileSync(file, content);
-        
-        logger.success("File paths in browser bundle masked successfully.");
-    }
-    
-    function createTempFolderPath() {
-        return joinPath(os.tmpdir(), "/toothrot_" + Math.round(Math.random() * 10000));
-    }
-    
-    function build(dir, outputDir, buildDesktop, then) {
+    function build(inputFs, dir, outputFs, outputDir, then) {
         
         var rawResources, resources, indexContent;
         
         var base = normalize((dir || process.cwd()) + "/");
         var buildDir = normalize(outputDir || (base + "build/"));
         var browserDir = joinPath(buildDir, "/browser/");
-        var desktopDir = joinPath(buildDir, "/desktop/");
-        var bundleFilePath = joinPath(browserDir, "/toothrot.js");
-        var tmpDir = createTempFolderPath();
         var filesDir = joinPath(base, "/files/");
         var projectFile = joinPath(base, "/project.json");
-        var project = JSON.parse("" + fs.readFileSync(projectFile));
+        var project = JSON.parse("" + inputFs.readFileSync(projectFile));
         
         then = then || function () {};
         
-        if (!fs.existsSync(buildDir)) {
-            fs.mkdirSync(buildDir);
+        if (!outputFs.existsSync(buildDir)) {
+            outputFs.mkdirSync(buildDir);
         }
         
-        if (buildDesktop && fs.existsSync(desktopDir)) {
-            if (fs.existsSync(browserDir)) {
-                rimraf(browserDir, function () {
-                    rimraf(desktopDir, function () {
-                        copyContents();
-                    });
-                });
-            }
-            else {
-                rimraf(desktopDir, function () {
-                    copyContents();
-                });
-            }
-        }
-        else if (fs.existsSync(browserDir)) {
-            rimraf(browserDir, function () {
-                copyContents();
-            });
-        }
-        else {
-            copyContents();
+        if (outputFs.existsSync(browserDir)) {
+            fsHelper.removeRecursive(outputFs, browserDir);
         }
         
-        function copyContents() {
+        outputFs.mkdirSync(browserDir);
+        
+        createBootstrapFiles(inputFs, base, outputFs, browserDir);
+        
+        logger.info("Copying files from `" + filesDir + "` to `" + browserDir + "`...");
+        
+        fsHelper.copyAll(inputFs, filesDir, outputFs, browserDir);
+        
+        logger.success("Files copied to `" + browserDir + "`.");
+        
+        try {
+            rawResources = packer.pack(inputFs, base);
+        }
+        catch (error) {
             
-            if (!fs.existsSync(browserDir)) {
-                fs.mkdirSync(browserDir);
+            if (error.isToothrotError) {
+                then(error);
+                logger.error(error.toothrotMessage);
+                return;
             }
             
-            if (buildDesktop && !fs.existsSync(desktopDir)) {
-                fs.mkdirSync(desktopDir);
+            if (Array.isArray(error)) {
+                reportErrors(error);
+                then(error);
+                return;
             }
-        
-            createBootstrapFile(base, bundleFilePath, function (error) {
-                
-                if (error) {
-                    then(error);
-                    return logger.error(error);
-                }
-                
-                logger.info("Copying files from `" + filesDir + "` to `" + tmpDir + "`...");
-                
-                ncp(filesDir, tmpDir, function (error) {
-                    
-                    if (error) {
-                        then(error);
-                        return logger.error(error);
-                    }
-                    
-                    logger.success("Files copied to `" + tmpDir + "`.");
-                    
-                    logger.info(
-                        "Copying temporary directory contents to output folder `" +
-                        browserDir + "`..."
-                    );
-                    
-                    ncp(tmpDir, browserDir, function (error) {
-                        
-                        if (error) {
-                            then(error);
-                            return logger.error(error);
-                        }
-                        
-                        logger.success("Files copied to `" + browserDir + "`.");
-                        
-                        logger.info("Removing temporary folder `" + tmpDir + "`...");
-                        
-                        rimraf(tmpDir, function (error) {
-                            
-                            if (error) {
-                                logger.error(error);
-                                return;
-                            }
-                            
-                            logger.success(
-                                "Successfully removed temporary folder `" + tmpDir + "`."
-                            );
-                        });
-                        
-                        try {
-                            rawResources = packer.pack(base);
-                        }
-                        catch (error) {
-                            
-                            if (error.isToothrotError) {
-                                then(error);
-                                logger.error(error.toothrotMessage);
-                                return;
-                            }
-                            
-                            if (Array.isArray(error)) {
-                                reportErrors(error);
-                                then(error);
-                                return;
-                            }
-                            
-                            throw error;
-                        }
-                        
-                        project.name = JSON.parse(rawResources).story.meta.title || project.name;
-                        resources = new Buffer(encodeURIComponent(rawResources)).toString("base64");
-                        
-                        indexContent = "(function () {" +
-                                "window.toothrotResources = '" + resources + "';" +
-                            "}());";
-                        
-                        fs.writeFileSync(browserDir + "resources.js", indexContent);
-                        fs.writeFileSync(projectFile, JSON.stringify(project, null, 4));
-                        
-                        logger.success("Toothrot project built successfully in: " + browserDir);
-                        
-                        createAppCacheFile(browserDir, function () {
-                            
-                            if (buildDesktop) {
-                                
-                                logger.log("Building desktop apps...");
-                                
-                                fs.writeFileSync(
-                                    normalize(browserDir + "/package.json"),
-                                    JSON.stringify(project, null, 4)
-                                );
-                                
-                                buildDesktopApps(
-                                    buildDir,
-                                    project.electron || {},
-                                    function (error) {
-                                        
-                                        if (error) {
-                                            then(error);
-                                            logger.error("Cannot build desktop apps: " + error);
-                                            return;
-                                        }
-                                        
-                                        then(null);
-                                        logger.success("Desktop apps build in: " + desktopDir);
-                                    }
-                                );
-                            }
-                            else {
-                                then(null);
-                            }
-                        });
-                        
-                    });
-                });
-            });
             
-        }
-    }
-    
-    function buildDesktopApps(buildDir, config, then) {
-        
-        var options = merge({}, config);
-        var package = require("electron-packager");
-        var browserDir = joinPath(buildDir, "/browser/");
-        var desktopDir = joinPath(buildDir, "/desktop/");
-        var cacheDir = joinPath(os.homedir(), "/toothrot-cache/");
-        
-        if (!Array.isArray(config.platform) || config.platform.length < 1) {
-            then("no electron platforms specified");
-            return;
+            throw error;
         }
         
-        if (!fs.existsSync(cacheDir)) {
-            fs.mkdirSync(cacheDir);
-        }
+        project.name = JSON.parse(rawResources).story.meta.title || project.name;
+        resources = new Buffer(encodeURIComponent(rawResources)).toString("base64");
         
-        options = merge(options, {
-            dir: browserDir,
-            out: desktopDir,
-            platform: config.platform,
-            version: config.version,
-            prune: "prune" in config ? config.prune : false,
-            asar: "asar" in config ? config.asar : true,
-            overwrite: "overwrite" in config ? config.overwrite : true,
-            tmpdir: "tmpdir" in config ? config.tmpdir : false,
-            download: {
-                cache: config.download && config.download.cache ? config.download.cache : cacheDir
-            }
-        });
+        indexContent = "(function () {\n" +
+                "    var toothrotResources = '" + resources + "';\n" +
+                '    TOOTHROT.decorate("getResource", function (fn) {\n' +
+                "        return function (name) {\n" +
+                "            var result = fn(name);\n" +
+                "            if (result) { return result; }\n" +
+                '            return name === "toothrotResources" ? toothrotResources : null;\n' +
+                "        };\n" +
+                '    });\n' +
+            "}());";
         
-        return package(options, then);
+        outputFs.writeFileSync(browserDir + "resources.js", indexContent);
+        outputFs.writeFileSync(projectFile, JSON.stringify(project, null, 4));
+        
+        logger.success("Toothrot project built successfully in: " + browserDir);
+        
+        createAppCacheFile(outputFs, browserDir, then);
         
     }
     
-    function createAppCacheFile(dir, then) {
+    function createAppCacheFile(fs, dir, then) {
         
         var cacheFile = "" +
             "CACHE MANIFEST\n" +
@@ -425,24 +196,17 @@ function create(context) {
             "CACHE:\n";
         
         var cacheFilePath = normalize(dir + "/cache.manifest");
+        var files = fsHelper.readDirRecursive(fs, dir);
         
-        recurse(dir, function (error, files) {
-            
-            if (error) {
-                then(error);
-                return;
-            }
-            
-            files.forEach(function (file) {
-                cacheFile += normalizePath(file) + "\n";
-            });
-            
-            fs.writeFileSync(cacheFilePath, cacheFile);
-            
-            logger.success("Created appcache file at: " + cacheFilePath);
-            
-            then();
+        files.forEach(function (file) {
+            cacheFile += normalizePath(file) + "\n";
         });
+        
+        fs.writeFileSync(cacheFilePath, cacheFile);
+        
+        logger.success("Created appcache file at: " + cacheFilePath);
+        
+        then();
         
         function normalizePath(path) {
             return (path.split(dir)[1] || "").replace("\\", "/");

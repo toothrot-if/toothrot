@@ -1,15 +1,9 @@
 /* global require, __dirname */
 /* eslint-disable camelcase */
 
-var fs = require("fs");
-var path = require("path");
-var ncp = require("ncp").ncp;
-
-var resourceDir = path.normalize(__dirname + "/../resources/");
-
 function create(context) {
     
-    var logger;
+    var logger, path, resourceDir, fsHelper;
     
     var api = context.createInterface("initializer", {
         getFolderName: getFolderName,
@@ -17,7 +11,14 @@ function create(context) {
     });
     
     function init() {
+        
+        var getModule = context.channel("getModule").call;
+        
+        path = getModule("path");
         logger = context.getInterface("logger", ["log", "error", "info", "success"]);
+        fsHelper = context.getInterface("fileSystem", ["copyAll"]);
+        resourceDir = path.join(__dirname, "/../resources/");
+        
         context.connectInterface(api);
     }
     
@@ -35,7 +36,7 @@ function create(context) {
         return parts.pop();
     }
     
-    function initProject(dir, then) {
+    function initProject(fs, dir, then) {
         
         var name = getFolderName(dir) || "My Toothrot Engine Project";
         
@@ -64,27 +65,27 @@ function create(context) {
         
         logger.info("Copying required resources...");
         
-        ncp(resourceDir, dir, function (error) {
-            
-            if (error) {
-                then(error);
-                return logger.error(error);
-            }
-            
-            logger.success("Resources copied.");
-            logger.log("Creating `project.json` file...");
-            
-            fs.writeFileSync(
-                path.normalize(dir + "/project.json"), JSON.stringify(project, null, 4)
-            );
-            
-            logger.log("Setting story title to project name...");
-            
-            setStoryName();
-            
-            logger.success("Initialized Toothrot Engine project '" + name + "' in " + dir + ".");
-            then(null);
-        });
+        fsHelper.copyAll(fs, resourceDir, fs, dir);
+        
+        fs.writeFileSync(
+            path.join(dir, "toothrot.js"),
+            fs.readFileSync(path.join(__dirname, "../build", "toothrot.js"))
+        );
+        
+        logger.success("Resources copied.");
+        logger.log("Creating `project.json` file...");
+        
+        fs.writeFileSync(
+            path.normalize(dir + "/project.json"), JSON.stringify(project, null, 4)
+        );
+        
+        logger.log("Setting story title to project name...");
+        
+        setStoryName();
+        
+        logger.success("Initialized Toothrot Engine project '" + name + "' in " + dir + ".");
+        
+        then(null);
         
         function setStoryName() {
             

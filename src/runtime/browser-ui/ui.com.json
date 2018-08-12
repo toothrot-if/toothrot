@@ -1,0 +1,28 @@
+{
+    "name": "ui",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["browser"],
+    "requires": [
+        "nodes",
+        "uiScreens",
+        "highlighter",
+        "env",
+        "vars",
+        "story",
+        "system",
+        "settings",
+        "resources",
+        "focus",
+        "interpreter",
+        "uiConfirmations",
+        "uiScrolling",
+        "uiNotifications",
+        "uiRevealEffect",
+        "domUtils"
+    ],
+    "modules": ["vrep"],
+    "file": "./ui.com.js"
+}

@@ -1,12 +1,5 @@
 /* global require, module */
 
-var each = require("enjoy-core/each");
-var bind = require("enjoy-core/bind");
-var clone = require("clone");
-var parseMarkdown = require("marked");
-
-var createError = require("./utils/createError");
-
 var scriptPattern = /```js @([a-zA-Z0-9_]+)((.|\n)*?)\n```/g;
 var settingsPattern = /```json @settings((.|\n)*?)\n```/g;
 var hierarchyPattern = /```json @hierarchy((.|\n)*?)\n```/g;
@@ -16,7 +9,7 @@ var currentFileLineOffset = 0;
 
 function create(context) {
     
-    var validator;
+    var validator, createError, marked, clone;
     
     var api = context.createInterface("parser", {
         parse: parse,
@@ -46,7 +39,12 @@ function create(context) {
     
     function init() {
         
+        var getModule = context.channel("getModule").call;
+        
+        clone = getModule("clone");
+        marked = getModule("marked");
         validator = context.getInterface("validator", ["createValidator"]);
+        createError = context.channel("toothrotErrors", ["createError"]);
         
         context.connectInterface(api);
     }
@@ -56,6 +54,10 @@ function create(context) {
         validator = null;
         
         context.disconnectInterface(api);
+    }
+    
+    function parseMarkdown() {
+        return marked.apply(null, arguments);
     }
     
     //
@@ -86,7 +88,9 @@ function create(context) {
         text = removeComments(text);
         ast = parseStructure(text, handleError);
         
-        each(bind(api.parseNodeContent, handleError), ast.nodes);
+        Object.keys(ast.nodes).forEach(function (key) {
+            api.parseNodeContent(handleError, ast.nodes[key]);
+        });
         
         validateAst(ast);
         normalizeWasIn(ast.nodes);

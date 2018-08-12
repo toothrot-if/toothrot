@@ -1,0 +1,11 @@
+{
+    "name": "system",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["run"],
+    "environments": ["any"],
+    "offers": ["system"],
+    "modules": ["clone"],
+    "file": "./system.com.js"
+}

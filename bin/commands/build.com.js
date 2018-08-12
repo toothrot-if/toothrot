@@ -1,4 +1,6 @@
 
+var fs = require("fs");
+
 function create(context) {
     
     var builder;
@@ -35,7 +37,7 @@ function create(context) {
         var path = args.args[1];
         var outputDir = args.args[2];
         
-        builder.build(path, outputDir, false);
+        builder.build(fs, path, fs, outputDir);
     }
     
     return {
