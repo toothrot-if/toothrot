@@ -4,7 +4,7 @@
     
     Toothrot Engine Runtime (v2.0.0)
     
-    Build Time: Sat, 11 Aug 2018 21:02:00 GMT
+    Build Time: Tue, 14 Aug 2018 17:39:01 GMT
    
    ---------------------------------------------------------------------------------------------- */
 
@@ -31,6 +31,18 @@
     });
     
     host.connect("getResource", function () {
+        return null;
+    });
+    
+    host.connect("getNodeScript", function () {
+        return null;
+    });
+    
+    host.connect("getGlobalScript", function () {
+        return null;
+    });
+    
+    host.connect("getSectionScript", function () {
         return null;
     });
     
@@ -119,8 +131,8 @@
         "modules": [
             "howler"
         ],
-        "file": "<component_path_5891825>/audio.com.js",
-        "definitionFile": "<component_path_5891825>/audio.com.json",
+        "file": "<component_path_8424498>/audio.com.js",
+        "definitionFile": "<component_path_8424498>/audio.com.json",
         "create": (function () {
     
     var mod = {};
@@ -402,8 +414,8 @@ module.exports = {
         "modules": [
             "png-cartridge"
         ],
-        "file": "<component_path_6353701>/cartridges.com.js",
-        "definitionFile": "<component_path_6353701>/cartridges.com.json",
+        "file": "<component_path_2522336>/cartridges.com.js",
+        "definitionFile": "<component_path_2522336>/cartridges.com.json",
         "create": (function () {
     
     var mod = {};
@@ -471,8 +483,9 @@ function create(context) {
         dropZone.addEventListener("dragleave", cartridges.hideDropZone);
         dropZone.addEventListener("drop", handleDrop);
         
-        context.on("show_screen", onShowScreen);
+        context.on("showScreen", onShowScreen);
         context.on("cartridge_file_change", onFileChange);
+        
     }
     
     function destroy() {
@@ -480,7 +493,7 @@ function create(context) {
         context.disconnectInterface(cartridges);
         
         window.removeEventListener("dragenter", cartridges.showDropZone);
-        context.removeListener("show_screen", onShowScreen);
+        context.removeListener("showScreen", onShowScreen);
         context.removeListener("cartridge_file_change", onFileChange);
         
         logger = null;
@@ -492,8 +505,29 @@ function create(context) {
         
     }
     
+    function runScreenScript() {
+        
+        var file = document.querySelector(".file");
+        var uploadContainer = document.querySelector(".upload-container");
+        var downloadLink = document.querySelector(".download-link");
+        
+        function onClick(event) {
+            event.stopPropagation();
+        }
+        
+        function onFileChange(event) {
+            context.publish("cartridge_file_change", event);
+        }
+        
+        uploadContainer.addEventListener("click", onClick);
+        downloadLink.addEventListener("click", onClick);
+        file.addEventListener("change", onFileChange);
+        
+    }
+    
     function onShowScreen(screen) {
         if (screen === SCREEN_NAME) {
+            runScreenScript();
             cartridges.generate();
         }
     }
@@ -646,8 +680,8 @@ module.exports = {
         "modules": [
             "transform-js"
         ],
-        "file": "<component_path_7304744>/highlighter.com.js",
-        "definitionFile": "<component_path_7304744>/highlighter.com.json",
+        "file": "<component_path_9004067>/highlighter.com.js",
+        "definitionFile": "<component_path_9004067>/highlighter.com.json",
         "create": (function () {
     
     var mod = {};
@@ -826,7 +860,7 @@ module.exports = {
         "offers": [
             "uiOptions"
         ],
-        "file": "<component_path_4536134>/options.com.js",
+        "file": "<component_path_7893676>/options.com.js",
         "channels": {
             "exposes": {
                 "uiOptions": [
@@ -843,7 +877,7 @@ module.exports = {
                 ]
             }
         },
-        "definitionFile": "<component_path_4536134>/options.com.json",
+        "definitionFile": "<component_path_7893676>/options.com.json",
         "create": (function () {
     
     var mod = {};
@@ -1014,8 +1048,8 @@ module.exports = {
             "vrep",
             "transform-js"
         ],
-        "file": "<component_path_8640572>/screens.com.js",
-        "definitionFile": "<component_path_8640572>/screens.com.json",
+        "file": "<component_path_5668314>/screens.com.js",
+        "definitionFile": "<component_path_5668314>/screens.com.json",
         "create": (function () {
     
     var mod = {};
@@ -1043,14 +1077,16 @@ function none() {
 function create(context) {
     
     var storage, settings, system, interpreter, vars, story, env, focus, logger, createConfirm,
-        screens, currentScreen, screenStack, curtain, confirm, resources, evalScript,
-        formatter, format, transform;
+        screens, currentScreen, stack, curtain, confirm, resources, formatter, format, transform;
     
     var curtainVisible = false;
     
     var api = context.createInterface("uiScreens", {
         run: run,
-        back: back
+        back: back,
+        getScreenFadeInTime: getScreenFadeInTime,
+        getScreenFadeOutTime: getScreenFadeOutTime,
+        getScreenScripts: getScreenScripts
     });
     
     function init() {
@@ -1060,7 +1096,6 @@ function create(context) {
         format = getModule("vrep").format;
         formatter = getModule("vrep").create;
         transform = getModule("transform-js").transform;
-        evalScript = context.channel("scripts/run").call;
         createConfirm = context.channel("uiConfirmations/create").call;
         
         context.connectInterface(api);
@@ -1090,7 +1125,7 @@ function create(context) {
         confirm = createConfirm(context);
         
         // A stack for remembering which screen to return to.
-        screenStack = [];
+        stack = [];
         
         // The curtain element is used to darken the screen when
         // transitioning from one state to the next, e.g. when
@@ -1100,7 +1135,7 @@ function create(context) {
         curtain.setAttribute("class", "curtain");
         
         context.on("screen_click", onScreenClick);
-        context.on("show_screen", removeInactiveElements);
+        context.on("showScreen", removeInactiveElements);
         context.on("change_focus_mode", onFocusModeChange);
         context.on("resume_game", resumeGame);
         context.on("clear_state", onClearState);
@@ -1126,7 +1161,7 @@ function create(context) {
         context.disconnectInterface(api);
         
         context.removeListener("screen_click", onScreenClick);
-        context.removeListener("show_screen", removeInactiveElements);
+        context.removeListener("showScreen", removeInactiveElements);
         context.removeListener("change_focus_mode", onFocusModeChange);
         context.removeListener("resume_game", resumeGame);
         context.removeListener("clear_state", onClearState);
@@ -1136,6 +1171,10 @@ function create(context) {
         storage = null;
         settings = null;
         resources = null;
+    }
+    
+    function getScreenScripts(/* screenName */) {
+        return [];
     }
     
     function onFocusModeChange(mode) {
@@ -1253,7 +1292,7 @@ function create(context) {
         removeInactiveElements();
         
         if (currentScreen && !isSameScreen) {
-            screenStack.push(currentScreen);
+            stack.push(currentScreen);
         }
         
         currentScreen = name;
@@ -1273,7 +1312,6 @@ function create(context) {
         
         function replace() {
             
-            var scriptElements;
             var screenContainer = context.call("ui/getScreenContainer");
             var content = format(screen, settings.getAll());
             
@@ -1283,21 +1321,7 @@ function create(context) {
             
             screenContainer.innerHTML = content;
             
-            scriptElements = Array.prototype.slice.call(screenContainer.querySelectorAll("script"));
-            
-            scriptElements.forEach(function (script) {
-                evalScript(
-                    context,
-                    resources.get("story"),
-                    env.getAll(),
-                    vars.getAll(),
-                    script.innerHTML,
-                    0,
-                    "screens/" + name
-                );
-            });
-            
-            context.publish("show_screen", currentScreen);
+            context.publish("showScreen", currentScreen);
             
             then();
         }
@@ -1308,17 +1332,17 @@ function create(context) {
         
         var lastScreen;
         
-        if (screenStack.length < 1 && interpreter.isStarted()) {
+        if (stack.length < 1 && interpreter.isStarted()) {
             return resumeGame();
         }
         
-        if (!screenStack.length) {
+        if (!stack.length) {
             return;
         }
         
-        lastScreen = screenStack.pop();
+        lastScreen = stack.pop();
         
-        if (!screenStack.length) {
+        if (!stack.length) {
             currentScreen = undefined;
         }
         
@@ -1339,7 +1363,7 @@ function create(context) {
             
             inBetween();
             hideCurtain(function () {
-                context.publish("show_screen", currentScreen);
+                context.publish("showScreen", currentScreen);
                 then();
             });
         });
@@ -1414,7 +1438,7 @@ function create(context) {
         curtainVisible = true;
         
         setTimeout(function () {
-            transform(0, 1, setOpacity(curtain), {duration: SCREEN_FADE_IN}, then);
+            transform(0, 1, setOpacity(curtain), {duration: api.getScreenFadeInTime()}, then);
         }, 50);
         
     }
@@ -1432,7 +1456,7 @@ function create(context) {
         
         curtainVisible = false;
         
-        transform(1, 0, setOpacity(curtain), {duration: SCREEN_FADE_OUT}, function () {
+        transform(1, 0, setOpacity(curtain), {duration: api.getScreenFadeOutTime()}, function () {
             
             curtain.style.display = "none";
             
@@ -1546,13 +1570,21 @@ function create(context) {
     }
     
     function clearStack() {
-        screenStack.splice(0, screenStack.length);
+        stack.splice(0, stack.length);
     }
     
     function setOpacity(element) {
         return function (v) {
             element.style.opacity = v;
         };
+    }
+    
+    function getScreenFadeInTime() {
+        return SCREEN_FADE_IN;
+    }
+    
+    function getScreenFadeOutTime() {
+        return SCREEN_FADE_OUT;
     }
     
     return {
@@ -1606,8 +1638,8 @@ module.exports = {
         "modules": [
             "vrep"
         ],
-        "file": "<component_path_3372597>/ui.com.js",
-        "definitionFile": "<component_path_3372597>/ui.com.json",
+        "file": "<component_path_1605237>/ui.com.js",
+        "definitionFile": "<component_path_1605237>/ui.com.json",
         "create": (function () {
     
     var mod = {};
@@ -2376,8 +2408,8 @@ module.exports = {
         "offers": [
             "env"
         ],
-        "file": "<component_path_5116152>/env.com.js",
-        "definitionFile": "<component_path_5116152>/env.com.json",
+        "file": "<component_path_1272811>/env.com.js",
+        "definitionFile": "<component_path_1272811>/env.com.json",
         "create": (function () {
     
     var mod = {};
@@ -2475,8 +2507,8 @@ module.exports = {
         "offers": [
             "focus"
         ],
-        "file": "<component_path_6474684>/focus.com.js",
-        "definitionFile": "<component_path_6474684>/focus.com.json",
+        "file": "<component_path_677993>/focus.com.js",
+        "definitionFile": "<component_path_677993>/focus.com.json",
         "create": (function () {
     
     var mod = {};
@@ -2640,8 +2672,8 @@ module.exports = {
             "clone",
             "deepmerge"
         ],
-        "file": "<component_path_6974271>/interpreter.com.js",
-        "definitionFile": "<component_path_6974271>/interpreter.com.json",
+        "file": "<component_path_4507403>/interpreter.com.js",
+        "definitionFile": "<component_path_4507403>/interpreter.com.json",
         "create": (function () {
     
     var mod = {};
@@ -2659,7 +2691,7 @@ var none = function () {};
 function create(context) {
     
     var serialized, currentNextType, currentSection, started, focus, vars, logger, clone, merge;
-    var story, env, nodes, storage, settings, currentNode, nextClickTime, timeoutId;
+    var story, env, nodes, storage, settings, currentNode, nextClickTime, timeoutId, scripts;
     
     // A stack for remembering which node to return to.
     var stack = [];
@@ -2689,8 +2721,6 @@ function create(context) {
         getCurrentNodeId: getCurrentNodeId
     });
     
-    var evalScript = context.channel("scripts/run").call;
-    
     function init() {
         
         var getModule = context.channel("getModule").call;
@@ -2707,6 +2737,12 @@ function create(context) {
         focus = context.getInterface("focus", ["setMode", "getMode"]);
         storage = context.getInterface("storage", ["save", "load"]);
         settings = context.getInterface("settings", ["getAll", "update", "set"]);
+        
+        scripts = context.getInterface("scripts", [
+            "runNodeScript",
+            "runSectionScript",
+            "runGlobalScript"
+        ]);
         
         story = context.getInterface("story", [
             "getNode",
@@ -3003,30 +3039,15 @@ function create(context) {
         });
         
         env.set("execNodeScript", function (nodeName, slot) {
-            
-            var script = story.getNodeScript(nodeName, slot);
-            
-            if (script) {
-                return runScript(script);
-            }
+            return scripts.runNodeScript(nodeName, slot);
         });
         
         env.set("execSectionScript", function (sectionName, slot) {
-            
-            var script = story.getSectionScript(sectionName, slot);
-            
-            if (script) {
-                return runScript(script);
-            }
+            return scripts.runSectionScript(sectionName, slot);
         });
         
         env.set("execGlobalScript", function (slot) {
-            
-            var script = story.getGlobalScript(slot);
-            
-            if (script) {
-                return runScript(script);
-            }
+            return scripts.runGlobalScript(slot);
         });
         
         env.set("hasNodeScript", function (nodeName, slot) {
@@ -3048,30 +3069,27 @@ function create(context) {
         if (lastSection !== currentSection) {
             
             if (story.hasGlobalScript("section_entry")) {
-                runScript(story.getGlobalScript("section_entry"));
+                scripts.runGlobalScript("section_entry");
             }
             
             if (section.scripts.entry) {
-                runScript(section.scripts.entry);
+                scripts.runSectionScript(node.section, "entry");
             }
         }
         
         if (story.hasGlobalScript("node_entry")) {
-            runScript(story.getGlobalScript("node_entry"));
+            scripts.runGlobalScript("node_entry");
         }
         
         if (story.hasSectionScript(node.section, "node_entry")) {
-            runScript(story.getSectionScript(node.section, "node_entry"));
+            scripts.runSectionScript(node.section, "node_entry");
         }
         
         if (node.scripts.entry) {
-            runScript(node.scripts.entry);
+            scripts.runNodeScript(node.id, "entry");
         }
         
         copy.content = copy.content.replace(/\(@\s*([a-zA-Z0-9_]+)\s*@\)/g, function (match, slot) {
-            
-            var script;
-            var result = "";
             
             if (
                 !(slot in node.scripts) &&
@@ -3082,11 +3100,16 @@ function create(context) {
                 return "";
             }
             
-            script = node.scripts[slot] || section.scripts[slot] || story.getGlobalScript(slot);
+            if (node.scripts[slot]) {
+                return scripts.runNodeScript(node.id, slot);
+            }
             
-            result = runScript(script);
+            if (section.scripts[slot]) {
+                return scripts.runSectionScript(section.id, slot);
+            }
             
-            return result || "";
+            return scripts.runGlobalScript(slot);
+            
         });
         
         if (data.isntSneaky()) {
@@ -3109,7 +3132,7 @@ function create(context) {
                     return nodes.get(id);
                 });
                 
-                scriptResult = runScript(item.scripts.brief);
+                scriptResult = scripts.runNodeScript(item.id, "brief");
                 
                 copy.items.push({
                     id: item.id,
@@ -3158,31 +3181,6 @@ function create(context) {
         }
         else if (typeof data.get("timeout") === "number") {
             startTimer(node);
-        }
-        
-        function runScript(script) {
-            
-            var result;
-            
-            try {
-                result = evalScript(
-                    context,
-                    story.getAll(),
-                    env.getAll(),
-                    vars.getAll(),
-                    script.body,
-                    script.line,
-                    script.file
-                );
-            }
-            catch (error) {
-                logger.error(
-                    "Cannot execute script (<" + script.file + ">@" + script.line + "):",
-                    error
-                );
-            }
-            
-            return result;
         }
         
         function getSelf() {
@@ -3347,8 +3345,8 @@ module.exports = {
         "modules": [
             "clone"
         ],
-        "file": "<component_path_2321326>/nodes.com.js",
-        "definitionFile": "<component_path_2321326>/nodes.com.json",
+        "file": "<component_path_7394726>/nodes.com.js",
+        "definitionFile": "<component_path_7394726>/nodes.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3713,8 +3711,8 @@ module.exports = {
         "offers": [
             "resources"
         ],
-        "file": "<component_path_5401658>/resources.com.js",
-        "definitionFile": "<component_path_5401658>/resources.com.json",
+        "file": "<component_path_9893460>/resources.com.js",
+        "definitionFile": "<component_path_9893460>/resources.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3785,8 +3783,8 @@ module.exports = {
         "modules": [
             "clone"
         ],
-        "file": "<component_path_5294346>/settings.com.js",
-        "definitionFile": "<component_path_5294346>/settings.com.json",
+        "file": "<component_path_7105346>/settings.com.js",
+        "definitionFile": "<component_path_7105346>/settings.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3952,8 +3950,8 @@ module.exports = {
         "requires": [
             "logger"
         ],
-        "file": "<component_path_6934298>/storage.com.js",
-        "definitionFile": "<component_path_6934298>/storage.com.json",
+        "file": "<component_path_9359536>/storage.com.js",
+        "definitionFile": "<component_path_9359536>/storage.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4209,8 +4207,8 @@ module.exports = {
         "requires": [
             "resources"
         ],
-        "file": "<component_path_8726151>/story.com.js",
-        "definitionFile": "<component_path_8726151>/story.com.json",
+        "file": "<component_path_9709565>/story.com.js",
+        "definitionFile": "<component_path_9709565>/story.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4385,8 +4383,8 @@ module.exports = {
         "modules": [
             "clone"
         ],
-        "file": "<component_path_3917634>/system.com.js",
-        "definitionFile": "<component_path_3917634>/system.com.json",
+        "file": "<component_path_9991956>/system.com.js",
+        "definitionFile": "<component_path_9991956>/system.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4587,8 +4585,8 @@ module.exports = {
         "offers": [
             "vars"
         ],
-        "file": "<component_path_2311032>/vars.com.js",
-        "definitionFile": "<component_path_2311032>/vars.com.json",
+        "file": "<component_path_5933087>/vars.com.js",
+        "definitionFile": "<component_path_5933087>/vars.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4701,8 +4699,8 @@ module.exports = {
             "resources",
             "focus"
         ],
-        "file": "<component_path_2470652>/confirmations.com.js",
-        "definitionFile": "<component_path_2470652>/confirmations.com.json",
+        "file": "<component_path_3899913>/confirmations.com.js",
+        "definitionFile": "<component_path_3899913>/confirmations.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4795,8 +4793,8 @@ module.exports = {
         "offers": [
             "domUtils"
         ],
-        "file": "<component_path_6586690>/domUtils.com.js",
-        "definitionFile": "<component_path_6586690>/domUtils.com.json",
+        "file": "<component_path_2312049>/domUtils.com.js",
+        "definitionFile": "<component_path_2312049>/domUtils.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4868,8 +4866,8 @@ module.exports = {
             "vrep",
             "transform-js"
         ],
-        "file": "<component_path_6299641>/notifications.com.js",
-        "definitionFile": "<component_path_6299641>/notifications.com.json",
+        "file": "<component_path_686251>/notifications.com.js",
+        "definitionFile": "<component_path_686251>/notifications.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4997,8 +4995,8 @@ module.exports = {
         "offers": [
             "uiPositioning"
         ],
-        "file": "<component_path_394847>/positioning.com.js",
-        "definitionFile": "<component_path_394847>/positioning.com.json",
+        "file": "<component_path_5492817>/positioning.com.js",
+        "definitionFile": "<component_path_5492817>/positioning.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5076,8 +5074,8 @@ module.exports = {
         "modules": [
             "transform-js"
         ],
-        "file": "<component_path_9120083>/revealEffect.com.js",
-        "definitionFile": "<component_path_9120083>/revealEffect.com.json",
+        "file": "<component_path_9535680>/revealEffect.com.js",
+        "definitionFile": "<component_path_9535680>/revealEffect.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5260,8 +5258,8 @@ module.exports = {
             "transform-js",
             "scrollbarwidth"
         ],
-        "file": "<component_path_1654792>/scrolling.com.js",
-        "definitionFile": "<component_path_1654792>/scrolling.com.json",
+        "file": "<component_path_39174>/scrolling.com.js",
+        "definitionFile": "<component_path_39174>/scrolling.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5400,8 +5398,8 @@ module.exports = {
         "modules": [
             "colors"
         ],
-        "file": "<component_path_7163818>/logger.com.js",
-        "definitionFile": "<component_path_7163818>/logger.com.json",
+        "file": "<component_path_6278747>/logger.com.js",
+        "definitionFile": "<component_path_6278747>/logger.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5521,8 +5519,14 @@ module.exports = {
         "offers": [
             "scripts"
         ],
-        "file": "<component_path_3730645>/scripts.com.js",
-        "definitionFile": "<component_path_3730645>/scripts.com.json",
+        "requires": [
+            "env",
+            "vars",
+            "story",
+            "logger"
+        ],
+        "file": "<component_path_243201>/scripts.com.js",
+        "definitionFile": "<component_path_243201>/scripts.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5532,11 +5536,28 @@ module.exports = {
 
 function create(context) {
     
+    var story, env, vars, logger, getNodeScript, getGlobalScript, getSectionScript;
+    
     var api = context.createInterface("scripts", {
-        run: runScript
+        run: runScript,
+        write: write,
+        writeLn: writeLn,
+        runNodeScript: runNodeScript,
+        runGlobalScript: runGlobalScript,
+        runSectionScript: runSectionScript
     });
     
     function init() {
+        
+        getNodeScript = context.channel("getNodeScript");
+        getGlobalScript = context.channel("getGlobalScript");
+        getSectionScript = context.channel("getSectionScript");
+        
+        env = context.getInterface("env", ["getAll"]);
+        vars = context.getInterface("vars", ["getAll"]);
+        story = context.getInterface("story", ["getAll"]);
+        logger = context.getInterface("logger", ["error"]);
+        
         context.connectInterface(api);
     }
     
@@ -5544,18 +5565,61 @@ function create(context) {
         context.disconnectInterface(api);
     }
     
-    function runScript(engine, __story, _, $, __body, __line, __file) {
+    function runNodeScript(nodeName, slotName) {
+        return runScript(getNodeScript(nodeName, slotName));
+    }
+    
+    function runSectionScript(sectionName, slotName) {
+        return runScript(getSectionScript(sectionName, slotName));
+    }
+    
+    function runGlobalScript(slotName) {
+        return runScript(getGlobalScript(slotName));
+    }
+    
+    function runScript(script) {
         
-        var link = _.link; // eslint-disable-line no-unused-vars
-        var nodes = __story.nodes; // eslint-disable-line no-unused-vars
-        var title = __story.meta.title; // eslint-disable-line no-unused-vars
+        var result = "";
         
-        // @ts-ignore
-        window.__line = __line;
-        // @ts-ignore
-        window.__file = __file;
+        try {
+            
+            result = "";
+            
+            script(
+                context,
+                story.getAll(),
+                env.getAll(),
+                vars.getAll(),
+                write,
+                writeLn,
+                script.line,
+                script.file
+            );
+        }
+        catch (error) {
+            logger.error(
+                "Cannot execute script (<" + script.file + ">@" + script.line + "):",
+                error
+            );
+        }
         
-        return eval(__body);
+        return result;
+        
+        function write(text) {
+            result += api.write(text);
+        }
+        
+        function writeLn(text) {
+            result += api.writeLn(text);
+        }
+    }
+    
+    function write(text) {
+        return text;
+    }
+    
+    function writeLn(text) {
+        return "\n<br />" + text;
     }
     
     return {
@@ -5600,8 +5664,8 @@ module.exports = {
         "resources": {
             "toothrotErrors": "errors.json"
         },
-        "file": "<component_path_7397745>/toothrotErrors.com.js",
-        "definitionFile": "<component_path_7397745>/toothrotErrors.com.json",
+        "file": "<component_path_5858127>/toothrotErrors.com.js",
+        "definitionFile": "<component_path_5858127>/toothrotErrors.com.json",
         "create": (function () {
     
     var mod = {};

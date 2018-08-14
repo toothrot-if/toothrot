@@ -20,14 +20,16 @@ function none() {
 function create(context) {
     
     var storage, settings, system, interpreter, vars, story, env, focus, logger, createConfirm,
-        screens, currentScreen, screenStack, curtain, confirm, resources, evalScript,
-        formatter, format, transform;
+        screens, currentScreen, stack, curtain, confirm, resources, formatter, format, transform;
     
     var curtainVisible = false;
     
     var api = context.createInterface("uiScreens", {
         run: run,
-        back: back
+        back: back,
+        getScreenFadeInTime: getScreenFadeInTime,
+        getScreenFadeOutTime: getScreenFadeOutTime,
+        getScreenScripts: getScreenScripts
     });
     
     function init() {
@@ -37,7 +39,6 @@ function create(context) {
         format = getModule("vrep").format;
         formatter = getModule("vrep").create;
         transform = getModule("transform-js").transform;
-        evalScript = context.channel("scripts/run").call;
         createConfirm = context.channel("uiConfirmations/create").call;
         
         context.connectInterface(api);
@@ -67,7 +68,7 @@ function create(context) {
         confirm = createConfirm(context);
         
         // A stack for remembering which screen to return to.
-        screenStack = [];
+        stack = [];
         
         // The curtain element is used to darken the screen when
         // transitioning from one state to the next, e.g. when
@@ -77,7 +78,7 @@ function create(context) {
         curtain.setAttribute("class", "curtain");
         
         context.on("screen_click", onScreenClick);
-        context.on("show_screen", removeInactiveElements);
+        context.on("showScreen", removeInactiveElements);
         context.on("change_focus_mode", onFocusModeChange);
         context.on("resume_game", resumeGame);
         context.on("clear_state", onClearState);
@@ -103,7 +104,7 @@ function create(context) {
         context.disconnectInterface(api);
         
         context.removeListener("screen_click", onScreenClick);
-        context.removeListener("show_screen", removeInactiveElements);
+        context.removeListener("showScreen", removeInactiveElements);
         context.removeListener("change_focus_mode", onFocusModeChange);
         context.removeListener("resume_game", resumeGame);
         context.removeListener("clear_state", onClearState);
@@ -113,6 +114,10 @@ function create(context) {
         storage = null;
         settings = null;
         resources = null;
+    }
+    
+    function getScreenScripts(/* screenName */) {
+        return [];
     }
     
     function onFocusModeChange(mode) {
@@ -230,7 +235,7 @@ function create(context) {
         removeInactiveElements();
         
         if (currentScreen && !isSameScreen) {
-            screenStack.push(currentScreen);
+            stack.push(currentScreen);
         }
         
         currentScreen = name;
@@ -250,7 +255,6 @@ function create(context) {
         
         function replace() {
             
-            var scriptElements;
             var screenContainer = context.call("ui/getScreenContainer");
             var content = format(screen, settings.getAll());
             
@@ -260,21 +264,7 @@ function create(context) {
             
             screenContainer.innerHTML = content;
             
-            scriptElements = Array.prototype.slice.call(screenContainer.querySelectorAll("script"));
-            
-            scriptElements.forEach(function (script) {
-                evalScript(
-                    context,
-                    resources.get("story"),
-                    env.getAll(),
-                    vars.getAll(),
-                    script.innerHTML,
-                    0,
-                    "screens/" + name
-                );
-            });
-            
-            context.publish("show_screen", currentScreen);
+            context.publish("showScreen", currentScreen);
             
             then();
         }
@@ -285,17 +275,17 @@ function create(context) {
         
         var lastScreen;
         
-        if (screenStack.length < 1 && interpreter.isStarted()) {
+        if (stack.length < 1 && interpreter.isStarted()) {
             return resumeGame();
         }
         
-        if (!screenStack.length) {
+        if (!stack.length) {
             return;
         }
         
-        lastScreen = screenStack.pop();
+        lastScreen = stack.pop();
         
-        if (!screenStack.length) {
+        if (!stack.length) {
             currentScreen = undefined;
         }
         
@@ -316,7 +306,7 @@ function create(context) {
             
             inBetween();
             hideCurtain(function () {
-                context.publish("show_screen", currentScreen);
+                context.publish("showScreen", currentScreen);
                 then();
             });
         });
@@ -391,7 +381,7 @@ function create(context) {
         curtainVisible = true;
         
         setTimeout(function () {
-            transform(0, 1, setOpacity(curtain), {duration: SCREEN_FADE_IN}, then);
+            transform(0, 1, setOpacity(curtain), {duration: api.getScreenFadeInTime()}, then);
         }, 50);
         
     }
@@ -409,7 +399,7 @@ function create(context) {
         
         curtainVisible = false;
         
-        transform(1, 0, setOpacity(curtain), {duration: SCREEN_FADE_OUT}, function () {
+        transform(1, 0, setOpacity(curtain), {duration: api.getScreenFadeOutTime()}, function () {
             
             curtain.style.display = "none";
             
@@ -523,13 +513,21 @@ function create(context) {
     }
     
     function clearStack() {
-        screenStack.splice(0, screenStack.length);
+        stack.splice(0, stack.length);
     }
     
     function setOpacity(element) {
         return function (v) {
             element.style.opacity = v;
         };
+    }
+    
+    function getScreenFadeInTime() {
+        return SCREEN_FADE_IN;
+    }
+    
+    function getScreenFadeOutTime() {
+        return SCREEN_FADE_OUT;
     }
     
     return {

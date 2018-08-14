@@ -374,6 +374,7 @@ function create(context) {
             
             if (!ast.sections[section]) {
                 ast.sections[section] = {
+                    id: section,
                     content: "",
                     data: {},
                     scripts: {},

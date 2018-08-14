@@ -6,5 +6,6 @@
     "applicationSteps": ["run"],
     "environments": ["browser"],
     "offers": ["scripts"],
+    "requires": ["env", "vars", "story", "logger"],
     "file": "./scripts.com.js"
 }

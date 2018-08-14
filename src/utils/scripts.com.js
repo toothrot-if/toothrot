@@ -2,11 +2,28 @@
 
 function create(context) {
     
+    var story, env, vars, logger, getNodeScript, getGlobalScript, getSectionScript;
+    
     var api = context.createInterface("scripts", {
-        run: runScript
+        run: runScript,
+        write: write,
+        writeLn: writeLn,
+        runNodeScript: runNodeScript,
+        runGlobalScript: runGlobalScript,
+        runSectionScript: runSectionScript
     });
     
     function init() {
+        
+        getNodeScript = context.channel("getNodeScript");
+        getGlobalScript = context.channel("getGlobalScript");
+        getSectionScript = context.channel("getSectionScript");
+        
+        env = context.getInterface("env", ["getAll"]);
+        vars = context.getInterface("vars", ["getAll"]);
+        story = context.getInterface("story", ["getAll"]);
+        logger = context.getInterface("logger", ["error"]);
+        
         context.connectInterface(api);
     }
     
@@ -14,18 +31,61 @@ function create(context) {
         context.disconnectInterface(api);
     }
     
-    function runScript(engine, __story, _, $, __body, __line, __file) {
+    function runNodeScript(nodeName, slotName) {
+        return runScript(getNodeScript(nodeName, slotName));
+    }
+    
+    function runSectionScript(sectionName, slotName) {
+        return runScript(getSectionScript(sectionName, slotName));
+    }
+    
+    function runGlobalScript(slotName) {
+        return runScript(getGlobalScript(slotName));
+    }
+    
+    function runScript(script) {
         
-        var link = _.link; // eslint-disable-line no-unused-vars
-        var nodes = __story.nodes; // eslint-disable-line no-unused-vars
-        var title = __story.meta.title; // eslint-disable-line no-unused-vars
+        var result = "";
         
-        // @ts-ignore
-        window.__line = __line;
-        // @ts-ignore
-        window.__file = __file;
+        try {
+            
+            result = "";
+            
+            script(
+                context,
+                story.getAll(),
+                env.getAll(),
+                vars.getAll(),
+                write,
+                writeLn,
+                script.line,
+                script.file
+            );
+        }
+        catch (error) {
+            logger.error(
+                "Cannot execute script (<" + script.file + ">@" + script.line + "):",
+                error
+            );
+        }
         
-        return eval(__body);
+        return result;
+        
+        function write(text) {
+            result += api.write(text);
+        }
+        
+        function writeLn(text) {
+            result += api.writeLn(text);
+        }
+    }
+    
+    function write(text) {
+        return text;
+    }
+    
+    function writeLn(text) {
+        return "\n<br />" + text;
     }
     
     return {

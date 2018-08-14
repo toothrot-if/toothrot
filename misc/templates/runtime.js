@@ -33,6 +33,18 @@
         return null;
     });
     
+    host.connect("getNodeScript", function () {
+        return null;
+    });
+    
+    host.connect("getGlobalScript", function () {
+        return null;
+    });
+    
+    host.connect("getSectionScript", function () {
+        return null;
+    });
+    
     app = createApp(host);
     
     app.on("error", console.error.bind(console));

@@ -2,7 +2,7 @@
 
 function create(context) {
     
-    var logger, packer, joinPath, normalize, gatherer, fsHelper;
+    var logger, packer, joinPath, normalize, gatherer, fsHelper, scriptExporter;
     
     var api = context.createInterface("builder", {
         build: build,
@@ -21,6 +21,7 @@ function create(context) {
         logger = context.getInterface("logger", ["log", "error", "info", "success"]);
         packer = context.getInterface("packer", ["pack"]);
         gatherer = context.getInterface("toothrotGatherer", ["renderTemplate"]);
+        scriptExporter = context.getInterface("scriptExporter", ["render"]);
         
         fsHelper = context.getInterface("fileSystem", [
             "copyAll",
@@ -36,6 +37,7 @@ function create(context) {
         logger = null;
         packer = null;
         gatherer = null;
+        scriptExporter = null;
         
         context.disconnectInterface(api);
     }
@@ -114,11 +116,12 @@ function create(context) {
     
     function build(inputFs, dir, outputFs, outputDir, then) {
         
-        var rawResources, resources, indexContent;
+        var rawResources, resources, indexContent, story;
         
         var base = normalize((dir || process.cwd()) + "/");
         var buildDir = normalize(outputDir || (base + "build/"));
         var browserDir = joinPath(buildDir, "/browser/");
+        var scriptFilePath = joinPath(browserDir, "/scripts.js");
         var filesDir = joinPath(base, "/files/");
         var projectFile = joinPath(base, "/project.json");
         var project = JSON.parse("" + inputFs.readFileSync(projectFile));
@@ -163,7 +166,8 @@ function create(context) {
             throw error;
         }
         
-        project.name = JSON.parse(rawResources).story.meta.title || project.name;
+        story = JSON.parse(rawResources).story;
+        project.name = story.meta.title || project.name;
         resources = new Buffer(encodeURIComponent(rawResources)).toString("base64");
         
         indexContent = "(function () {\n" +
@@ -177,7 +181,8 @@ function create(context) {
                 '    });\n' +
             "}());";
         
-        outputFs.writeFileSync(browserDir + "resources.js", indexContent);
+        outputFs.writeFileSync(joinPath(browserDir, "resources.js"), indexContent);
+        outputFs.writeFileSync(scriptFilePath, scriptExporter.render(story));
         outputFs.writeFileSync(projectFile, JSON.stringify(project, null, 4));
         
         logger.success("Toothrot project built successfully in: " + browserDir);

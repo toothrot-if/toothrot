@@ -60,8 +60,9 @@ function create(context) {
         dropZone.addEventListener("dragleave", cartridges.hideDropZone);
         dropZone.addEventListener("drop", handleDrop);
         
-        context.on("show_screen", onShowScreen);
+        context.on("showScreen", onShowScreen);
         context.on("cartridge_file_change", onFileChange);
+        
     }
     
     function destroy() {
@@ -69,7 +70,7 @@ function create(context) {
         context.disconnectInterface(cartridges);
         
         window.removeEventListener("dragenter", cartridges.showDropZone);
-        context.removeListener("show_screen", onShowScreen);
+        context.removeListener("showScreen", onShowScreen);
         context.removeListener("cartridge_file_change", onFileChange);
         
         logger = null;
@@ -81,8 +82,29 @@ function create(context) {
         
     }
     
+    function runScreenScript() {
+        
+        var file = document.querySelector(".file");
+        var uploadContainer = document.querySelector(".upload-container");
+        var downloadLink = document.querySelector(".download-link");
+        
+        function onClick(event) {
+            event.stopPropagation();
+        }
+        
+        function onFileChange(event) {
+            context.publish("cartridge_file_change", event);
+        }
+        
+        uploadContainer.addEventListener("click", onClick);
+        downloadLink.addEventListener("click", onClick);
+        file.addEventListener("change", onFileChange);
+        
+    }
+    
     function onShowScreen(screen) {
         if (screen === SCREEN_NAME) {
+            runScreenScript();
             cartridges.generate();
         }
     }

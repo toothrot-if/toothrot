@@ -6,7 +6,7 @@
     "applicationSteps": ["build"],
     "environments": ["cli", "node"],
     "offers": ["builder"],
-    "requires": ["logger", "packer", "toothrotGatherer", "fileSystem"],
+    "requires": ["logger", "packer", "toothrotGatherer", "fileSystem", "scriptExporter"],
     "modules": ["path", "assert", "semver", "minimatch"],
     "resources": {
         "toothrotPackageInfo": "../package.json",

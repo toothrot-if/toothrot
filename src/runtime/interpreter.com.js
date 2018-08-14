@@ -10,7 +10,7 @@ var none = function () {};
 function create(context) {
     
     var serialized, currentNextType, currentSection, started, focus, vars, logger, clone, merge;
-    var story, env, nodes, storage, settings, currentNode, nextClickTime, timeoutId;
+    var story, env, nodes, storage, settings, currentNode, nextClickTime, timeoutId, scripts;
     
     // A stack for remembering which node to return to.
     var stack = [];
@@ -40,8 +40,6 @@ function create(context) {
         getCurrentNodeId: getCurrentNodeId
     });
     
-    var evalScript = context.channel("scripts/run").call;
-    
     function init() {
         
         var getModule = context.channel("getModule").call;
@@ -58,6 +56,12 @@ function create(context) {
         focus = context.getInterface("focus", ["setMode", "getMode"]);
         storage = context.getInterface("storage", ["save", "load"]);
         settings = context.getInterface("settings", ["getAll", "update", "set"]);
+        
+        scripts = context.getInterface("scripts", [
+            "runNodeScript",
+            "runSectionScript",
+            "runGlobalScript"
+        ]);
         
         story = context.getInterface("story", [
             "getNode",
@@ -354,30 +358,15 @@ function create(context) {
         });
         
         env.set("execNodeScript", function (nodeName, slot) {
-            
-            var script = story.getNodeScript(nodeName, slot);
-            
-            if (script) {
-                return runScript(script);
-            }
+            return scripts.runNodeScript(nodeName, slot);
         });
         
         env.set("execSectionScript", function (sectionName, slot) {
-            
-            var script = story.getSectionScript(sectionName, slot);
-            
-            if (script) {
-                return runScript(script);
-            }
+            return scripts.runSectionScript(sectionName, slot);
         });
         
         env.set("execGlobalScript", function (slot) {
-            
-            var script = story.getGlobalScript(slot);
-            
-            if (script) {
-                return runScript(script);
-            }
+            return scripts.runGlobalScript(slot);
         });
         
         env.set("hasNodeScript", function (nodeName, slot) {
@@ -399,30 +388,27 @@ function create(context) {
         if (lastSection !== currentSection) {
             
             if (story.hasGlobalScript("section_entry")) {
-                runScript(story.getGlobalScript("section_entry"));
+                scripts.runGlobalScript("section_entry");
             }
             
             if (section.scripts.entry) {
-                runScript(section.scripts.entry);
+                scripts.runSectionScript(node.section, "entry");
             }
         }
         
         if (story.hasGlobalScript("node_entry")) {
-            runScript(story.getGlobalScript("node_entry"));
+            scripts.runGlobalScript("node_entry");
         }
         
         if (story.hasSectionScript(node.section, "node_entry")) {
-            runScript(story.getSectionScript(node.section, "node_entry"));
+            scripts.runSectionScript(node.section, "node_entry");
         }
         
         if (node.scripts.entry) {
-            runScript(node.scripts.entry);
+            scripts.runNodeScript(node.id, "entry");
         }
         
         copy.content = copy.content.replace(/\(@\s*([a-zA-Z0-9_]+)\s*@\)/g, function (match, slot) {
-            
-            var script;
-            var result = "";
             
             if (
                 !(slot in node.scripts) &&
@@ -433,11 +419,16 @@ function create(context) {
                 return "";
             }
             
-            script = node.scripts[slot] || section.scripts[slot] || story.getGlobalScript(slot);
+            if (node.scripts[slot]) {
+                return scripts.runNodeScript(node.id, slot);
+            }
             
-            result = runScript(script);
+            if (section.scripts[slot]) {
+                return scripts.runSectionScript(section.id, slot);
+            }
             
-            return result || "";
+            return scripts.runGlobalScript(slot);
+            
         });
         
         if (data.isntSneaky()) {
@@ -460,7 +451,7 @@ function create(context) {
                     return nodes.get(id);
                 });
                 
-                scriptResult = runScript(item.scripts.brief);
+                scriptResult = scripts.runNodeScript(item.id, "brief");
                 
                 copy.items.push({
                     id: item.id,
@@ -509,31 +500,6 @@ function create(context) {
         }
         else if (typeof data.get("timeout") === "number") {
             startTimer(node);
-        }
-        
-        function runScript(script) {
-            
-            var result;
-            
-            try {
-                result = evalScript(
-                    context,
-                    story.getAll(),
-                    env.getAll(),
-                    vars.getAll(),
-                    script.body,
-                    script.line,
-                    script.file
-                );
-            }
-            catch (error) {
-                logger.error(
-                    "Cannot execute script (<" + script.file + ">@" + script.line + "):",
-                    error
-                );
-            }
-            
-            return result;
         }
         
         function getSelf() {

@@ -1,0 +1,15 @@
+{
+    "name": "scriptExporter",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["build"],
+    "environments": ["node", "cli", "browser", "any"],
+    "offers": ["scriptExporter"],
+    "modules": ["vrep"],
+    "resources": {
+        "scriptTemplate": "../misc/templates/script.js",
+        "scriptsTemplate": "../misc/templates/scripts.js"
+    },
+    "file": "./scriptExporter.com.js"
+}
