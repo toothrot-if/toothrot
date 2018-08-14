@@ -85,6 +85,10 @@ function createToothrotApp(config) {
         return resources[name];
     });
     
+    app.connect("getEngineVersion", function () {
+        return package.version;
+    });
+    
     return app;
     
     function addResources(componentResources, componentDir) {
