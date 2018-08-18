@@ -395,7 +395,7 @@ function create(context) {
             text.innerHTML += '<div class="separator"></div>';
             text.innerHTML += '<div class="text-item current">' + content + "</div>";
             
-            api.insertNodeControls(text, node);
+            api.insertNodeControls(text.querySelector(".current"), node);
             
             if (
                 !api.nodeHasControls(node) &&

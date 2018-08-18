@@ -4,7 +4,7 @@
     
     Toothrot Engine Runtime (v2.0.0)
     
-    Build Time: Tue, 14 Aug 2018 17:39:01 GMT
+    Build Time: Sat, 18 Aug 2018 19:03:25 GMT
    
    ---------------------------------------------------------------------------------------------- */
 
@@ -131,8 +131,8 @@
         "modules": [
             "howler"
         ],
-        "file": "<component_path_8424498>/audio.com.js",
-        "definitionFile": "<component_path_8424498>/audio.com.json",
+        "file": "<component_path_7003826>/audio.com.js",
+        "definitionFile": "<component_path_7003826>/audio.com.json",
         "create": (function () {
     
     var mod = {};
@@ -414,8 +414,8 @@ module.exports = {
         "modules": [
             "png-cartridge"
         ],
-        "file": "<component_path_2522336>/cartridges.com.js",
-        "definitionFile": "<component_path_2522336>/cartridges.com.json",
+        "file": "<component_path_2168451>/cartridges.com.js",
+        "definitionFile": "<component_path_2168451>/cartridges.com.json",
         "create": (function () {
     
     var mod = {};
@@ -680,8 +680,8 @@ module.exports = {
         "modules": [
             "transform-js"
         ],
-        "file": "<component_path_9004067>/highlighter.com.js",
-        "definitionFile": "<component_path_9004067>/highlighter.com.json",
+        "file": "<component_path_4380869>/highlighter.com.js",
+        "definitionFile": "<component_path_4380869>/highlighter.com.json",
         "create": (function () {
     
     var mod = {};
@@ -860,7 +860,7 @@ module.exports = {
         "offers": [
             "uiOptions"
         ],
-        "file": "<component_path_7893676>/options.com.js",
+        "file": "<component_path_6569403>/options.com.js",
         "channels": {
             "exposes": {
                 "uiOptions": [
@@ -877,7 +877,7 @@ module.exports = {
                 ]
             }
         },
-        "definitionFile": "<component_path_7893676>/options.com.json",
+        "definitionFile": "<component_path_6569403>/options.com.json",
         "create": (function () {
     
     var mod = {};
@@ -1048,8 +1048,8 @@ module.exports = {
             "vrep",
             "transform-js"
         ],
-        "file": "<component_path_5668314>/screens.com.js",
-        "definitionFile": "<component_path_5668314>/screens.com.json",
+        "file": "<component_path_2065639>/screens.com.js",
+        "definitionFile": "<component_path_2065639>/screens.com.json",
         "create": (function () {
     
     var mod = {};
@@ -1638,8 +1638,8 @@ module.exports = {
         "modules": [
             "vrep"
         ],
-        "file": "<component_path_1605237>/ui.com.js",
-        "definitionFile": "<component_path_1605237>/ui.com.json",
+        "file": "<component_path_7420793>/ui.com.js",
+        "definitionFile": "<component_path_7420793>/ui.com.json",
         "create": (function () {
     
     var mod = {};
@@ -2042,7 +2042,7 @@ function create(context) {
             text.innerHTML += '<div class="separator"></div>';
             text.innerHTML += '<div class="text-item current">' + content + "</div>";
             
-            api.insertNodeControls(text, node);
+            api.insertNodeControls(text.querySelector(".current"), node);
             
             if (
                 !api.nodeHasControls(node) &&
@@ -2408,8 +2408,8 @@ module.exports = {
         "offers": [
             "env"
         ],
-        "file": "<component_path_1272811>/env.com.js",
-        "definitionFile": "<component_path_1272811>/env.com.json",
+        "file": "<component_path_3317750>/env.com.js",
+        "definitionFile": "<component_path_3317750>/env.com.json",
         "create": (function () {
     
     var mod = {};
@@ -2507,8 +2507,8 @@ module.exports = {
         "offers": [
             "focus"
         ],
-        "file": "<component_path_677993>/focus.com.js",
-        "definitionFile": "<component_path_677993>/focus.com.json",
+        "file": "<component_path_7709270>/focus.com.js",
+        "definitionFile": "<component_path_7709270>/focus.com.json",
         "create": (function () {
     
     var mod = {};
@@ -2672,8 +2672,8 @@ module.exports = {
             "clone",
             "deepmerge"
         ],
-        "file": "<component_path_4507403>/interpreter.com.js",
-        "definitionFile": "<component_path_4507403>/interpreter.com.json",
+        "file": "<component_path_3651416>/interpreter.com.js",
+        "definitionFile": "<component_path_3651416>/interpreter.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3345,8 +3345,8 @@ module.exports = {
         "modules": [
             "clone"
         ],
-        "file": "<component_path_7394726>/nodes.com.js",
-        "definitionFile": "<component_path_7394726>/nodes.com.json",
+        "file": "<component_path_8378950>/nodes.com.js",
+        "definitionFile": "<component_path_8378950>/nodes.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3711,8 +3711,8 @@ module.exports = {
         "offers": [
             "resources"
         ],
-        "file": "<component_path_9893460>/resources.com.js",
-        "definitionFile": "<component_path_9893460>/resources.com.json",
+        "file": "<component_path_9652385>/resources.com.js",
+        "definitionFile": "<component_path_9652385>/resources.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3783,8 +3783,8 @@ module.exports = {
         "modules": [
             "clone"
         ],
-        "file": "<component_path_7105346>/settings.com.js",
-        "definitionFile": "<component_path_7105346>/settings.com.json",
+        "file": "<component_path_1698051>/settings.com.js",
+        "definitionFile": "<component_path_1698051>/settings.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3950,8 +3950,8 @@ module.exports = {
         "requires": [
             "logger"
         ],
-        "file": "<component_path_9359536>/storage.com.js",
-        "definitionFile": "<component_path_9359536>/storage.com.json",
+        "file": "<component_path_7441880>/storage.com.js",
+        "definitionFile": "<component_path_7441880>/storage.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4207,8 +4207,8 @@ module.exports = {
         "requires": [
             "resources"
         ],
-        "file": "<component_path_9709565>/story.com.js",
-        "definitionFile": "<component_path_9709565>/story.com.json",
+        "file": "<component_path_8010869>/story.com.js",
+        "definitionFile": "<component_path_8010869>/story.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4383,8 +4383,8 @@ module.exports = {
         "modules": [
             "clone"
         ],
-        "file": "<component_path_9991956>/system.com.js",
-        "definitionFile": "<component_path_9991956>/system.com.json",
+        "file": "<component_path_4408527>/system.com.js",
+        "definitionFile": "<component_path_4408527>/system.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4585,8 +4585,8 @@ module.exports = {
         "offers": [
             "vars"
         ],
-        "file": "<component_path_5933087>/vars.com.js",
-        "definitionFile": "<component_path_5933087>/vars.com.json",
+        "file": "<component_path_8032554>/vars.com.js",
+        "definitionFile": "<component_path_8032554>/vars.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4699,8 +4699,8 @@ module.exports = {
             "resources",
             "focus"
         ],
-        "file": "<component_path_3899913>/confirmations.com.js",
-        "definitionFile": "<component_path_3899913>/confirmations.com.json",
+        "file": "<component_path_5754253>/confirmations.com.js",
+        "definitionFile": "<component_path_5754253>/confirmations.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4793,8 +4793,8 @@ module.exports = {
         "offers": [
             "domUtils"
         ],
-        "file": "<component_path_2312049>/domUtils.com.js",
-        "definitionFile": "<component_path_2312049>/domUtils.com.json",
+        "file": "<component_path_7197832>/domUtils.com.js",
+        "definitionFile": "<component_path_7197832>/domUtils.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4866,8 +4866,8 @@ module.exports = {
             "vrep",
             "transform-js"
         ],
-        "file": "<component_path_686251>/notifications.com.js",
-        "definitionFile": "<component_path_686251>/notifications.com.json",
+        "file": "<component_path_505607>/notifications.com.js",
+        "definitionFile": "<component_path_505607>/notifications.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4995,8 +4995,8 @@ module.exports = {
         "offers": [
             "uiPositioning"
         ],
-        "file": "<component_path_5492817>/positioning.com.js",
-        "definitionFile": "<component_path_5492817>/positioning.com.json",
+        "file": "<component_path_4326408>/positioning.com.js",
+        "definitionFile": "<component_path_4326408>/positioning.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5074,8 +5074,8 @@ module.exports = {
         "modules": [
             "transform-js"
         ],
-        "file": "<component_path_9535680>/revealEffect.com.js",
-        "definitionFile": "<component_path_9535680>/revealEffect.com.json",
+        "file": "<component_path_291126>/revealEffect.com.js",
+        "definitionFile": "<component_path_291126>/revealEffect.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5258,8 +5258,8 @@ module.exports = {
             "transform-js",
             "scrollbarwidth"
         ],
-        "file": "<component_path_39174>/scrolling.com.js",
-        "definitionFile": "<component_path_39174>/scrolling.com.json",
+        "file": "<component_path_2183198>/scrolling.com.js",
+        "definitionFile": "<component_path_2183198>/scrolling.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5398,8 +5398,8 @@ module.exports = {
         "modules": [
             "colors"
         ],
-        "file": "<component_path_6278747>/logger.com.js",
-        "definitionFile": "<component_path_6278747>/logger.com.json",
+        "file": "<component_path_3374543>/logger.com.js",
+        "definitionFile": "<component_path_3374543>/logger.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5525,15 +5525,14 @@ module.exports = {
             "story",
             "logger"
         ],
-        "file": "<component_path_243201>/scripts.com.js",
-        "definitionFile": "<component_path_243201>/scripts.com.json",
+        "file": "<component_path_2537488>/scripts.com.js",
+        "definitionFile": "<component_path_2537488>/scripts.com.json",
         "create": (function () {
     
     var mod = {};
     
     (function (module) {
-        /* eslint-disable no-eval */
-
+        
 function create(context) {
     
     var story, env, vars, logger, getNodeScript, getGlobalScript, getSectionScript;
@@ -5664,8 +5663,8 @@ module.exports = {
         "resources": {
             "toothrotErrors": "errors.json"
         },
-        "file": "<component_path_5858127>/toothrotErrors.com.js",
-        "definitionFile": "<component_path_5858127>/toothrotErrors.com.json",
+        "file": "<component_path_6611468>/toothrotErrors.com.js",
+        "definitionFile": "<component_path_6611468>/toothrotErrors.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5684,7 +5683,7 @@ function create(context) {
         
         var getResource = context.channel("getResource");
         
-        format = context.channel("getModule").call("vrep");
+        format = context.channel("getModule").call("vrep").format;
         errors = JSON.parse(getResource("toothrotErrors"));
         
         context.connectInterface(api);
@@ -10954,8 +10953,6 @@ function create() {
     }
     
     function channel(channelName) {
-        
-        var bus = new EventEmitter();
         
         function api() {
             return callChannel.apply(null, arguments);
