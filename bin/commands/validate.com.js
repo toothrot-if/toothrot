@@ -1,19 +1,21 @@
+/* global process */
 
 var fs = require("fs");
+var joinPath = require("path").join;
 
 function create(context) {
     
-    var validator, logger;
+    var logger, parser, reader;
     
     function init() {
         logger = context.getInterface("logger", ["error", "success"]);
-        validator = context.getInterface("validator", ["validate"]);
+        parser = context.getInterface("parser", ["parse"]);
+        reader = context.getInterface("storyFileReader", ["read"]);
         context.decorate("cli/getCommands", decorate);
     }
     
     function destroy() {
         context.removeDecorator("cli/getCommands", decorate);
-        validator = null;
         logger = null;
     }
     
@@ -36,32 +38,38 @@ function create(context) {
     
     function validate(args) {
         
-        var path = args.args[1];
+        var path = args.args[1] || process.cwd();
+        var storyFiles = reader.read(fs, joinPath(path, "/resources/"));
         
-        validateAst(JSON.parse("" + fs.readFileSync(path)));
-    }
-    
-    function reportErrors(errors) {
-        errors.forEach(function (error) {
-            logger.error(error.toothrotMessage || error.message);
-        });
-    }
-    
-    function validateAst(ast) {
-        
-        var errors = [];
-        
-        validator.createValidator(collect).validate(ast);
-        
-        if (errors.length) {
-            reportErrors(errors);
+        if (args.flags.json) {
+            parser.parse(storyFiles, handleErrorsJson);
         }
         else {
-            logger.success("No errors found! :)");
+            parser.parse(storyFiles, handleErrors);
         }
-        
-        function collect(error) {
-            errors.push(error);
+    }
+    
+    function handleErrorsJson(errors) {
+        console.log( // eslint-disable-line no-console
+            Array.isArray(errors) ?
+                JSON.stringify(errors, null, 4) :
+                []
+        );
+    }
+    
+    function handleErrors(errors) {
+        if (errors) {
+            if (Array.isArray(errors)) {
+                errors.forEach(function (error) {
+                    logger.error("\n" + (error.toothrotMessage || error.message));
+                });
+            }
+            else {
+                logger.error(errors);
+            }
+        }
+        else {
+            logger.success("Story files are valid!");
         }
     }
     

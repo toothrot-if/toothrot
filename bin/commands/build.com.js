@@ -3,9 +3,10 @@ var fs = require("fs");
 
 function create(context) {
     
-    var builder;
+    var builder, logger;
     
     function init() {
+        logger = context.getInterface("logger", ["success", "error"]);
         builder = context.getInterface("builder", ["build"]);
         context.decorate("cli/getCommands", decorate);
     }
@@ -13,6 +14,7 @@ function create(context) {
     function destroy() {
         context.removeDecorator("cli/getCommands", decorate);
         builder = null;
+        logger = null;
     }
     
     function decorate(fn) {
@@ -37,7 +39,14 @@ function create(context) {
         var path = args.args[1];
         var outputDir = args.args[2];
         
-        builder.build(fs, path, fs, outputDir);
+        builder.build(fs, path, fs, outputDir, function (errors) {
+            if (errors) {
+                logger.error("Project cannot be build because it contains errors.");
+            }
+            else {
+                logger.success("Project build successfully! :)");
+            }
+        });
     }
     
     return {

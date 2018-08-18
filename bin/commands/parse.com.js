@@ -1,13 +1,15 @@
+/* global process */
 
 var fs = require("fs");
 
 function create(context) {
     
-    var parser, logger;
+    var parser, logger, reader;
     
     function init() {
         parser = context.getInterface("parser", ["parse"]);
         logger = context.getInterface("logger", ["error"]);
+        reader = context.getInterface("storyFileReader", ["read"]);
         context.decorate("cli/getCommands", decorate);
     }
     
@@ -36,14 +38,17 @@ function create(context) {
     
     function parse(args) {
         
-        var path = args.args[1];
+        var storyFiles;
+        var path = args.args[1] || process.cwd();
         
         if (!path || typeof path !== "string") {
             logger.error("No path specified for `parse` command!");
             return;
         }
         
-        parser.parse("" + fs.readFileSync(path), function (errors, result) {
+        storyFiles = reader.read(fs, path);
+        
+        parser.parse(storyFiles, function (errors, result) {
             if (errors) {
                 reportErrors(errors);
             }

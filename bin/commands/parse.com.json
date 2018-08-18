@@ -5,6 +5,6 @@
     "applicationVersion": "2.x",
     "applicationSteps": ["build"],
     "environments": ["cli"],
-    "requires": ["logger", "parser"],
+    "requires": ["logger", "parser", "storyFileReader"],
     "file": "./parse.com.js"
 }

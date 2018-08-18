@@ -1,9 +1,13 @@
+/* global process */
+
+var fs = require("fs");
 
 function create(context) {
     
-    var packer;
+    var packer, logger;
     
     function init() {
+        logger = context.getInterface("logger", ["error"]);
         packer = context.getInterface("packer", ["pack"]);
         context.decorate("cli/getCommands", decorate);
     }
@@ -11,6 +15,7 @@ function create(context) {
     function destroy() {
         context.removeDecorator("cli/getCommands", decorate);
         packer = null;
+        logger = null;
     }
     
     function decorate(fn) {
@@ -33,9 +38,27 @@ function create(context) {
     
     function pack(args) {
         
-        var path = args.args[1];
+        var path = args.args[1] || process.cwd();
         
-        console.log(packer.pack(path)); // eslint-disable-line no-console
+        packer.pack(fs, path, function (errors, storyPack) {
+            
+            if (errors) {
+                
+                if (Array.isArray(errors)) {
+                    errors.forEach(function (error) {
+                        logger.error(error.toothrotMessage || error.message);
+                    });
+                }
+                else if (errors) {
+                    logger.error(errors);
+                }
+                
+                logger.error("Project resources could not be packed because of errors.");
+            }
+            else {
+                console.log(storyPack); // eslint-disable-line no-console
+            }
+        });
     }
     
     return {
