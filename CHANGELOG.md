@@ -6,18 +6,20 @@
 * The `objects.json` file and corresponding API removed
 * Tags, flags and properties added to nodes
 * Nodes can now contain other nodes
-* Internal JS code switched to a component architecture, improving maintainability
 * Introduces scripts and slots
 * Object links have been removed
 * Improved default theme
 * Savegame slots removed, using PNG images as "datacards" instead
 * Introduces a hierarchy for node tags
 * Screens can now have embedded scripts
-* Desktop builds now use electron instead of NW.js
+* Desktop build step has been removed (and will probably return as a plugin) 
 * Adds `autonext` property
 * Makes it possible to define default settings in the main story file
+* Internal JS code switched to a component architecture, improving maintainability
+* Plugins can now be written to extend almost anything in the engine
+* Plugins are discovered automatically during the build phase
 
-Story format now uses markdown-like syntax where appropriate:
+The story format now uses markdown-like syntax where appropriate:
 
 | v1 Syntax             | v2 Syntax           | Description                           |
 |:----------------------|:--------------------|:--------------------------------------|
