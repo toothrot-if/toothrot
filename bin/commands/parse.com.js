@@ -1,6 +1,7 @@
 /* global process */
 
 var fs = require("fs");
+var joinPath = require("path").join;
 
 function create(context) {
     
@@ -39,7 +40,7 @@ function create(context) {
     function parse(args) {
         
         var storyFiles;
-        var path = args.args[1] || process.cwd();
+        var path = joinPath(args.args[1] || process.cwd(), "/resources/");
         
         if (!path || typeof path !== "string") {
             logger.error("No path specified for `parse` command!");

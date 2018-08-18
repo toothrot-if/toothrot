@@ -54,7 +54,6 @@ function create(context) {
         }
     }
     
-    
     return {
         init: init,
         destroy: destroy
