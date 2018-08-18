@@ -6,7 +6,6 @@ function create(context) {
     
     var api = context.createInterface("builder", {
         build: build,
-        createAppCacheFile: createAppCacheFile,
         reportErrors: reportErrors
     });
     
@@ -126,6 +125,13 @@ function create(context) {
         var projectFile = joinPath(base, "/project.json");
         var project = JSON.parse("" + inputFs.readFileSync(projectFile));
         
+        context.publish("builder/build.before", {
+            inputFs: inputFs,
+            inputDir: dir,
+            outputFs: outputFs,
+            outputDir: outputDir
+        });
+        
         then = then || function () {};
         
         if (!outputFs.existsSync(buildDir)) {
@@ -152,9 +158,11 @@ function create(context) {
         });
         
         if (storyErrors) {
-                
+            
+            // @ts-ignore
             if (storyErrors.isToothrotError) {
                 then(storyErrors);
+                // @ts-ignore
                 logger.error(storyErrors.toothrotMessage);
                 return;
             }
@@ -189,35 +197,14 @@ function create(context) {
         
         logger.success("Toothrot project built successfully in: " + browserDir);
         
-        createAppCacheFile(outputFs, browserDir, then);
-        
-    }
-    
-    function createAppCacheFile(fs, dir, then) {
-        
-        var cacheFile = "" +
-            "CACHE MANIFEST\n" +
-            "# Timestamp: " + Date.now() + "\n" +
-            "# Automatically created by Toothrot Engine\n" +
-            "\n" +
-            "CACHE:\n";
-        
-        var cacheFilePath = normalize(dir + "/cache.manifest");
-        var files = fsHelper.readDirRecursive(fs, dir);
-        
-        files.forEach(function (file) {
-            cacheFile += normalizePath(file) + "\n";
+        context.publish("builder/build.after", {
+            inputFs: inputFs,
+            inputDir: dir,
+            outputFs: outputFs,
+            outputDir: outputDir,
+            browserDir: browserDir
         });
         
-        fs.writeFileSync(cacheFilePath, cacheFile);
-        
-        logger.success("Created appcache file at: " + cacheFilePath);
-        
-        then();
-        
-        function normalizePath(path) {
-            return path.replace("\\", "/");
-        }
     }
     
     function reportErrors(errors) {

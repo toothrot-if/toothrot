@@ -1,0 +1,12 @@
+{
+    "name": "appCacheManifest",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["build"],
+    "environments": ["node"],
+    "requires": ["fileSystem", "logger"],
+    "offers": ["appCacheManifest"],
+    "modules": ["path"],
+    "file": "./appCacheManifest.com.js"
+}
