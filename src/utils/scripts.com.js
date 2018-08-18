@@ -1,4 +1,3 @@
-/* eslint-disable no-eval */
 
 function create(context) {
     

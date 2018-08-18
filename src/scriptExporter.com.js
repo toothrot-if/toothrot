@@ -56,7 +56,7 @@ function create(context) {
         
         functions += Object.keys(story.head.scripts).map(function (slotName) {
             return api.renderGlobalScript(story, slotName);
-        }).join("");
+        }).join("\n");
         
         functions += Object.keys(story.nodes).map(function (nodeName) {
             
@@ -64,8 +64,8 @@ function create(context) {
             
             return Object.keys(node.scripts).map(function (slotName) {
                 return api.renderNodeScript(story, node, slotName);
-            });
-        }).join("");
+            }).join("\n");
+        }).join("\n");
         
         functions += Object.keys(story.sections).map(function (sectionName) {
             
@@ -73,8 +73,8 @@ function create(context) {
             
             return Object.keys(section.scripts).map(function (slotName) {
                 return api.renderSectionScript(story, section, slotName);
-            });
-        }).join("");
+            }).join("\n");
+        }).join("\n");
         
         return functions;
     }
