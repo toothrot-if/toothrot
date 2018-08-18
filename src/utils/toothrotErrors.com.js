@@ -11,7 +11,7 @@ function create(context) {
         
         var getResource = context.channel("getResource");
         
-        format = context.channel("getModule").call("vrep");
+        format = context.channel("getModule").call("vrep").format;
         errors = JSON.parse(getResource("toothrotErrors"));
         
         context.connectInterface(api);
