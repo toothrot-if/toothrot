@@ -1,12 +1,11 @@
 
 function create(context) {
     
-    var parser, toDataUri, normalize;
+    var parser, toDataUri, normalize, storyFileReader;
     
     var api = context.createInterface("packer", {
         pack: pack,
-        pruneStory: pruneStory,
-        readStoryFiles: readStoryFiles
+        pruneStory: pruneStory
     });
     
     function init() {
@@ -16,6 +15,7 @@ function create(context) {
         toDataUri = getModule("datauri").sync;
         normalize = getModule("path").normalize;
         parser = context.getInterface("parser", ["parse"]);
+        storyFileReader = context.getInterface("storyFileReader", ["read"]);
         
         context.connectInterface(api);
     }
@@ -23,42 +23,15 @@ function create(context) {
     function destroy() {
         
         parser = null;
+        storyFileReader = null;
         
         context.disconnectInterface(api);
     }
     
-    function readStoryFiles(fs, dir) {
-        
-        var mainFile = normalize(dir + "/story.trot.md");
-        var content = "<<<story.trot.md>>>\n";
-        var files = getAdditionalStoryFiles(fs, dir);
-        
-        content += fs.readFileSync(mainFile);
-        
-        files.forEach(function (file) {
-            
-            var fileContent = fs.readFileSync(normalize(dir + "/" + file));
-            
-            content += "<<<" + file + ">>>\n";
-            content += fileContent;
-        });
-        
-        return content;
-    }
-    
-    function getAdditionalStoryFiles(fs, dir) {
-        
-        var allFiles = fs.readdirSync(dir);
-        
-        return allFiles.filter(function (file) {
-            return (/\.trot\.ext\.md/).test(file);
-        });
-    }
-    
-    function pack(fs, dir) {
+    function pack(fs, dir, then) {
         
         var story, storyFilesContent, templatePath, screenPath, imagePath, astFile, templateFiles,
-            screenFiles, imageFiles, bundle;
+            screenFiles, imageFiles, bundle, errors;
         
         dir = normalize(dir + "/resources/");
         templatePath = normalize(dir + "/templates/");
@@ -77,15 +50,21 @@ function create(context) {
             story = JSON.parse("" + fs.readFileSync(astFile));
         }
         else {
-            storyFilesContent = api.readStoryFiles(fs, dir);
-            parser.parse("" + storyFilesContent, function (errors, ast) {
-                
-                if (errors) {
-                    throw errors;
+            
+            storyFilesContent = storyFileReader.read(fs, dir);
+            
+            parser.parse("" + storyFilesContent, function (storyErrors, ast) {
+                if (storyErrors) {
+                    errors = storyErrors;
                 }
-                
-                story = ast;
+                else {
+                    story = ast;
+                }
             });
+            
+            if (errors) {
+                return then(errors);
+            }
         }
         
         bundle = {
@@ -121,7 +100,7 @@ function create(context) {
         
         api.pruneStory(story);
         
-        return JSON.stringify(bundle, null, 4);
+        return then(null, JSON.stringify(bundle, null, 4));
     }
     
     function pruneStory(story) {

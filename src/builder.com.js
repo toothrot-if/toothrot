@@ -116,7 +116,7 @@ function create(context) {
     
     function build(inputFs, dir, outputFs, outputDir, then) {
         
-        var rawResources, resources, indexContent, story;
+        var rawResources, resources, indexContent, story, storyErrors;
         
         var base = normalize((dir || process.cwd()) + "/");
         var buildDir = normalize(outputDir || (base + "build/"));
@@ -146,24 +146,26 @@ function create(context) {
         
         logger.success("Files copied to `" + browserDir + "`.");
         
-        try {
-            rawResources = packer.pack(inputFs, base);
-        }
-        catch (error) {
-            
-            if (error.isToothrotError) {
-                then(error);
-                logger.error(error.toothrotMessage);
+        packer.pack(inputFs, base, function (error, storyPack) {
+            storyErrors = error;
+            rawResources = storyPack;
+        });
+        
+        if (storyErrors) {
+                
+            if (storyErrors.isToothrotError) {
+                then(storyErrors);
+                logger.error(storyErrors.toothrotMessage);
                 return;
             }
             
-            if (Array.isArray(error)) {
-                reportErrors(error);
-                then(error);
+            if (Array.isArray(storyErrors)) {
+                reportErrors(storyErrors);
+                then(storyErrors);
                 return;
             }
             
-            throw error;
+            throw storyErrors;
         }
         
         story = JSON.parse(rawResources).story;

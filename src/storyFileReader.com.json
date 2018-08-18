@@ -1,0 +1,11 @@
+{
+    "name": "storyFileReader",
+    "version": "2.0.0",
+    "application": "toothrot",
+    "applicationVersion": "2.x",
+    "applicationSteps": ["build"],
+    "environments": ["cli", "node"],
+    "requires": ["fileSystem"],
+    "offers": ["storyFileReader"],
+    "file": "./storyFileReader.com.js"
+}
