@@ -216,7 +216,7 @@ function create(context) {
         then();
         
         function normalizePath(path) {
-            return (path.split(dir)[1] || "").replace("\\", "/");
+            return path.replace("\\", "/");
         }
     }
     
