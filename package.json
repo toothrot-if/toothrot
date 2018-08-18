@@ -23,7 +23,7 @@
     "dependency-graph": "^0.7.1",
     "howler": "^2.0.14",
     "marked": "^0.3.5",
-    "multiversum": "^0.2.3",
+    "multiversum": "^0.3.1",
     "png-cartridge": "^1.0.1",
     "scrollbarwidth": "^0.1.1",
     "transform-js": "^1.1.0-final.1512141547",
