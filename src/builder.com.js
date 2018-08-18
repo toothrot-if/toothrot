@@ -2,7 +2,7 @@
 
 function create(context) {
     
-    var logger, packer, joinPath, normalize, gatherer, fsHelper, scriptExporter;
+    var logger, packer, joinPath, normalize, gatherer, fsHelper, scriptExporter, format;
     
     var api = context.createInterface("builder", {
         build: build,
@@ -17,6 +17,7 @@ function create(context) {
         joinPath = path.join;
         normalize = path.normalize;
         
+        format = getModule("vrep").create("{{$", "}}");
         logger = context.getInterface("logger", ["log", "error", "info", "success"]);
         packer = context.getInterface("packer", ["pack"]);
         gatherer = context.getInterface("toothrotGatherer", ["renderTemplate"]);
@@ -180,16 +181,12 @@ function create(context) {
         project.name = story.meta.title || project.name;
         resources = new Buffer(encodeURIComponent(rawResources)).toString("base64");
         
-        indexContent = "(function () {\n" +
-                "    var toothrotResources = '" + resources + "';\n" +
-                '    TOOTHROT.decorate("getResource", function (fn) {\n' +
-                "        return function (name) {\n" +
-                "            var result = fn(name);\n" +
-                "            if (result) { return result; }\n" +
-                '            return name === "toothrotResources" ? toothrotResources : null;\n' +
-                "        };\n" +
-                '    });\n' +
-            "}());";
+        indexContent = format(
+            context.channel("getResource")("toothrotResourceFileTemplate"),
+            {
+                resources: resources
+            }
+        );
         
         outputFs.writeFileSync(joinPath(browserDir, "resources.js"), indexContent);
         outputFs.writeFileSync(scriptFilePath, scriptExporter.render(story));

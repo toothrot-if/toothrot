@@ -7,11 +7,12 @@
     "environments": ["cli", "node"],
     "offers": ["builder"],
     "requires": ["logger", "packer", "toothrotGatherer", "fileSystem", "scriptExporter"],
-    "modules": ["path", "assert", "semver", "minimatch"],
+    "modules": ["path", "assert", "semver", "minimatch", "vrep"],
     "resources": {
         "toothrotPackageInfo": "../package.json",
         "toothrotResourcesTemplate": "../misc/templates/resources.js",
-        "toothrotComponentTemplate": "../misc/templates/component.js"
+        "toothrotComponentTemplate": "../misc/templates/component.js",
+        "toothrotResourceFileTemplate": "../misc/templates/toothrotResources.js"
     },
     "file": "./builder.com.js"
 }
