@@ -1,6 +1,8 @@
 
 var isLikeGecko = (/like Gecko/i).test(window.navigator.userAgent);
 var isGecko = !isLikeGecko && (/Gecko/i).test(window.navigator.userAgent);
+// @ts-ignore
+var isSafari = (/iPad|iPhone|iPod/).test(window.navigator.userAgent) && !window.MSStream;
 
 function create(context) {
     
@@ -53,10 +55,10 @@ function create(context) {
             // It has something to do with the 'behavior: "smooth"' part, so we use custom scrolling
             // when the browser uses Gecko as rendering engine.
             //
-            if (isGecko) {
+            if (isGecko || isSafari) {
                 transform(element.scrollTop, element.scrollHeight, function (v) {
                     element.scrollTop = v;
-                }, {duration: 200, easing: "sineInOut", fps: 60});
+                }, {duration: 600, easing: "sineOut", fps: 200});
             }
             else {
                 element.scroll({

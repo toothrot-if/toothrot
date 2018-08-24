@@ -4,7 +4,7 @@
     
     Toothrot Engine Runtime (v2.0.0)
     
-    Build Time: Sat, 18 Aug 2018 21:48:41 GMT
+    Build Time: Thu, 23 Aug 2018 21:44:59 GMT
    
    ---------------------------------------------------------------------------------------------- */
 
@@ -131,8 +131,8 @@
         "modules": [
             "howler"
         ],
-        "file": "<component_path_9843466>/audio.com.js",
-        "definitionFile": "<component_path_9843466>/audio.com.json",
+        "file": "<component_path_1311202>/audio.com.js",
+        "definitionFile": "<component_path_1311202>/audio.com.json",
         "create": (function () {
     
     var mod = {};
@@ -414,8 +414,8 @@ module.exports = {
         "modules": [
             "png-cartridge"
         ],
-        "file": "<component_path_1181909>/cartridges.com.js",
-        "definitionFile": "<component_path_1181909>/cartridges.com.json",
+        "file": "<component_path_8892650>/cartridges.com.js",
+        "definitionFile": "<component_path_8892650>/cartridges.com.json",
         "create": (function () {
     
     var mod = {};
@@ -680,8 +680,8 @@ module.exports = {
         "modules": [
             "transform-js"
         ],
-        "file": "<component_path_7419230>/highlighter.com.js",
-        "definitionFile": "<component_path_7419230>/highlighter.com.json",
+        "file": "<component_path_7837814>/highlighter.com.js",
+        "definitionFile": "<component_path_7837814>/highlighter.com.json",
         "create": (function () {
     
     var mod = {};
@@ -860,7 +860,7 @@ module.exports = {
         "offers": [
             "uiOptions"
         ],
-        "file": "<component_path_5673699>/options.com.js",
+        "file": "<component_path_4193060>/options.com.js",
         "channels": {
             "exposes": {
                 "uiOptions": [
@@ -877,7 +877,7 @@ module.exports = {
                 ]
             }
         },
-        "definitionFile": "<component_path_5673699>/options.com.json",
+        "definitionFile": "<component_path_4193060>/options.com.json",
         "create": (function () {
     
     var mod = {};
@@ -1048,8 +1048,8 @@ module.exports = {
             "vrep",
             "transform-js"
         ],
-        "file": "<component_path_1437714>/screens.com.js",
-        "definitionFile": "<component_path_1437714>/screens.com.json",
+        "file": "<component_path_2608099>/screens.com.js",
+        "definitionFile": "<component_path_2608099>/screens.com.json",
         "create": (function () {
     
     var mod = {};
@@ -1638,8 +1638,8 @@ module.exports = {
         "modules": [
             "vrep"
         ],
-        "file": "<component_path_492639>/ui.com.js",
-        "definitionFile": "<component_path_492639>/ui.com.json",
+        "file": "<component_path_3842654>/ui.com.js",
+        "definitionFile": "<component_path_3842654>/ui.com.json",
         "create": (function () {
     
     var mod = {};
@@ -2408,8 +2408,8 @@ module.exports = {
         "offers": [
             "env"
         ],
-        "file": "<component_path_7636911>/env.com.js",
-        "definitionFile": "<component_path_7636911>/env.com.json",
+        "file": "<component_path_3372647>/env.com.js",
+        "definitionFile": "<component_path_3372647>/env.com.json",
         "create": (function () {
     
     var mod = {};
@@ -2507,8 +2507,8 @@ module.exports = {
         "offers": [
             "focus"
         ],
-        "file": "<component_path_5989755>/focus.com.js",
-        "definitionFile": "<component_path_5989755>/focus.com.json",
+        "file": "<component_path_4429820>/focus.com.js",
+        "definitionFile": "<component_path_4429820>/focus.com.json",
         "create": (function () {
     
     var mod = {};
@@ -2672,8 +2672,8 @@ module.exports = {
             "clone",
             "deepmerge"
         ],
-        "file": "<component_path_2379760>/interpreter.com.js",
-        "definitionFile": "<component_path_2379760>/interpreter.com.json",
+        "file": "<component_path_2233212>/interpreter.com.js",
+        "definitionFile": "<component_path_2233212>/interpreter.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3345,8 +3345,8 @@ module.exports = {
         "modules": [
             "clone"
         ],
-        "file": "<component_path_7892160>/nodes.com.js",
-        "definitionFile": "<component_path_7892160>/nodes.com.json",
+        "file": "<component_path_3723203>/nodes.com.js",
+        "definitionFile": "<component_path_3723203>/nodes.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3711,8 +3711,8 @@ module.exports = {
         "offers": [
             "resources"
         ],
-        "file": "<component_path_9175728>/resources.com.js",
-        "definitionFile": "<component_path_9175728>/resources.com.json",
+        "file": "<component_path_4731313>/resources.com.js",
+        "definitionFile": "<component_path_4731313>/resources.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3783,8 +3783,8 @@ module.exports = {
         "modules": [
             "clone"
         ],
-        "file": "<component_path_191173>/settings.com.js",
-        "definitionFile": "<component_path_191173>/settings.com.json",
+        "file": "<component_path_5077010>/settings.com.js",
+        "definitionFile": "<component_path_5077010>/settings.com.json",
         "create": (function () {
     
     var mod = {};
@@ -3950,8 +3950,8 @@ module.exports = {
         "requires": [
             "logger"
         ],
-        "file": "<component_path_1992155>/storage.com.js",
-        "definitionFile": "<component_path_1992155>/storage.com.json",
+        "file": "<component_path_3216083>/storage.com.js",
+        "definitionFile": "<component_path_3216083>/storage.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4207,8 +4207,8 @@ module.exports = {
         "requires": [
             "resources"
         ],
-        "file": "<component_path_1006854>/story.com.js",
-        "definitionFile": "<component_path_1006854>/story.com.json",
+        "file": "<component_path_7440721>/story.com.js",
+        "definitionFile": "<component_path_7440721>/story.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4383,8 +4383,8 @@ module.exports = {
         "modules": [
             "clone"
         ],
-        "file": "<component_path_7130276>/system.com.js",
-        "definitionFile": "<component_path_7130276>/system.com.json",
+        "file": "<component_path_3512398>/system.com.js",
+        "definitionFile": "<component_path_3512398>/system.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4585,8 +4585,8 @@ module.exports = {
         "offers": [
             "vars"
         ],
-        "file": "<component_path_1866434>/vars.com.js",
-        "definitionFile": "<component_path_1866434>/vars.com.json",
+        "file": "<component_path_9651686>/vars.com.js",
+        "definitionFile": "<component_path_9651686>/vars.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4699,8 +4699,8 @@ module.exports = {
             "resources",
             "focus"
         ],
-        "file": "<component_path_3513722>/confirmations.com.js",
-        "definitionFile": "<component_path_3513722>/confirmations.com.json",
+        "file": "<component_path_8976694>/confirmations.com.js",
+        "definitionFile": "<component_path_8976694>/confirmations.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4793,8 +4793,8 @@ module.exports = {
         "offers": [
             "domUtils"
         ],
-        "file": "<component_path_2515062>/domUtils.com.js",
-        "definitionFile": "<component_path_2515062>/domUtils.com.json",
+        "file": "<component_path_6316621>/domUtils.com.js",
+        "definitionFile": "<component_path_6316621>/domUtils.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4866,8 +4866,8 @@ module.exports = {
             "vrep",
             "transform-js"
         ],
-        "file": "<component_path_7778371>/notifications.com.js",
-        "definitionFile": "<component_path_7778371>/notifications.com.json",
+        "file": "<component_path_2117690>/notifications.com.js",
+        "definitionFile": "<component_path_2117690>/notifications.com.json",
         "create": (function () {
     
     var mod = {};
@@ -4995,8 +4995,8 @@ module.exports = {
         "offers": [
             "uiPositioning"
         ],
-        "file": "<component_path_2301887>/positioning.com.js",
-        "definitionFile": "<component_path_2301887>/positioning.com.json",
+        "file": "<component_path_9459465>/positioning.com.js",
+        "definitionFile": "<component_path_9459465>/positioning.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5074,8 +5074,8 @@ module.exports = {
         "modules": [
             "transform-js"
         ],
-        "file": "<component_path_2170689>/revealEffect.com.js",
-        "definitionFile": "<component_path_2170689>/revealEffect.com.json",
+        "file": "<component_path_20377>/revealEffect.com.js",
+        "definitionFile": "<component_path_20377>/revealEffect.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5258,8 +5258,8 @@ module.exports = {
             "transform-js",
             "scrollbarwidth"
         ],
-        "file": "<component_path_1765766>/scrolling.com.js",
-        "definitionFile": "<component_path_1765766>/scrolling.com.json",
+        "file": "<component_path_8700476>/scrolling.com.js",
+        "definitionFile": "<component_path_8700476>/scrolling.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5268,6 +5268,8 @@ module.exports = {
         
 var isLikeGecko = (/like Gecko/i).test(window.navigator.userAgent);
 var isGecko = !isLikeGecko && (/Gecko/i).test(window.navigator.userAgent);
+// @ts-ignore
+var isSafari = (/iPad|iPhone|iPod/).test(window.navigator.userAgent) && !window.MSStream;
 
 function create(context) {
     
@@ -5320,10 +5322,10 @@ function create(context) {
             // It has something to do with the 'behavior: "smooth"' part, so we use custom scrolling
             // when the browser uses Gecko as rendering engine.
             //
-            if (isGecko) {
+            if (isGecko || isSafari) {
                 transform(element.scrollTop, element.scrollHeight, function (v) {
                     element.scrollTop = v;
-                }, {duration: 200, easing: "sineInOut", fps: 60});
+                }, {duration: 600, easing: "sineOut", fps: 200});
             }
             else {
                 element.scroll({
@@ -5398,8 +5400,8 @@ module.exports = {
         "modules": [
             "colors"
         ],
-        "file": "<component_path_7541696>/logger.com.js",
-        "definitionFile": "<component_path_7541696>/logger.com.json",
+        "file": "<component_path_94136>/logger.com.js",
+        "definitionFile": "<component_path_94136>/logger.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5525,8 +5527,8 @@ module.exports = {
             "story",
             "logger"
         ],
-        "file": "<component_path_7259219>/scripts.com.js",
-        "definitionFile": "<component_path_7259219>/scripts.com.json",
+        "file": "<component_path_5857856>/scripts.com.js",
+        "definitionFile": "<component_path_5857856>/scripts.com.json",
         "create": (function () {
     
     var mod = {};
@@ -5663,8 +5665,8 @@ module.exports = {
         "resources": {
             "toothrotErrors": "errors.json"
         },
-        "file": "<component_path_6150023>/toothrotErrors.com.js",
-        "definitionFile": "<component_path_6150023>/toothrotErrors.com.json",
+        "file": "<component_path_5229763>/toothrotErrors.com.js",
+        "definitionFile": "<component_path_5229763>/toothrotErrors.com.json",
         "create": (function () {
     
     var mod = {};
@@ -11074,6 +11076,7 @@ function create() {
                     }
                     
                     try {
+                        
                         lastCallCount = nextCalls;
                         value = current.fn.apply(null, arguments);
                         lastValue = value;
