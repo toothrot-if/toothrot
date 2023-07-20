@@ -1,6 +1,6 @@
 # Toothrot Engine
 
-[Website](https://toothrot.one) | [Discord](https://discord.gg/DJ8SAr5)
+    DEPRECATION NOTICE: This project is no longer actively maintained.
 
 An engine for creating text-based games.
 
